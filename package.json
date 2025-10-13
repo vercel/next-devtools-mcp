@@ -1,0 +1,10 @@
+{
+  "name": "next-devtools-mcp",
+  "version": "0.0.1",
+  "description": "Next.js development tool MCP",
+  "main": "index.js",
+  "scripts": {
+    
+  },
+  "license": "MIT"
+}

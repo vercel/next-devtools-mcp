@@ -1,10 +1,34 @@
 {
   "name": "next-devtools-mcp",
   "version": "0.0.1",
-  "description": "Next.js development tool MCP",
-  "main": "index.js",
-  "scripts": {
-    
+  "description": "Next.js development tools MCP server with stdio transport",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./dist/index.js"
   },
-  "license": "MIT"
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc && cp -r src/mcp-prompts/*.md dist/mcp-prompts/",
+    "prepublishOnly": "pnpm run build",
+    "clean": "rm -rf dist",
+    "test": "echo \"No tests yet\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.20.0",
+    "ai": "^5.0.45",
+    "zod": "^4.1.9"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "typescript": "^5.9.2"
+  },
+  "packageManager": "pnpm@9.15.9"
 }

@@ -53,13 +53,7 @@ async function main() {
     }
 
     try {
-      // Coerce numeric parameters from strings if needed
-      const coercedArgs = { ...args }
-      if (name === "chrome_devtools" && typeof coercedArgs.pageIdx === "string") {
-        coercedArgs.pageIdx = Number(coercedArgs.pageIdx)
-      }
-
-      const result = await tool.execute?.(coercedArgs as any, {
+      const result = await tool.execute?.(args as any, {
         abortSignal: new AbortController().signal,
         messages: [],
         toolCallId: String(request.params._meta?.progressToken || Date.now()),

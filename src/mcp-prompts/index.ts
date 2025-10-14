@@ -1,5 +1,4 @@
 import type { Prompt } from "@modelcontextprotocol/sdk/types.js"
-import { testWithChromePrompt, getTestWithChromePrompt } from "./test-with-chrome.js"
 import { upgradeNextjs16Prompt, getUpgradeNextjs16Prompt } from "./upgrade-nextjs-16.js"
 import {
   enableCacheComponentsPrompt,
@@ -11,7 +10,6 @@ import {
 } from "./preload-nextjs-16-knowledge.js"
 
 // Export individual prompts
-export { testWithChromePrompt, getTestWithChromePrompt } from "./test-with-chrome.js"
 export { upgradeNextjs16Prompt, getUpgradeNextjs16Prompt } from "./upgrade-nextjs-16.js"
 export {
   enableCacheComponentsPrompt,
@@ -24,7 +22,6 @@ export {
 
 // Prompts registry
 export const MCP_PROMPTS: Record<string, Prompt> = {
-  "test-with-chrome": testWithChromePrompt,
   "upgrade-nextjs-16": upgradeNextjs16Prompt,
   "enable-cache-components": enableCacheComponentsPrompt,
   "preload-nextjs-16-knowledge": preloadNextjs16KnowledgePrompt,
@@ -33,9 +30,8 @@ export const MCP_PROMPTS: Record<string, Prompt> = {
 // Prompt handlers registry
 export const PROMPT_HANDLERS: Record<
   string,
-  (args?: Record<string, string>) => ReturnType<typeof getTestWithChromePrompt>
+  (args?: Record<string, string>) => ReturnType<typeof getUpgradeNextjs16Prompt>
 > = {
-  "test-with-chrome": getTestWithChromePrompt,
   "upgrade-nextjs-16": getUpgradeNextjs16Prompt,
   "enable-cache-components": getEnableCacheComponentsPrompt,
   "preload-nextjs-16-knowledge": getPreloadNextjs16KnowledgePrompt,

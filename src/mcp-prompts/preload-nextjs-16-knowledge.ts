@@ -1,10 +1,6 @@
 import type { GetPromptResult, Prompt } from "@modelcontextprotocol/sdk/types.js"
 import { readFileSync } from "node:fs"
-import { join, dirname } from "node:path"
-import { fileURLToPath } from "node:url"
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+import { join } from "node:path"
 
 export const preloadNextjs16KnowledgePrompt: Prompt = {
   name: "preload-nextjs-16-knowledge",

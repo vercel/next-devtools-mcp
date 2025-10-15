@@ -1,10 +1,6 @@
 import type { GetPromptResult, Prompt } from "@modelcontextprotocol/sdk/types.js"
 import { readFileSync } from "fs"
-import { dirname, join } from "path"
-import { fileURLToPath } from "url"
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+import { join } from "path"
 
 export const upgradeNextjs16Prompt: Prompt = {
   name: "upgrade-nextjs-16",

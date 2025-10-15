@@ -70,22 +70,12 @@ Help me upgrade my Next.js app to version 16
 
 Your MCP client should provide guidance and tools for upgrading your Next.js application.
 
-## Tools
-
-The Next.js DevTools MCP server provides the following tools:
-
-- **`nextjs_docs`** - Search and retrieve Next.js documentation
-- **`nextjs_verify`** - Verify Next.js project configuration and setup
-- **`chrome_devtools`** - Access Chrome DevTools functionality via external chrome-devtools-mcp server
-- **`playwright_test`** - Run Playwright tests and browser automation
-
 ## Prompts
 
 Pre-configured prompts to help with common Next.js development tasks:
 
 - **`upgrade-nextjs-16`** - Guide for upgrading to Next.js 16
 - **`enable-cache-components`** - Enable caching for React components
-- **`test-with-playwright`** - Set up and run Playwright tests
 - **`preload-nextjs-16-knowledge`** - Load Next.js 16 documentation and best practices
 
 ## Development

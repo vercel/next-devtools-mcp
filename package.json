@@ -10,15 +10,13 @@
     ".": "./dist/index.js"
   },
   "files": [
-    "dist",
-    "bin"
+    "dist"
   ],
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc && cp -r src/mcp-prompts/*.md dist/mcp-prompts/",
     "prepublishOnly": "pnpm run build",
     "clean": "rm -rf dist",
-    "test": "echo \"No tests yet\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

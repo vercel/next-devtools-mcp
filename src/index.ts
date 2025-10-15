@@ -105,9 +105,7 @@ async function main() {
   await server.connect(transport)
 
   // Log to stderr so it doesn't interfere with MCP protocol on stdout
-  console.error("Next.js DevTools MCP Server running on stdio")
-  console.error(`Available tools: ${Object.keys(MCP_TOOLS).join(", ")}`)
-  console.error(`Available prompts: ${Object.keys(MCP_PROMPTS).join(", ")}`)
+  console.error("Next.js DevTools MCP Server connected")
 }
 
 // Run the server

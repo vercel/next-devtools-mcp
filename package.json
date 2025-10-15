@@ -10,8 +10,7 @@
     ".": "./dist/index.js"
   },
   "files": [
-    "dist",
-    "bin"
+    "dist"
   ],
   "scripts": {
     "dev": "tsc --watch",

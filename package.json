@@ -18,7 +18,7 @@
     "build": "tsc && cp -r src/mcp-prompts/*.md dist/mcp-prompts/",
     "prepublishOnly": "pnpm run build",
     "clean": "rm -rf dist",
-    "test": "echo \"No tests yet\"",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -27,8 +27,11 @@
     "zod": "^4.1.9"
   },
   "devDependencies": {
-    "@types/node": "^24.5.2",
-    "typescript": "^5.9.2"
+    "@anthropic-ai/claude-agent-sdk": "^0.1.15",
+    "@types/node": "^24.7.2",
+    "dotenv": "^17.2.3",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   },
   "packageManager": "pnpm@9.15.9"
 }

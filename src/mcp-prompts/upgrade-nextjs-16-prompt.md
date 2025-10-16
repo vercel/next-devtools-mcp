@@ -181,6 +181,33 @@ After the codemod runs, check for any remaining issues it might have missed:
    ```
 
 **H. revalidateTag API Changes (Deprecation - NOT handled by codemod)**
+   Files: Search for `revalidateTag(` calls
+   Check: All revalidateTag calls now require a profile parameter
+
+   ```bash
+   # Find all revalidateTag calls
+   grep -r "revalidateTag(" app/ src/
+   ```
+
+   Migration options:
+   ```typescript
+   // ❌ OLD (deprecated)
+   import { revalidateTag } from 'next/cache'
+   revalidateTag('posts')
+
+   // ✅ OPTION 1: Use updateTag for Server Actions with read-your-own-writes
+   import { updateTag } from 'next/cache'
+   updateTag('posts', 'max')
+
+   // ✅ OPTION 2: Use revalidateTag with profile for background invalidation
+   import { revalidateTag } from 'next/cache'
+   revalidateTag('posts', 'max')
+   ```
+
+   **When to use which:**
+   - Use `updateTag('tag', 'max')` in Server Actions when you need immediate consistency (read-your-own-writes)
+   - Use `revalidateTag('tag', 'max')` in Route Handlers or when background invalidation is acceptable
+
    Load `nextjs16://knowledge/cache-invalidation` for detailed API semantics and migration patterns.
 
 **I. Deprecated Features (WARNINGS - Optional)**
@@ -201,9 +228,10 @@ Based on Phase 3 analysis, apply only the necessary manual fixes:
 
 **3. Update lint commands (if using next lint in scripts/CI)**
 
-**4. Fix revalidateTag calls (if compilation errors occur)**
-   - Add profile parameter: `revalidateTag(tag, 'max')`
-   - Or use `unstable_updateTag` for read-your-own-writes in Server Actions
+**4. Fix revalidateTag calls (see section H in Phase 3)**
+   - Update all `revalidateTag(tag)` calls to include profile parameter
+   - Use `updateTag(tag, 'max')` for Server Actions (read-your-own-writes)
+   - Use `revalidateTag(tag, 'max')` for Route Handlers (background invalidation)
 
 **5. Fix edge cases the codemod missed (RARE - only if found in Phase 3)**
    Template for async API fixes:

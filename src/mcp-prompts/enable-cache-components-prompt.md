@@ -28,9 +28,54 @@ This prompt uses the Next.js 16 Knowledge Base resources for on-demand access to
 
 ---
 
-# ENABLE WORKFLOW: Cache Components Setup & Verification Guide
+# ENABLE WORKFLOW: Complete Cache Components Setup & Verification Guide
 
-The section below contains the step-by-step enablement workflow. Load the knowledge base resources above for detailed technical behavior, API semantics, and best practices.
+The section below contains the comprehensive step-by-step enablement workflow. This guide includes ALL steps needed to enable Cache Components: configuration updates, flag changes, boundary setup, error detection, and automated fixing. Load the knowledge base resources above for detailed technical behavior, API semantics, and best practices.
+
+## Overview: What This Process Covers
+
+This prompt automates the complete Cache Components enablement workflow:
+
+**Configuration & Flags (Phase 1-2):**
+- ✅ Detect package manager (npm/pnpm/yarn/bun)
+- ✅ Verify Next.js version (16.0.0+)
+- ✅ Update next.config to enable `experimental.cacheComponents`
+- ✅ Migrate from `experimental.dynamicIO` or `experimental.ppr` if needed
+- ✅ Document existing Route Segment Config for migration
+
+**Dev Server & MCP Setup (Phase 3):**
+- ✅ Start dev server once with MCP enabled (`__NEXT_EXPERIMENTAL_MCP_SERVER=true`)
+- ✅ Verify MCP server is active and responding
+- ✅ Capture base URL and MCP endpoint for error detection
+
+**Error Detection (Phase 4):**
+- ✅ Load every route in Chrome browser using chrome_devtools tool
+- ✅ Collect errors from Chrome session using Next.js MCP `get_errors` tool
+- ✅ Categorize all Cache Components errors by type
+- ✅ Build comprehensive error list before fixing
+
+**Automated Fixing (Phase 5):**
+- ✅ Fix blocking route errors (add Suspense boundaries or "use cache")
+- ✅ Fix dynamic value errors (add `await connection()`)
+- ✅ Fix route params errors (add `generateStaticParams`)
+- ✅ Fix unavailable API errors (move outside cache or use "use cache: private")
+- ✅ Migrate Route Segment Config to "use cache" + cacheLife
+- ✅ Add cache tags with cacheTag() for on-demand revalidation
+- ✅ Configure cacheLife profiles for revalidation control
+- ✅ Verify each fix with Fast Refresh (no restart needed)
+
+**Final Verification (Phase 6):**
+- ✅ Verify all routes return 200 OK
+- ✅ Confirm zero errors with final `get_errors` check
+- ✅ Stop dev server after verification
+- ✅ Run production build and test
+
+**Key Features:**
+- One-time dev server start (no restarts needed)
+- Automated error detection using Next.js MCP tools
+- Browser-based testing with chrome_devtools
+- Fast Refresh applies fixes instantly
+- Comprehensive fix strategies for all error types
 
 ## Decision Guide: Suspense vs "use cache"
 
@@ -105,68 +150,120 @@ Before enabling Cache Components:
 
 ## PHASE 2: Enable Cache Components Configuration
 ────────────────────────────────────────
-Update the Next.js configuration to enable Cache Components:
+Update the Next.js configuration to enable Cache Components. This phase handles ALL configuration and flag changes needed.
 
 **Step 1: Backup existing config**
 Copy current next.config.js or next.config.ts before making changes
 
-**Step 2: Update configuration**
+**Step 2: Update experimental.cacheComponents flag**
 
-Option A - If starting fresh (no existing experimental.cacheComponents):
+The `experimental.cacheComponents` flag is the PRIMARY configuration change. Choose the right option based on your current config:
+
+**Option A - If starting fresh (no existing experimental flags):**
 ```typescript
 // next.config.ts (or .js)
 const nextConfig = {
   experimental: {
-    cacheComponents: true,
+    cacheComponents: true,  // Enable Cache Components
   },
 }
 
 export default nextConfig
 ```
 
-Option B - If migrating from experimental.dynamicIO:
+**Option B - If migrating from experimental.dynamicIO:**
 ```diff
   const nextConfig = {
     experimental: {
--     dynamicIO: true,
-+     cacheComponents: true,
+-     dynamicIO: true,         // Old name (deprecated)
++     cacheComponents: true,   // New name (current)
     },
   }
 ```
 
-Option C - If migrating from experimental.ppr:
+**Option C - If migrating from experimental.ppr:**
 ```diff
   const nextConfig = {
     experimental: {
--     ppr: true,
-+     cacheComponents: true,
+-     ppr: true,               // Removed in Next.js 16
++     cacheComponents: true,   // Replacement feature
     },
   }
 ```
 
 ⚠️  **Important for PPR Migration:**
 If you were using `experimental.ppr`, note that Cache Components has:
-- Different implementation details
-- Additional features and behaviors
+- Different implementation details and behavior
+- Additional features (cacheLife, cacheTag, "use cache: private", etc.)
+- Different static shell generation rules
 - May require code adjustments in your routes
 - Review route-level cache behavior after migration
 
-**Step 3: Consider cacheLife profiles**
-If you're using `revalidateTag()`, update to the new signature:
-```typescript
-import { revalidateTag } from 'next/cache'
+**Step 3: Remove incompatible flags**
 
-// Old (deprecated)
-revalidateTag('my-tag')
-
-// New (with cacheLife profile)
-revalidateTag('my-tag', 'max')  // Recommended for most cases
+If present, REMOVE these flags (they conflict with Cache Components):
+```diff
+  const nextConfig = {
+    experimental: {
+      cacheComponents: true,
+-     ppr: true,              // Remove - replaced by cacheComponents
+    },
+  }
 ```
 
-Built-in cacheLife profiles:
-- `'max'` - Long-lived content with background revalidation (recommended)
-- `'hours'` - Content that changes every few hours
-- `'days'` - Content that changes daily or less frequently
+**Step 4: Preserve compatible flags**
+
+These experimental flags CAN coexist with cacheComponents:
+- `turbo` - Turbopack configuration (separate feature)
+- `serverActions` - Server Actions config (separate feature)
+- `mdxRs` - MDX support (separate feature)
+- Other non-caching related flags
+
+Example of valid combined config:
+```typescript
+const nextConfig = {
+  experimental: {
+    cacheComponents: true,     // Cache Components
+    turbo: {                   // Turbopack config (compatible)
+      rules: { /* ... */ }
+    },
+    serverActions: {           // Server Actions (compatible)
+      bodySizeLimit: '2mb'
+    },
+  },
+}
+```
+
+**Step 5: Document Route Segment Config usage**
+
+Search for existing Route Segment Config exports in your routes:
+- `export const dynamic = ...`
+- `export const revalidate = ...`
+- `export const fetchCache = ...`
+- `export const runtime = ...`
+- `export const preferredRegion = ...`
+
+⚠️  **CRITICAL: Route Segment Config is DISABLED with Cache Components**
+
+These options will cause build errors and MUST be migrated:
+- `dynamic: 'force-static'` → Use `"use cache"` directive
+- `dynamic: 'force-dynamic'` → Use Suspense boundary
+- `revalidate: 3600` → Use `cacheLife({ revalidate: 3600 })`
+- `fetchCache: 'force-cache'` → Use `"use cache"`
+
+Document all Route Segment Config locations now - you'll migrate them in Phase 5.
+
+**Step 6: Verify configuration changes**
+
+After making changes, verify:
+- ✅ `experimental.cacheComponents: true` is set
+- ✅ Incompatible flags removed (`experimental.ppr`)
+- ✅ Compatible flags preserved (if any)
+- ✅ Route Segment Config locations documented
+- ✅ Config file syntax is valid (no syntax errors)
+
+**What's Next:**
+With configuration updated, Phase 3 will start the dev server and Phase 4 will detect any runtime errors that need fixing.
 
 ## PHASE 3: Start Dev Server with MCP
 ────────────────────────────────────────
@@ -464,13 +561,23 @@ Systematically verify each route and collect errors:
 - If chrome_devtools navigation fails, check if Chrome is installed
 - If Next.js MCP connection fails, the dev server may have crashed (rare)
 
-## PHASE 5: Automated Error Fixing
+## PHASE 5: Automated Error Fixing & Boundary Setup
 ────────────────────────────────────────
 
 **Prerequisites:**
 - ✅ Dev server is still running from Phase 3 (do NOT restart it)
-- ✅ Error list collected from Phase 4
-- ✅ Fast Refresh will apply changes automatically
+- ✅ Comprehensive error list collected from Phase 4
+- ✅ Fast Refresh will apply changes automatically (no restart needed)
+
+This phase handles ALL code changes needed for Cache Components:
+- Adding Suspense boundaries for dynamic content
+- Adding "use cache" directives for cacheable content
+- Fixing dynamic value errors with connection()
+- Adding generateStaticParams for route params
+- Migrating Route Segment Config to "use cache" + cacheLife
+- Setting up cache tags with cacheTag() for revalidation
+- Configuring cacheLife profiles for fine-grained control
+- Moving unavailable APIs outside cache scope
 
 Fix errors systematically based on error type:
 
@@ -846,11 +953,15 @@ Report findings in this format:
 [x] Package manager detected: [manager]
 [x] Existing config checked
 [x] Routes identified: [count] routes
+[x] Route Segment Config usage documented
 
-## Phase 2: Configuration
-[x] Cache Components enabled in next.config
+## Phase 2: Configuration & Flags
+[x] Cache Components flag enabled: experimental.cacheComponents = true
 [x] Configuration backed up
-[ ] cacheLife profiles reviewed
+[x] Incompatible flags removed (experimental.ppr if present)
+[x] Compatible flags preserved
+[x] Route Segment Config locations documented for migration
+[x] Config file syntax validated
 
 ## Phase 3: Dev Server
 [x] Checked for existing servers/stale locks
@@ -874,34 +985,61 @@ Report findings in this format:
 - File: [file path]
 - Status: [Fixed/Pending]
 
-## Phase 5: Fixes Applied
+## Phase 5: Boundary Setup & Code Changes
 [List all fixes made, grouped by error type]
 
-### A. Blocking Route Errors Fixed: [count]
-- [file path]: Added Suspense boundary / Added "use cache" / Created loading.tsx
-- [file path]: [specific fix applied]
+### A. Suspense Boundaries Added: [count]
+- [file path]: Added Suspense boundary in page component
+- [file path]: Added Suspense boundary in layout
+- [file path]: Created loading.tsx file
 - ...
 
-### B. Dynamic Value Errors Fixed: [count]
-- [file path]: Added await connection() before Math.random()/Date()
+### B. "use cache" Directives Added: [count]
+- [file path]: Added "use cache" to page component (public cache)
+- [file path]: Added "use cache: private" to page component (prefetchable with cookies/params)
+- [file path]: Added "use cache" to individual function
 - ...
 
-### C. Route Params Errors Fixed: [count]
+### C. Dynamic Value Errors Fixed: [count]
+- [file path]: Added await connection() before Math.random()
+- [file path]: Added await connection() before new Date()
+- ...
+
+### D. Route Params Errors Fixed: [count]
 - [file path]: Added generateStaticParams with known params
+- [file path]: Added generateStaticParams for dynamic route
 - ...
 
-### D. Unavailable API Errors Fixed: [count]
-- [file path]: Moved cookies()/headers() outside cache scope / Changed to "use cache: private"
+### E. Unavailable API Errors Fixed: [count]
+- [file path]: Moved cookies() call outside cache scope
+- [file path]: Moved headers() call outside cache scope
+- [file path]: Changed to "use cache: private" to allow cookies/params
 - ...
 
-### E. Route Segment Config Migrations: [count]
-- [file path]: Removed export const dynamic, replaced with "use cache" + cacheLife
+### F. Route Segment Config Migrations: [count]
+- [file path]: Removed export const dynamic = 'force-static', replaced with "use cache"
+- [file path]: Removed export const revalidate = 3600, replaced with cacheLife({ revalidate: 3600 })
+- [file path]: Removed export const fetchCache, replaced with "use cache"
 - ...
 
-### F. Cache Optimizations Added: [count]
-- [file path]: Added cacheLife profile for revalidation control
-- [file path]: Added cacheTag for granular revalidation
+### G. Cache Tags Added: [count]
+- [file path]: Added cacheTag('posts') for on-demand revalidation
+- [file path]: Added cacheTag('products') for granular control
 - ...
+
+### H. cacheLife Profiles Configured: [count]
+- [file path]: Added cacheLife({ revalidate: 900, expire: 3600 })
+- [file path]: Added cacheLife('max') for long-lived content
+- [file path]: Added cacheLife('hours') for frequently changing content
+- ...
+
+### Summary of All Code Changes:
+- Total Suspense boundaries added: [count]
+- Total "use cache" directives added: [count]
+- Total generateStaticParams functions added: [count]
+- Total Route Segment Config exports removed: [count]
+- Total cache tags added: [count]
+- Total cacheLife profiles configured: [count]
 
 ## Phase 6: Final Verification
 [x] All routes return 200 OK (with dev server running)
@@ -913,11 +1051,40 @@ Report findings in this format:
 ## Migration Notes
 [Any special notes about the migration, especially if migrating from PPR]
 
+## Complete Changes Summary
+This enablement process made the following comprehensive changes:
+
+### Configuration Changes (Phase 2):
+- ✅ Enabled experimental.cacheComponents flag in next.config
+- ✅ Removed incompatible flags (experimental.ppr if present)
+- ✅ Preserved compatible experimental flags
+- ✅ Documented Route Segment Config for migration
+
+### Boundary & Cache Setup (Phase 5):
+- ✅ Added Suspense boundaries for dynamic content
+- ✅ Added "use cache" directives for cacheable content
+- ✅ Added "use cache: private" for prefetchable private content
+- ✅ Created loading.tsx files where appropriate
+- ✅ Added generateStaticParams for dynamic routes
+
+### API Migrations (Phase 5):
+- ✅ Moved cookies()/headers() calls outside cache scope
+- ✅ Added await connection() for dynamic values
+- ✅ Migrated Route Segment Config to "use cache" + cacheLife
+- ✅ Removed all export const dynamic/revalidate/fetchCache
+
+### Cache Optimization (Phase 5):
+- ✅ Added cacheTag() calls for granular revalidation
+- ✅ Configured cacheLife profiles for revalidation control
+- ✅ Set up cache invalidation strategies
+
 ## Next Steps
 - Monitor application behavior in development
 - Test interactive features with Cache Components
-- Review cacheLife profile usage
+- Review cacheLife profile usage for optimization
+- Test prefetching in production build
 - Consider enabling Turbopack file system caching for faster dev
+- Monitor cache hit rates and adjust cacheLife profiles
 
 ## Troubleshooting Tips
 - If cached components re-execute on every request: Check Suspense boundaries, consider "use cache: remote"
@@ -926,6 +1093,17 @@ Report findings in this format:
 - If "use cache" with params fails: Add generateStaticParams
 - If dynamic APIs fail in cache: Move outside cache scope or use "use cache: private"
 - If Route Segment Config errors: Remove exports, use "use cache" + cacheLife instead
+
+## What Was Accomplished
+Cache Components is now fully enabled with:
+- ✅ Configuration flags properly set
+- ✅ All routes verified and working
+- ✅ All boundaries properly configured
+- ✅ All cache directives in place
+- ✅ All API migrations completed
+- ✅ Cache optimization strategies implemented
+- ✅ Zero errors in final verification
+- ✅ Production build tested and passing
 ```
 
 # START HERE

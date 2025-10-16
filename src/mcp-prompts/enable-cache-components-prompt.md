@@ -879,15 +879,15 @@ Run comprehensive checks:
    - Build output shows cache status for each route
    - Check for any build-time errors that didn't appear in dev
 
-4. **Production Test**
+4. **Dev Mode Test**
    ```bash
-   <pkg-manager> start
-   # Test a few key routes in production mode
+   __NEXT_EXPERIMENTAL_MCP_SERVER=true <pkg-manager> next dev
+   # Test a few key routes in dev mode
    ```
    Expected:
    - Server starts successfully
    - Key routes work correctly
-   - Cached content is served from prerendered shells
+   - Cached content behavior can be observed
 
 ## Important Caching Behavior Notes
 ────────────────────────────────────────
@@ -1046,7 +1046,7 @@ Report findings in this format:
 [x] No errors in get_errors final check
 [x] Dev server stopped after verification
 [x] Build succeeds
-[x] Production mode tested
+[x] Dev mode tested with key routes
 
 ## Migration Notes
 [Any special notes about the migration, especially if migrating from PPR]

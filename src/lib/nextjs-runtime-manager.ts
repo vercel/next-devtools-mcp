@@ -33,27 +33,49 @@ async function findNextJsServers(): Promise<NextJsServerInfo[]> {
     const { stdout } = await execAsync("ps aux")
     const lines = stdout.split("\n")
     const servers: NextJsServerInfo[] = []
+    const seenPorts = new Set<number>()
 
     for (const line of lines) {
-      if (line.includes("next dev") || line.includes("next-server")) {
+      // Enhanced detection patterns for Next.js servers
+      const isNextJsProcess = 
+        line.includes("next dev") || 
+        line.includes("next-server") ||
+        line.includes("next/dist/bin/next") ||
+        (line.includes("node") && line.includes("next") && line.includes("dev"))
+
+      if (isNextJsProcess) {
         const parts = line.trim().split(/\s+/)
         const pid = parseInt(parts[1], 10)
         const command = parts.slice(10).join(" ")
 
-        const portMatch = command.match(/--port[=\s]+(\d+)/) || command.match(/:(\d+)/)
-        let port = 3000
+        // Try multiple methods to detect port
+        const portMatch = 
+          command.match(/--port[=\s]+(\d+)/) || 
+          command.match(/-p[=\s]+(\d+)/) ||
+          command.match(/:(\d+)/)
+        
+        let port = 3000 // Default Next.js port
 
         if (portMatch) {
           port = parseInt(portMatch[1], 10)
         } else {
-          const processInfo = await execAsync(`lsof -Pan -p ${pid} -i 2>/dev/null || true`)
-          const portFromLsof = processInfo.stdout.match(/:(\d+).*LISTEN/)
-          if (portFromLsof) {
-            port = parseInt(portFromLsof[1], 10)
+          // Fallback: use lsof to find the listening port
+          try {
+            const processInfo = await execAsync(`lsof -Pan -p ${pid} -i 2>/dev/null || true`)
+            const portFromLsof = processInfo.stdout.match(/:(\d+).*LISTEN/)
+            if (portFromLsof) {
+              port = parseInt(portFromLsof[1], 10)
+            }
+          } catch {
+            // If lsof fails, continue with default port
           }
         }
 
-        servers.push({ port, pid, command })
+        // Avoid duplicate ports (in case multiple processes are detected)
+        if (!seenPorts.has(port)) {
+          seenPorts.add(port)
+          servers.push({ port, pid, command })
+        }
       }
     }
 
@@ -188,6 +210,55 @@ export async function callNextJsTool(
   }
 }
 
-export async function getAllAvailableServers(): Promise<NextJsServerInfo[]> {
-  return findNextJsServers()
+/**
+ * Verify if a server has MCP endpoint available
+ */
+async function verifyMCPEndpoint(port: number): Promise<boolean> {
+  try {
+    const url = `http://localhost:${port}/_next/mcp`
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 1000) // 1 second timeout
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        method: "tools/list",
+        params: {},
+        id: 1,
+      }),
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+    return response.ok || response.status === 200
+  } catch {
+    return false
+  }
+}
+
+export async function getAllAvailableServers(verifyMCP: boolean = true): Promise<NextJsServerInfo[]> {
+  const servers = await findNextJsServers()
+  
+  if (!verifyMCP) {
+    return servers
+  }
+
+  // Filter servers that actually have MCP enabled
+  const verifiedServers: NextJsServerInfo[] = []
+  
+  await Promise.all(
+    servers.map(async (server) => {
+      const hasMCP = await verifyMCPEndpoint(server.port)
+      if (hasMCP) {
+        verifiedServers.push(server)
+      }
+    })
+  )
+
+  return verifiedServers
 }

@@ -70,13 +70,32 @@ Help me upgrade my Next.js app to version 16
 
 Your MCP client should provide guidance and tools for upgrading your Next.js application.
 
+## Resources
+
+Next.js 16 knowledge base resources are automatically available to your AI assistant. These resources provide comprehensive documentation split into focused sections for efficient context management:
+
+- **`nextjs16://knowledge/overview`** - Overview and critical errors AI agents make
+- **`nextjs16://knowledge/core-mechanics`** - Fundamental paradigm shift and how cacheComponents works
+- **`nextjs16://knowledge/public-caches`** - Public cache mechanics with 'use cache'
+- **`nextjs16://knowledge/private-caches`** - Private cache patterns with 'use cache: private'
+- **`nextjs16://knowledge/runtime-prefetching`** - Runtime prefetch configuration and patterns
+- **`nextjs16://knowledge/request-apis`** - Async params, searchParams, cookies, headers APIs
+- **`nextjs16://knowledge/cache-invalidation`** - updateTag, revalidateTag, and refresh patterns
+- **`nextjs16://knowledge/advanced-patterns`** - cacheLife, cacheTag, draft mode, and more
+- **`nextjs16://knowledge/build-behavior`** - Prerendering, resume data cache, and metadata
+- **`nextjs16://knowledge/error-patterns`** - Common errors and how to fix them
+- **`nextjs16://knowledge/test-patterns`** - E2E patterns from 125+ test fixtures
+- **`nextjs16://knowledge/reference`** - API reference, checklists, and comprehensive nuances
+
+Resources are loaded on-demand by your AI assistant, providing targeted knowledge without overwhelming the context window.
+
 ## Prompts
 
 Pre-configured prompts to help with common Next.js development tasks:
 
 - **`upgrade-nextjs-16`** - Guide for upgrading to Next.js 16
 - **`enable-cache-components`** - Enable caching for React components
-- **`preload-nextjs-16-knowledge`** - Load Next.js 16 documentation and best practices
+- **`preload-nextjs-16-knowledge`** - Load the complete Next.js 16 knowledge base into context (use resources for targeted sections instead)
 
 ## Development
 

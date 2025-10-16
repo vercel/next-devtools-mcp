@@ -6,5 +6,6 @@ dist/
 .turbo
 *.tgz
 
-.claude/*
+.claude/settings.local.json
+!.claude/settings.json
 test/e2e/.env

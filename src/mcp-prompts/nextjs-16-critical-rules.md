@@ -44,6 +44,33 @@ export async function GET(request: Request, props) {
 }
 ```
 
+**Metadata Image Routes (opengraph-image, twitter-image, icon, apple-icon):**
+```typescript
+// ❌ BEFORE (Next.js 15)
+export default function Image({ params, id }) {
+  const slug = params.slug
+  const imageId = id  // string
+  // ...
+}
+
+export async function generateImageMetadata({ params }) {
+  return [{ id: '1' }, { id: '2' }]
+}
+
+// ✅ AFTER (Next.js 16)
+export default async function Image(props, id) {
+  const params = await props.params  // params now async
+  const imageId = await id  // id is now Promise<string> when using generateImageMetadata
+  const slug = params.slug
+  // ...
+}
+
+export async function generateImageMetadata(props) {
+  const params = await props.params
+  return [{ id: '1' }, { id: '2' }]
+}
+```
+
 ### 2. Async Dynamic Functions
 **cookies(), headers(), draftMode()**
 
@@ -96,7 +123,51 @@ revalidateTag('posts', 'max')  // For background invalidation
 
 ## ⚙️ Config Migrations
 
-### Image Defaults Changed (No Action Needed)
+### 1. Turbopack Config Rename (REQUIRED for canary users)
+```typescript
+// ❌ BEFORE
+// next.config.js
+export default {
+  turbopackPersistentCachingForDev: true,
+}
+
+// ✅ AFTER
+// next.config.js
+export default {
+  turbopackFileSystemCacheForDev: true,
+}
+```
+
+### 2. ESLint Config Removal (REQUIRED)
+```typescript
+// ❌ BEFORE - Remove this from next.config.js
+export default {
+  eslint: {
+    ignoreDuringBuilds: true,
+    dirs: ['app', 'src'],
+  },
+}
+
+// ✅ AFTER - Move to .eslintrc.json or eslint.config.js
+// ESLint configuration should now be in dedicated ESLint config files
+```
+
+### 3. serverComponentsExternalPackages (BREAKING)
+```typescript
+// ❌ BEFORE - In experimental
+export default {
+  experimental: {
+    serverComponentsExternalPackages: ['package-name'],
+  },
+}
+
+// ✅ AFTER - Top-level config
+export default {
+  serverComponentsExternalPackages: ['package-name'],
+}
+```
+
+### 4. Image Defaults Changed (No Action Needed)
 These changed automatically - override if needed:
 - `minimumCacheTTL`: 60s → 14400s (4 hours)
 - `qualities`: [1..100] → [75]
@@ -136,7 +207,7 @@ import { ViewTransition } from 'react'
 
 ## 📁 Parallel Routes Requirement
 
-If you have `@modal`, `@auth`, etc. folders:
+If you have `@modal`, `@auth`, etc. folders (any `@` folder except `@children`):
 
 ```typescript
 // MUST create: app/@modal/default.tsx
@@ -144,6 +215,8 @@ export default function Default() {
   return null
 }
 ```
+
+**Note:** `@children` is a special implicit slot and does NOT require a `default.js` file.
 
 ## 🛡️ Image Security
 
@@ -206,12 +279,17 @@ export default async function Page(props) {
 - [ ] `function Layout({ params })` → `async function Layout(props)` + `await props.params`
 - [ ] `generateMetadata({ params })` → `async generateMetadata(props)` + `await props.params`
 - [ ] `generateViewport({ params })` → `async generateViewport(props)` + `await props.params`
+- [ ] Metadata image routes: `function Image({ params, id })` → `async function Image(props, id)` + `await props.params` + `await id`
+- [ ] `generateImageMetadata({ params })` → `async generateImageMetadata(props)` + `await props.params`
 - [ ] `cookies().get()` → `(await cookies()).get()`
 - [ ] `headers().get()` → `(await headers()).get()`
 - [ ] `draftMode().isEnabled` → `(await draftMode()).isEnabled`
 - [ ] `revalidateTag(tag)` → `updateTag(tag, 'max')` or `revalidateTag(tag, 'max')`
 
-**Config changes:**
+**Config changes in next.config.js:**
+- [ ] Rename `turbopackPersistentCachingForDev` → `turbopackFileSystemCacheForDev`
+- [ ] Remove `eslint` config object (move to .eslintrc.json or eslint.config.js)
+- [ ] Move `serverComponentsExternalPackages` out of `experimental` to top-level
 - [ ] Add `default.tsx` for all parallel route `@` folders
 - [ ] Update `unstable_ViewTransition` → `ViewTransition`
 - [ ] Review image config defaults (if using local images with query strings)

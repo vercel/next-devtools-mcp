@@ -21,11 +21,15 @@ export function getUpgradeNextjs16Prompt(args?: Record<string, string>): GetProm
   // TEMPORARY: Set to false once Next.js 16 beta supports experimental.cacheComponents
   const REQUIRES_CANARY_FOR_CACHE_COMPONENTS = true
 
+  // Load critical rules (always embedded)
+  const criticalRules = readFileSync(join(__dirname, "nextjs-16-critical-rules.md"), "utf-8")
+
   // Load prompt template
   let promptTemplate = readFileSync(join(__dirname, "upgrade-nextjs-16-prompt.md"), "utf-8")
 
   // Replace sentinel values
   promptTemplate = promptTemplate.replace(/{{PROJECT_PATH}}/g, projectPath)
+  promptTemplate = promptTemplate.replace(/{{CRITICAL_RULES}}/g, criticalRules)
 
   // Handle conditional blocks
   if (REQUIRES_CANARY_FOR_CACHE_COMPONENTS) {

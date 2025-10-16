@@ -5,7 +5,6 @@ dist/
 *.tsbuildinfo
 .turbo
 *.tgz
-
 .claude/settings.local.json
 !.claude/settings.json
 test/e2e/.env

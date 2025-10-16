@@ -4,15 +4,29 @@ PROJECT: {{PROJECT_PATH}}
 
 # BASE KNOWLEDGE: Next.js 16 Technical Reference
 
-<nextjs_16_knowledge>
-{{NEXTJS_16_KNOWLEDGE}}
-</nextjs_16_knowledge>
+This prompt uses the Next.js 16 Knowledge Base resources for on-demand access to technical details. Resources are loaded automatically when needed.
+
+**Available Resources:**
+- `nextjs16://knowledge/overview` - Critical errors AI agents make, quick reference (START HERE)
+- `nextjs16://knowledge/core-mechanics` - Fundamental paradigm shift, cacheComponents
+- `nextjs16://knowledge/request-apis` - Async params, searchParams, cookies(), headers()
+- `nextjs16://knowledge/cache-invalidation` - updateTag(), revalidateTag() patterns
+- `nextjs16://knowledge/error-patterns` - Common errors and solutions
+- `nextjs16://knowledge/test-patterns` - Real test-driven patterns
+- `nextjs16://knowledge/reference` - Complete API reference, checklists
+
+**When to Load Resources:**
+1. Load `overview` at start for critical context and common mistakes
+2. Load `request-apis` when dealing with params/searchParams conversion
+3. Load `cache-invalidation` when fixing revalidateTag issues
+4. Load `error-patterns` when encountering build/runtime errors
+5. Load specific sections as needed for detailed technical behavior
 
 ---
 
 # UPGRADE WORKFLOW: Next.js 15 → 16 Migration Guide
 
-The section below contains the step-by-step upgrade workflow. Refer to the base knowledge above for detailed technical behavior, API semantics, and best practices.
+The section below contains the step-by-step upgrade workflow. Load the knowledge base resources above for detailed technical behavior, API semantics, and best practices.
 
 ## PHASE 1: Pre-Flight Checks (REQUIRED)
 ────────────────────────────────────────
@@ -169,7 +183,7 @@ After the codemod runs, check for any remaining issues it might have missed:
    ```
 
 **H. revalidateTag API Changes (Deprecation - NOT handled by codemod)**
-   Refer to the base knowledge above for detailed technical behavior, API semantics, and best practices.
+   Load `nextjs16://knowledge/cache-invalidation` for detailed API semantics and migration patterns.
 
 **I. Deprecated Features (WARNINGS - Optional)**
    - `middleware.ts` → consider renaming to `proxy.ts`
@@ -184,7 +198,7 @@ Only fix issues the codemod missed:
 Based on Phase 3 analysis, apply only the necessary manual fixes:
 
 **1. Fix experimental flags consolidation (if ppr or useCache found)**
-   Refer to the base knowledge above for detailed technical behavior, API semantics, and best practices.
+   Load `nextjs16://knowledge/core-mechanics` for detailed cacheComponents behavior.
    - Replace `experimental.ppr` with `cacheComponents: true`
    - Replace `experimental.useCache` with `cacheComponents: true`
 

@@ -4,15 +4,33 @@ PROJECT: {{PROJECT_PATH}}
 
 # BASE KNOWLEDGE: Next.js 16 Technical Reference
 
-<nextjs_16_knowledge>
-{{NEXTJS_16_KNOWLEDGE}}
-</nextjs_16_knowledge>
+This prompt uses the Next.js 16 Knowledge Base resources for on-demand access to technical details. Resources are loaded automatically when needed.
+
+**Available Resources:**
+- `nextjs16://knowledge/overview` - Critical errors AI agents make, quick reference (START HERE)
+- `nextjs16://knowledge/core-mechanics` - Fundamental paradigm shift, cacheComponents
+- `nextjs16://knowledge/public-caches` - Public cache mechanics using 'use cache'
+- `nextjs16://knowledge/private-caches` - Private cache mechanics using 'use cache: private'
+- `nextjs16://knowledge/request-apis` - Async params, searchParams, cookies(), headers()
+- `nextjs16://knowledge/cache-invalidation` - updateTag(), revalidateTag() patterns
+- `nextjs16://knowledge/advanced-patterns` - cacheLife(), cacheTag(), draft mode
+- `nextjs16://knowledge/error-patterns` - Common errors and solutions
+- `nextjs16://knowledge/test-patterns` - Real test-driven patterns
+
+**When to Load Resources:**
+1. Load `overview` at start for critical context and common mistakes
+2. Load `core-mechanics` when setting up cacheComponents configuration
+3. Load `public-caches` and `private-caches` when adding "use cache" directives
+4. Load `request-apis` when fixing async params/searchParams errors
+5. Load `error-patterns` when encountering build/runtime errors
+6. Load `advanced-patterns` for cacheLife profiles and cache tags
+7. Load specific sections as needed for detailed technical behavior
 
 ---
 
 # ENABLE WORKFLOW: Cache Components Setup & Verification Guide
 
-The section below contains the step-by-step enablement workflow. Refer to the base knowledge above for detailed technical behavior, API semantics, and best practices.
+The section below contains the step-by-step enablement workflow. Load the knowledge base resources above for detailed technical behavior, API semantics, and best practices.
 
 ## Decision Guide: Suspense vs "use cache"
 

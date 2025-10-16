@@ -11,9 +11,16 @@ import {
   ListToolsRequestSchema,
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js"
 import { MCP_TOOLS } from "./mcp-tools/index.js"
 import { MCP_PROMPTS, PROMPT_HANDLERS } from "./mcp-prompts/index.js"
+import {
+  getNextjs16KnowledgeResources,
+  readKnowledgeSection,
+  isNextjs16KnowledgeUri,
+} from "./mcp-resources/nextjs-16-knowledge.js"
 
 async function main() {
   // Create MCP server instance
@@ -26,6 +33,7 @@ async function main() {
       capabilities: {
         tools: {},
         prompts: {},
+        resources: {},
       },
     }
   )
@@ -90,6 +98,39 @@ async function main() {
     }
 
     return handler(args)
+  })
+
+  // Register resources/list handler
+  server.setRequestHandler(ListResourcesRequestSchema, async () => {
+    const resources = getNextjs16KnowledgeResources()
+
+    return { resources }
+  })
+
+  // Register resources/read handler
+  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    const { uri } = request.params
+
+    if (!isNextjs16KnowledgeUri(uri)) {
+      throw new Error(`Unknown resource URI: ${uri}`)
+    }
+
+    try {
+      const content = readKnowledgeSection(uri)
+
+      return {
+        contents: [
+          {
+            uri,
+            mimeType: "text/markdown",
+            text: content,
+          },
+        ],
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      throw new Error(`Failed to read resource: ${errorMessage}`)
+    }
   })
 
   // Create stdio transport

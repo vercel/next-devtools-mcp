@@ -21,12 +21,8 @@ export function getEnableCacheComponentsPrompt(args?: Record<string, string>): G
   // Load prompt template
   let promptTemplate = readFileSync(join(__dirname, "enable-cache-components-prompt.md"), "utf-8")
 
-  // Load base Next.js 16 knowledge
-  const nextjs16Knowledge = readFileSync(join(__dirname, "nextjs-16.md"), "utf-8")
-
   // Replace sentinel values
   promptTemplate = promptTemplate.replace(/{{PROJECT_PATH}}/g, projectPath)
-  promptTemplate = promptTemplate.replace(/{{NEXTJS_16_KNOWLEDGE}}/g, nextjs16Knowledge)
 
   return {
     description: enableCacheComponentsPrompt.description,

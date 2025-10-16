@@ -208,6 +208,7 @@ After the codemod runs, check for any remaining issues it might have missed:
    - Dynamic params in nested layouts
    - Route handlers with cookies()/headers() in conditionals
    - Custom metadata generation with complex logic
+   - Metadata image routes (opengraph-image, twitter-image, icon, apple-icon)
 
    **CRITICAL: Only change if function actually uses these 5 APIs:**
    1. `params` from props
@@ -220,6 +221,25 @@ After the codemod runs, check for any remaining issues it might have missed:
    - `robots()`, `sitemap()`, `manifest()` without these APIs
    - `generateStaticParams()`
    - Any function that doesn't use the 5 APIs above
+
+   **METADATA IMAGE ROUTES - Important Changes:**
+   For metadata image route files (opengraph-image, twitter-image, icon, apple-icon):
+   - The first argument changes from `{ params }` to `params` (aligned with other App Router routes)
+   - `params` is now async: `await props.params`
+   - The second argument `id` becomes `Promise<string>` when using `generateImageMetadata`
+
+   ```typescript
+   // ❌ BEFORE
+   export default function Image({ params, id }) {
+     const slug = params.slug
+   }
+
+   // ✅ AFTER
+   export default async function Image(props, id) {
+     const params = await props.params
+     const imageId = await id  // if using generateImageMetadata
+   }
+   ```
 
 **J. ViewTransition API Renamed (NOT handled by codemod)**
    Files: Search for imports of `unstable_ViewTransition` from React

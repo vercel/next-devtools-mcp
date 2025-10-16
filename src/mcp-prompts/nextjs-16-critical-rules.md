@@ -44,6 +44,33 @@ export async function GET(request: Request, props) {
 }
 ```
 
+**Metadata Image Routes (opengraph-image, twitter-image, icon, apple-icon):**
+```typescript
+// ❌ BEFORE (Next.js 15)
+export default function Image({ params, id }) {
+  const slug = params.slug
+  const imageId = id  // string
+  // ...
+}
+
+export async function generateImageMetadata({ params }) {
+  return [{ id: '1' }, { id: '2' }]
+}
+
+// ✅ AFTER (Next.js 16)
+export default async function Image(props, id) {
+  const params = await props.params  // params now async
+  const imageId = await id  // id is now Promise<string> when using generateImageMetadata
+  const slug = params.slug
+  // ...
+}
+
+export async function generateImageMetadata(props) {
+  const params = await props.params
+  return [{ id: '1' }, { id: '2' }]
+}
+```
+
 ### 2. Async Dynamic Functions
 **cookies(), headers(), draftMode()**
 
@@ -252,6 +279,8 @@ export default async function Page(props) {
 - [ ] `function Layout({ params })` → `async function Layout(props)` + `await props.params`
 - [ ] `generateMetadata({ params })` → `async generateMetadata(props)` + `await props.params`
 - [ ] `generateViewport({ params })` → `async generateViewport(props)` + `await props.params`
+- [ ] Metadata image routes: `function Image({ params, id })` → `async function Image(props, id)` + `await props.params` + `await id`
+- [ ] `generateImageMetadata({ params })` → `async generateImageMetadata(props)` + `await props.params`
 - [ ] `cookies().get()` → `(await cookies()).get()`
 - [ ] `headers().get()` → `(await headers()).get()`
 - [ ] `draftMode().isEnabled` → `(await draftMode()).isEnabled`

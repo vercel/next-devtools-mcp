@@ -268,9 +268,9 @@ After the codemod runs, check for any remaining issues it might have missed:
 
    **METADATA IMAGE ROUTES - Important Changes:**
    For metadata image route files (opengraph-image, twitter-image, icon, apple-icon):
-   - The first argument changes from `{ params }` to `params` (aligned with other App Router routes)
-   - `params` is now async: `await props.params`
-   - The second argument `id` becomes `Promise<string>` when using `generateImageMetadata`
+   - The function signature remains `{ params, id }` but `params` becomes a Promise
+   - `params` is now async: `await params`
+   - The `id` parameter remains a string (not a Promise)
 
    ```typescript
    // ❌ BEFORE
@@ -279,9 +279,10 @@ After the codemod runs, check for any remaining issues it might have missed:
    }
 
    // ✅ AFTER
-   export default async function Image(props, id) {
-     const params = await props.params
-     const imageId = await id  // if using generateImageMetadata
+   export default async function Image({ params, id }) {
+     const resolvedParams = await params  // params is now a Promise
+     const slug = resolvedParams.slug
+     const imageId = id  // string
    }
    ```
 

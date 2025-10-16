@@ -103,13 +103,15 @@ After the codemod runs, check for any remaining issues it might have missed:
 ### Manual Check Checklist:
 
 **A. Parallel Routes (NOT handled by codemod)**
-   Files: Check for @ folders
+   Files: Check for @ folders (except `@children`)
    Requirement: All parallel route slots must have `default.js` files
    Impact: Build fails without them
 
+   **Note:** `@children` is a special implicit slot and does NOT require a `default.js` file.
+
    Fix if missing:
    ```typescript
-   // Create: app/@modal/default.js
+   // Create: app/@modal/default.js (for @modal, @auth, etc.)
    export default function Default() {
      return null
    }
@@ -145,13 +147,61 @@ After the codemod runs, check for any remaining issues it might have missed:
    1. Use Biome: `biome check .`
    2. Use ESLint directly: `<pkg-exec> @next/codemod@canary next-lint-to-eslint-cli .`
 
-**E. --turbopack Flags (No Longer Needed)**
+**E. next.config.js Turbopack Config Updates (REQUIRED for canary users)**
+   File: next.config.js
+   Check: `turbopackPersistentCachingForDev` config option
+   Action: Rename to `turbopackFileSystemCacheForDev`
+
+   ```diff
+   // next.config.js
+   export default {
+   -   turbopackPersistentCachingForDev: true,
+   +   turbopackFileSystemCacheForDev: true,
+   }
+   ```
+
+   Note: This was a temporary change on canary - not everyone has this config
+
+**F. --turbopack Flags (No Longer Needed)**
    Files: package.json scripts
    Check: `next dev --turbopack`, `next build --turbopack`
    Action: Remove `--turbopack` flags (Turbopack is default in v16)
    Note: Use `--webpack` flag if you want webpack instead
 
-**F. Edge Cases the Codemod May Miss**
+**G. ESLint Config Removal (REQUIRED)**
+   File: next.config.js
+   Check: `eslint` configuration object
+   Action: Remove eslint config from next.config.js
+
+   ```diff
+   // next.config.js
+   export default {
+   -   eslint: {
+   -     ignoreDuringBuilds: true,
+   -     dirs: ['app', 'src'],
+   -   },
+   }
+   ```
+
+   Note: ESLint configuration should now be in .eslintrc.json or eslint.config.js
+   Migration: Use `<pkg-exec> @next/codemod@canary next-lint-to-eslint-cli .` if needed
+
+**H. serverComponentsExternalPackages Deprecation (BREAKING)**
+   File: next.config.js
+   Check: `serverComponentsExternalPackages` in experimental config
+   Action: Move out of experimental - this is now a top-level config option
+
+   ```diff
+   // next.config.js
+   export default {
+   -   experimental: {
+   -     serverComponentsExternalPackages: ['package-name'],
+   -   },
+   +   serverComponentsExternalPackages: ['package-name'],
+   }
+   ```
+
+**I. Edge Cases the Codemod May Miss**
    Review these manually:
 
    - Complex async destructuring patterns
@@ -171,7 +221,7 @@ After the codemod runs, check for any remaining issues it might have missed:
    - `generateStaticParams()`
    - Any function that doesn't use the 5 APIs above
 
-**G. ViewTransition API Renamed (NOT handled by codemod)**
+**J. ViewTransition API Renamed (NOT handled by codemod)**
    Files: Search for imports of `unstable_ViewTransition` from React
    Action: Rename to `ViewTransition` (now stable in v16)
 
@@ -180,7 +230,7 @@ After the codemod runs, check for any remaining issues it might have missed:
    + import { ViewTransition } from 'react'
    ```
 
-**H. revalidateTag API Changes (Deprecation - NOT handled by codemod)**
+**K. revalidateTag API Changes (Deprecation - NOT handled by codemod)**
    Files: Search for `revalidateTag(` calls
    Check: All revalidateTag calls now require a profile parameter
 
@@ -210,7 +260,7 @@ After the codemod runs, check for any remaining issues it might have missed:
 
    Load `nextjs16://knowledge/cache-invalidation` for detailed API semantics and migration patterns.
 
-**I. Deprecated Features (WARNINGS - Optional)**
+**L. Deprecated Features (WARNINGS - Optional)**
    - `middleware.ts` → consider renaming to `proxy.ts`
    - `next/legacy/image` → use `next/image`
    - `images.domains` → use `images.remotePatterns`
@@ -304,6 +354,9 @@ Issues the codemod couldn't handle:
 [ ] Parallel routes missing default.js
 [ ] Image security config needed
 [ ] Lint commands to update
+[ ] next.config.js: turbopackPersistentCachingForDev → turbopackFileSystemCacheForDev
+[ ] next.config.js: Remove eslint config object
+[ ] next.config.js: Move serverComponentsExternalPackages out of experimental
 [ ] revalidateTag API changes
 [ ] Edge cases in async APIs
 [ ] Deprecated features to update

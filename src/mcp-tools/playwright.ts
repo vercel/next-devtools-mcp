@@ -79,6 +79,12 @@ export const playwrightTool = tool({
   description: `Automate and test web applications using Playwright browser automation.
 This tool connects to playwright-mcp server and provides access to all Playwright capabilities.
 
+IMPORTANT FOR NEXT.JS PROJECTS:
+If working with a Next.js application, PRIORITIZE using the 'nextjs_runtime' tool instead of browser console log forwarding.
+Next.js has built-in MCP integration that provides superior error reporting, build diagnostics, and runtime information
+directly from the Next.js dev server. Only use Playwright's console_messages action as a fallback when nextjs_runtime
+tools are not available or when you specifically need to test client-side browser behavior that Next.js runtime cannot capture.
+
 Available actions:
 - start: Start Playwright browser (automatically installs if needed)
 - navigate: Navigate to a URL
@@ -87,7 +93,7 @@ Available actions:
 - fill_form: Fill multiple form fields at once
 - evaluate: Execute JavaScript in browser context
 - screenshot: Take a screenshot of the page
-- console_messages: Get browser console messages
+- console_messages: Get browser console messages (for Next.js, prefer nextjs_runtime tool instead)
 - close: Close the browser
 - drag: Perform drag and drop
 - upload_file: Upload files

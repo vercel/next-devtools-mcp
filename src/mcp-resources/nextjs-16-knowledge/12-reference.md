@@ -2,15 +2,18 @@
 
 ### The Complete Picture from Tests
 
+**⚠️ IMPORTANT: These rules apply ONLY when `experimental.cacheComponents: true` is enabled in next.config**
+
 ```typescript
 // ═══════════════════════════════════════════════════════════
-// RULE 1: SEGMENT CONFIGS ARE FORBIDDEN
+// RULE 1: SEGMENT CONFIGS ARE FORBIDDEN (with cacheComponents)
 // ═══════════════════════════════════════════════════════════
+// NOTE: These work fine in Next.js 16 WITHOUT cacheComponents enabled
 
-export const dynamic = 'force-static'      // ❌ BUILD ERROR
-export const revalidate = 60                // ❌ BUILD ERROR
-export const fetchCache = 'force-cache'     // ❌ BUILD ERROR
-export const dynamicParams = false          // ❌ BUILD ERROR
+export const dynamic = 'force-static'      // ❌ BUILD ERROR (with cacheComponents)
+export const revalidate = 60                // ❌ BUILD ERROR (with cacheComponents)
+export const fetchCache = 'force-cache'     // ❌ BUILD ERROR (with cacheComponents)
+export const dynamicParams = false          // ❌ BUILD ERROR (with cacheComponents)
 
 // ═══════════════════════════════════════════════════════════
 // RULE 2: THREE CACHE TYPES

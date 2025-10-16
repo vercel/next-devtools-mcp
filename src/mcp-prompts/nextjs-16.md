@@ -1,4 +1,4 @@
-# Next.js 16 (cacheComponents Mode): The Complete AI Agent Guide
+# Cache Components Mode: The Complete AI Agent Guide
 
 ## Authoritative Reference Based on E2E Test Suite Patterns
 
@@ -7,19 +7,21 @@
 **Source**: Derived from 125+ E2E test fixtures and behavioral assertions
 **Last Updated**: January 2025
 
+**⚠️ SCOPE**: This guide covers Cache Components mode (`experimental.cacheComponents: true`). These rules do NOT apply to standard Next.js 16 without Cache Components enabled.
+
 ---
 
 ## 🎯 What AI Agents Get Wrong (And Why)
 
-Based on analyzing the complete E2E test suite, AI agents consistently make these mistakes:
+Based on analyzing the complete E2E test suite, AI agents consistently make these mistakes **when Cache Components is enabled**:
 
-### ❌ **CRITICAL ERRORS AI AGENTS MAKE:**
+### ❌ **CRITICAL ERRORS AI AGENTS MAKE (with cacheComponents enabled):**
 
 1. **Using `loading.tsx` for loading states** (deprecated for PPR shell generation)
 2. **Using `export const dynamic = 'force-static'`** (completely incompatible with cacheComponents)
-3. **Using `export const fetchCache`** (raises build error)
-4. **Using `export const revalidate`** (raises build error)
-5. **Using `export const dynamicParams`** (raises build error)
+3. **Using `export const fetchCache`** (raises build error with cacheComponents)
+4. **Using `export const revalidate`** (raises build error with cacheComponents)
+5. **Using `export const dynamicParams`** (raises build error with cacheComponents)
 6. **Using `export const runtime`** (raises build error when incompatible with cacheComponents)
 7. **Accessing `cookies()`/`headers()` in `'use cache'`** (throws runtime error)
 8. **Using `'use cache: private'` without `<Suspense>`** (build error)
@@ -163,10 +165,12 @@ This is THE CORE DIFFERENCE that AI agents must understand.
 
 **Test Source**: Multiple test files
 
-#### Behavior 1: Segment Configs Are Forbidden
+#### Behavior 1: Route Segment Configs Are Incompatible with Cache Components
+
+**⚠️ NOTE**: These configs work fine in Next.js 16 WITHOUT cacheComponents. They're only forbidden when `experimental.cacheComponents: true` is enabled.
 
 ```typescript
-// ❌ TEST SHOWS THIS ERRORS AT BUILD:
+// ❌ BUILD ERROR (when cacheComponents is enabled):
 export const dynamic = "force-static"
 export const revalidate = 60
 export const fetchCache = "force-cache"
@@ -176,6 +180,8 @@ export const runtime = "edge" // If incompatible
 // Error message from test:
 // "Route segment config "revalidate" is not compatible with
 // `nextConfig.experimental.cacheComponents`. Please remove it."
+
+// ✅ These work fine in Next.js 16 if cacheComponents is NOT enabled
 ```
 
 **Test Source**: `test/e2e/app-dir/cache-components-segment-configs/`
@@ -2424,15 +2430,18 @@ Two-stage load? → unstable_dynamicOnHover={true}
 
 ### The Complete Picture from Tests
 
+**⚠️ IMPORTANT: These rules apply ONLY when `experimental.cacheComponents: true` is enabled in next.config**
+
 ```typescript
 // ═══════════════════════════════════════════════════════════
-// RULE 1: SEGMENT CONFIGS ARE FORBIDDEN
+// RULE 1: SEGMENT CONFIGS ARE FORBIDDEN (with cacheComponents)
 // ═══════════════════════════════════════════════════════════
+// NOTE: These work fine in Next.js 16 WITHOUT cacheComponents enabled
 
-export const dynamic = 'force-static'      // ❌ BUILD ERROR
-export const revalidate = 60                // ❌ BUILD ERROR
-export const fetchCache = 'force-cache'     // ❌ BUILD ERROR
-export const dynamicParams = false          // ❌ BUILD ERROR
+export const dynamic = 'force-static'      // ❌ BUILD ERROR (with cacheComponents)
+export const revalidate = 60                // ❌ BUILD ERROR (with cacheComponents)
+export const fetchCache = 'force-cache'     // ❌ BUILD ERROR (with cacheComponents)
+export const dynamicParams = false          // ❌ BUILD ERROR (with cacheComponents)
 
 // ═══════════════════════════════════════════════════════════
 // RULE 2: THREE CACHE TYPES

@@ -53,10 +53,12 @@ This is THE CORE DIFFERENCE that AI agents must understand.
 
 **Test Source**: Multiple test files
 
-#### Behavior 1: Segment Configs Are Forbidden
+#### Behavior 1: Route Segment Configs Are Incompatible with Cache Components
+
+**⚠️ NOTE**: These configs work fine in Next.js 16 WITHOUT cacheComponents. They're only forbidden when `experimental.cacheComponents: true` is enabled.
 
 ```typescript
-// ❌ TEST SHOWS THIS ERRORS AT BUILD:
+// ❌ BUILD ERROR (when cacheComponents is enabled):
 export const dynamic = "force-static"
 export const revalidate = 60
 export const fetchCache = "force-cache"
@@ -66,6 +68,8 @@ export const runtime = "edge" // If incompatible
 // Error message from test:
 // "Route segment config "revalidate" is not compatible with
 // `nextConfig.experimental.cacheComponents`. Please remove it."
+
+// ✅ These work fine in Next.js 16 if cacheComponents is NOT enabled
 ```
 
 **Test Source**: `test/e2e/app-dir/cache-components-segment-configs/`

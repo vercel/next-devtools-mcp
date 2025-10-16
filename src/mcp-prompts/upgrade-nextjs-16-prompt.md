@@ -26,9 +26,36 @@ The section below contains the step-by-step upgrade workflow. Load the knowledge
 
 ## PHASE 1: Pre-Flight Checks (REQUIRED)
 ────────────────────────────────────────
-Check these BEFORE upgrading:
+Check these BEFORE running the codemod:
 
-0. **Detect Package Manager**
+0. **Detect Monorepo Structure (CRITICAL)**
+   ⚠️ **If this is a monorepo, you MUST run the upgrade flow on each individual app, NOT at the monorepo root**
+   
+   Check for monorepo indicators:
+   - Workspace configuration: `workspaces` field in root package.json
+   - Monorepo tools: pnpm-workspace.yaml, lerna.json, nx.json, turbo.json
+   - Multiple app directories: apps/, packages/, services/ folders
+   
+   **If monorepo detected:**
+   ```bash
+   # Find all Next.js apps in the monorepo
+   find . -name "package.json" -not -path "*/node_modules/*" -exec grep -l "\"next\":" {} \;
+   ```
+   
+   **For each Next.js app found:**
+   - Navigate to that app's directory: `cd apps/web` (or wherever the app is)
+   - Run the ENTIRE upgrade workflow from that directory
+   - The codemod will fail if run from monorepo root
+   
+   Example for typical monorepo structure:
+   ```bash
+   # If you have: apps/web, apps/admin, apps/marketing
+   cd apps/web && [run upgrade workflow here]
+   cd ../admin && [run upgrade workflow here]
+   cd ../marketing && [run upgrade workflow here]
+   ```
+
+1. **Detect Package Manager**
    Check: package.json "packageManager" field or lock files
 
    **Template Variables:**
@@ -41,34 +68,39 @@ Check these BEFORE upgrading:
 
    Use these template variables in ALL commands below for consistency
 
-1. **Node.js Version**
+2. **Node.js Version**
    Required: Node.js 20+
    Check: node --version
    Action: Upgrade if < 20
 
-2. **TypeScript Version**
+3. **TypeScript Version**
    Required: TypeScript 5.0+
    Check: package.json → devDependencies.typescript
-   Action: If exists and < 5.0, upgrade with detected package manager
-
-3. **React and Type Definitions**
-   Action: Upgrade React and type definitions using the detected package manager:
-   ```bash
-   <pkg-manager> add react@latest react-dom@latest
-   <pkg-manager> add -D @types/react@latest @types/react-dom@latest
-   ```
+   Note: Document if upgrade needed (codemod won't upgrade this)
+   Action: If < 5.0, plan to upgrade after codemod
 
 4. **Current Next.js Version**
    Check: package.json → dependencies.next
    Note: Document current version for rollback
 
+5. **Git Status**
+   Check: git status
+   Action: Ensure working directory is clean (no uncommitted changes)
+   Why: The codemod requires a clean git state to run
+
 ## PHASE 2: Run Automated Codemod
 ────────────────────────────────────────
-Run the official codemod first to handle most changes automatically:
+⚠️ **IMPORTANT: Run this BEFORE making any manual changes**
+
+The codemod requires a clean git working directory. It will fail with this error if you have uncommitted changes:
+> But before we continue, please stash or commit your git changes
+
+Run the official codemod to handle most changes automatically:
 
 ```bash
 # This will:
 # - Upgrade Next.js, React, and React DOM to latest versions
+# - Upgrade @types/react and @types/react-dom to latest
 # - Convert async params/searchParams automatically
 # - Update experimental config locations
 # - Fix other breaking changes
@@ -76,10 +108,22 @@ Run the official codemod first to handle most changes automatically:
 ```
 
 **What the codemod handles:**
+- ✅ Upgrades Next.js, React, and React DOM to latest versions
+- ✅ Upgrades React type definitions to latest
 - ✅ Converts sync params/searchParams to async (most cases)
 - ✅ Updates experimental config locations
 - ✅ Fixes metadata generation functions
 - ✅ Updates deprecated imports
+
+**What the codemod does NOT handle:**
+- ❌ TypeScript version upgrade (do this manually if needed)
+
+**After codemod completes:**
+1. Review the git diff to see what changed
+2. If TypeScript < 5.0, upgrade it now:
+   ```bash
+   <pkg-manager> add -D typescript@latest
+   ```
 
 **Wait for codemod to complete before proceeding to Phase 3**
 
@@ -352,22 +396,28 @@ Report findings in this format:
 - Current Version: [version]
 - Target Version: 16
 - Package Manager: [npm/pnpm/yarn/bun]
+- Monorepo: [Yes/No]
+- If Monorepo, Apps to Upgrade: [list of app directories]
 
 ## Phase 1: Pre-Flight Checks
+[ ] Monorepo structure detected (if applicable, list all Next.js apps)
+[ ] Working directory: [current app directory path]
 [ ] Node.js version (20+)
-[ ] TypeScript version (5.0+)
-[ ] React dependencies upgraded to @latest (even if on v19)
-[ ] React type definitions upgraded to @latest
+[ ] TypeScript version checked (5.0+)
 [ ] Current Next.js version documented
+[ ] Git working directory is clean (no uncommitted changes)
 
 ## Phase 2: Codemod Execution
 - [ ] Ran codemod: `<pkg-exec> @next/codemod@canary upgrade beta`
+- [ ] Codemod upgraded Next.js, React, and React DOM to latest
+- [ ] Codemod upgraded React type definitions to latest
+- [ ] Codemod applied automatic fixes
 {{IF_REQUIRES_CANARY}}
-- [ ] Upgraded to canary: `<pkg-manager> add next@canary`
-- [ ] Upgraded eslint-config-next: `<pkg-manager> add -D eslint-config-next@canary`
+- [ ] (Optional) Upgraded to canary: `<pkg-manager> add next@canary`
+- [ ] (Optional) Upgraded eslint-config-next: `<pkg-manager> add -D eslint-config-next@canary`
 {{/IF_REQUIRES_CANARY}}
-- [ ] Dependencies upgraded
-- [ ] Automatic fixes applied
+- [ ] TypeScript upgraded if needed: `<pkg-manager> add -D typescript@latest`
+- [ ] Reviewed git diff for codemod changes
 
 ## Phase 3: Issues Requiring Manual Fixes
 Issues the codemod couldn't handle:
@@ -400,6 +450,9 @@ Issues the codemod couldn't handle:
 
 # START HERE
 Begin migration:
-1. Start with Phase 1 pre-flight checks
-2. Run the codemod in Phase 2 (this handles most changes automatically)
-3. Only after codemod completes, analyze and fix remaining issues
+1. **FIRST: Check if this is a monorepo** - If yes, navigate to each Next.js app directory and run the workflow there (NOT at monorepo root)
+2. Start with Phase 1 pre-flight checks (ensure clean git state)
+3. Run the codemod in Phase 2 (this handles most changes automatically)
+4. Only after codemod completes, analyze and fix remaining issues
+
+**⚠️ MONOREPO USERS:** If you're in a monorepo, you MUST be in the specific Next.js app directory (e.g., `apps/web/`) before starting. The codemod will fail if run from the monorepo root.

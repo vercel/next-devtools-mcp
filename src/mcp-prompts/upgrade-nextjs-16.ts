@@ -5,7 +5,7 @@ import { join } from "path"
 export const upgradeNextjs16Prompt: Prompt = {
   name: "upgrade-nextjs-16",
   description:
-    "Guide through upgrading Next.js to version 16 beta. Runs the official codemod first for automatic fixes, then handles remaining issues manually. Covers async API changes, config moves, image defaults, parallel routes, and deprecations.",
+    "Guide through upgrading Next.js to version 16 beta. CRITICAL: Runs the official codemod FIRST (requires clean git state) for automatic upgrades and fixes, then handles remaining issues manually. The codemod upgrades Next.js, React, and React DOM automatically. Covers async API changes, config moves, image defaults, parallel routes, and deprecations.",
   arguments: [
     {
       name: "project_path",

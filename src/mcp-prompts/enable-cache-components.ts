@@ -5,7 +5,7 @@ import { join } from "path"
 export const enableCacheComponentsPrompt: Prompt = {
   name: "enable-cache-components",
   description:
-    "Enable and verify Cache Components in Next.js 16. Configures experimental.cacheComponents, starts dev server with MCP enabled, verifies all routes, and fixes any errors automatically.",
+    "Complete Cache Components setup for Next.js 16. Handles ALL steps: updates experimental.cacheComponents flag, removes incompatible flags, migrates Route Segment Config, starts dev server with MCP, detects all errors via chrome_devtools + get_errors, automatically fixes all issues by adding Suspense boundaries, 'use cache' directives, generateStaticParams, cacheLife profiles, cache tags, and validates everything with zero errors.",
   arguments: [
     {
       name: "project_path",

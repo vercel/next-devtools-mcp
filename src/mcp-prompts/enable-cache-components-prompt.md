@@ -253,39 +253,13 @@ These options will cause build errors and MUST be migrated:
 
 Document all Route Segment Config locations now - you'll migrate them in Phase 5.
 
-**Step 6: Update revalidateTag() API calls (if used)**
-
-If your codebase uses `revalidateTag()`, it now requires a profile parameter:
-
-```typescript
-import { revalidateTag } from 'next/cache'
-
-// Old (deprecated - will error in Next.js 16)
-revalidateTag('my-tag')
-
-// New (required in Next.js 16)
-revalidateTag('my-tag', 'max')  // Recommended for most cases
-```
-
-Built-in cacheLife profiles:
-- `'max'` - Long-lived content with background revalidation (recommended default)
-- `'hours'` - Content that changes every few hours
-- `'days'` - Content that changes daily or less frequently
-
-Search for all `revalidateTag()` calls and update them now:
-```bash
-# Find all revalidateTag calls in your codebase
-grep -r "revalidateTag" app/
-```
-
-**Step 7: Verify configuration changes**
+**Step 6: Verify configuration changes**
 
 After making changes, verify:
 - ✅ `experimental.cacheComponents: true` is set
 - ✅ Incompatible flags removed (`experimental.ppr`)
 - ✅ Compatible flags preserved (if any)
 - ✅ Route Segment Config locations documented
-- ✅ `revalidateTag()` calls updated with profile parameter
 - ✅ Config file syntax is valid (no syntax errors)
 
 **What's Next:**
@@ -987,7 +961,6 @@ Report findings in this format:
 [x] Incompatible flags removed (experimental.ppr if present)
 [x] Compatible flags preserved
 [x] Route Segment Config locations documented for migration
-[x] revalidateTag() calls updated with profile parameter
 [x] Config file syntax validated
 
 ## Phase 3: Dev Server
@@ -1085,7 +1058,6 @@ This enablement process made the following comprehensive changes:
 - ✅ Enabled experimental.cacheComponents flag in next.config
 - ✅ Removed incompatible flags (experimental.ppr if present)
 - ✅ Preserved compatible experimental flags
-- ✅ Updated revalidateTag() calls with profile parameter
 - ✅ Documented Route Segment Config for migration
 
 ### Boundary & Cache Setup (Phase 5):

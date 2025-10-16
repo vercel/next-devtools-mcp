@@ -47,23 +47,31 @@ const nextjsRuntimeInputSchema = z.object({
 })
 
 export const nextjsRuntimeTool = tool({
-  description: `Discover, inspect, and interact with running Next.js development servers and their MCP endpoints.
+  description: `Interact with a running Next.js development server's MCP endpoint to query runtime information, diagnostics, and internals.
 
-USE THIS TOOL WHEN:
-- User asks about running Next.js servers (e.g., "how many Next.js apps are running?", "show me running servers", "list Next.js apps")
-- User wants to see what servers/apps are active
-- User wants to interact with Next.js runtime capabilities
-- User needs to call Next.js internal tools or APIs
-- User asks about server ports, PIDs, or processes
+WHEN TO USE THIS TOOL - Use proactively in these scenarios:
 
-COMMON QUERY EXAMPLES:
-✓ "How many Next.js apps with MCP are running?"
-✓ "Show me all running Next.js servers"
-✓ "List running Next.js development servers"
-✓ "What Next.js apps are currently active?"
-✓ "Are there any Next.js servers running?"
-✓ "What tools are available in the Next.js runtime?"
-✓ "Clear the Next.js cache"
+1. **Before implementing ANY changes to the app**: When asked to add, modify, or fix anything in the application:
+   - "Add a loading state" → Check current component structure and routes first
+   - "Fix the navigation" → Inspect existing routes and components
+   - "Update the API endpoint" → Query current routes and data flows
+   - "Add error handling" → Check runtime errors and component hierarchy
+   - "Refactor the auth logic" → Inspect current auth implementation and routes
+   - "Optimize performance" → Check runtime diagnostics and component tree
+   Use this to understand where changes should be made and what currently exists.
+
+2. **For diagnostic and investigation questions**:
+   - "What's happening?" / "What's going on?" / "Why isn't this working?"
+   - "Check the errors" / "See what's wrong"
+   - "What routes are available?" / "Show me the routes"
+   - "Clear the cache" / "Reset everything"
+   - Questions about build status, compilation errors, or runtime diagnostics
+
+3. **For agentic codebase search**: Use this as FIRST CHOICE for searching the currently running app. If not found, fallback to static codebase search tools.
+
+KEY PRINCIPLE: If the request involves the running Next.js application (whether to investigate OR modify it), query the runtime FIRST to understand current state before proceeding.
+
+Start by calling action='list_tools' to discover what runtime information is available, then use those tools to gather context.
 
 REQUIREMENTS:
 - Next.js 16 or later (MCP support was added in v16)
@@ -73,13 +81,13 @@ Next.js exposes an MCP (Model Context Protocol) endpoint at /_next/mcp when star
 - experimental.mcpServer: true in next.config.js, OR
 - __NEXT_EXPERIMENTAL_MCP_SERVER=true environment variable
 
-CAPABILITIES:
-1. Discover running Next.js dev servers and their ports (action='discover_servers')
-2. List available MCP tools/functions exposed by the Next.js runtime (action='list_tools')
-3. Call those tools to interact with Next.js internals (action='call_tool')
+This tool allows you to:
+1. Discover running Next.js dev servers and their ports
+2. List available MCP tools/functions exposed by the Next.js runtime
+3. Call those tools to interact with Next.js internals (e.g., get route info, clear cache, runtime diagnostics, etc.)
 
-TYPICAL WORKFLOW:
-1. Use action='discover_servers' to find running Next.js servers
+Typical workflow:
+1. Use action='discover_servers' to find running Next.js servers (optional - auto-discovery will be attempted)
 2. Use action='list_tools' with the discovered port to see available tools and their input schemas
 3. Use action='call_tool' with port, toolName, and args (as an object, only if required) to invoke a specific tool
 

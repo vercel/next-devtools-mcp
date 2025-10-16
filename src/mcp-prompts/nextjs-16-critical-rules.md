@@ -58,15 +58,15 @@ export async function generateImageMetadata({ params }) {
 }
 
 // ✅ AFTER (Next.js 16)
-export default async function Image(props, id) {
-  const params = await props.params  // params now async
-  const imageId = await id  // id is now Promise<string> when using generateImageMetadata
-  const slug = params.slug
+export default async function Image({ params, id }) {
+  const resolvedParams = await params  // params is now a Promise
+  const slug = resolvedParams.slug
+  const imageId = id  // string (id itself is not a Promise)
   // ...
 }
 
-export async function generateImageMetadata(props) {
-  const params = await props.params
+export async function generateImageMetadata({ params }) {
+  const resolvedParams = await params  // params is now a Promise
   return [{ id: '1' }, { id: '2' }]
 }
 ```
@@ -279,8 +279,8 @@ export default async function Page(props) {
 - [ ] `function Layout({ params })` → `async function Layout(props)` + `await props.params`
 - [ ] `generateMetadata({ params })` → `async generateMetadata(props)` + `await props.params`
 - [ ] `generateViewport({ params })` → `async generateViewport(props)` + `await props.params`
-- [ ] Metadata image routes: `function Image({ params, id })` → `async function Image(props, id)` + `await props.params` + `await id`
-- [ ] `generateImageMetadata({ params })` → `async generateImageMetadata(props)` + `await props.params`
+- [ ] Metadata image routes: `function Image({ params, id })` → `async function Image({ params, id })` + `await params`
+- [ ] `generateImageMetadata({ params })` → `async generateImageMetadata({ params })` + `await params`
 - [ ] `cookies().get()` → `(await cookies()).get()`
 - [ ] `headers().get()` → `(await headers()).get()`
 - [ ] `draftMode().isEnabled` → `(await draftMode()).isEnabled`

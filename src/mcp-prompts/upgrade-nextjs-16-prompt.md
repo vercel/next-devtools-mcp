@@ -26,7 +26,7 @@ The section below contains the step-by-step upgrade workflow. Load the knowledge
 
 ## PHASE 1: Pre-Flight Checks (REQUIRED)
 ────────────────────────────────────────
-Check these BEFORE upgrading:
+Check these BEFORE running the codemod:
 
 0. **Detect Package Manager**
    Check: package.json "packageManager" field or lock files
@@ -49,26 +49,31 @@ Check these BEFORE upgrading:
 2. **TypeScript Version**
    Required: TypeScript 5.0+
    Check: package.json → devDependencies.typescript
-   Action: If exists and < 5.0, upgrade with detected package manager
+   Note: Document if upgrade needed (codemod won't upgrade this)
+   Action: If < 5.0, plan to upgrade after codemod
 
-3. **React and Type Definitions**
-   Action: Upgrade React and type definitions using the detected package manager:
-   ```bash
-   <pkg-manager> add react@latest react-dom@latest
-   <pkg-manager> add -D @types/react@latest @types/react-dom@latest
-   ```
-
-4. **Current Next.js Version**
+3. **Current Next.js Version**
    Check: package.json → dependencies.next
    Note: Document current version for rollback
 
+4. **Git Status**
+   Check: git status
+   Action: Ensure working directory is clean (no uncommitted changes)
+   Why: The codemod requires a clean git state to run
+
 ## PHASE 2: Run Automated Codemod
 ────────────────────────────────────────
-Run the official codemod first to handle most changes automatically:
+⚠️ **IMPORTANT: Run this BEFORE making any manual changes**
+
+The codemod requires a clean git working directory. It will fail with this error if you have uncommitted changes:
+> But before we continue, please stash or commit your git changes
+
+Run the official codemod to handle most changes automatically:
 
 ```bash
 # This will:
 # - Upgrade Next.js, React, and React DOM to latest versions
+# - Upgrade @types/react and @types/react-dom to latest
 # - Convert async params/searchParams automatically
 # - Update experimental config locations
 # - Fix other breaking changes
@@ -76,10 +81,22 @@ Run the official codemod first to handle most changes automatically:
 ```
 
 **What the codemod handles:**
+- ✅ Upgrades Next.js, React, and React DOM to latest versions
+- ✅ Upgrades React type definitions to latest
 - ✅ Converts sync params/searchParams to async (most cases)
 - ✅ Updates experimental config locations
 - ✅ Fixes metadata generation functions
 - ✅ Updates deprecated imports
+
+**What the codemod does NOT handle:**
+- ❌ TypeScript version upgrade (do this manually if needed)
+
+**After codemod completes:**
+1. Review the git diff to see what changed
+2. If TypeScript < 5.0, upgrade it now:
+   ```bash
+   <pkg-manager> add -D typescript@latest
+   ```
 
 **Wait for codemod to complete before proceeding to Phase 3**
 
@@ -355,19 +372,21 @@ Report findings in this format:
 
 ## Phase 1: Pre-Flight Checks
 [ ] Node.js version (20+)
-[ ] TypeScript version (5.0+)
-[ ] React dependencies upgraded to @latest (even if on v19)
-[ ] React type definitions upgraded to @latest
+[ ] TypeScript version checked (5.0+)
 [ ] Current Next.js version documented
+[ ] Git working directory is clean (no uncommitted changes)
 
 ## Phase 2: Codemod Execution
 - [ ] Ran codemod: `<pkg-exec> @next/codemod@canary upgrade beta`
+- [ ] Codemod upgraded Next.js, React, and React DOM to latest
+- [ ] Codemod upgraded React type definitions to latest
+- [ ] Codemod applied automatic fixes
 {{IF_REQUIRES_CANARY}}
-- [ ] Upgraded to canary: `<pkg-manager> add next@canary`
-- [ ] Upgraded eslint-config-next: `<pkg-manager> add -D eslint-config-next@canary`
+- [ ] (Optional) Upgraded to canary: `<pkg-manager> add next@canary`
+- [ ] (Optional) Upgraded eslint-config-next: `<pkg-manager> add -D eslint-config-next@canary`
 {{/IF_REQUIRES_CANARY}}
-- [ ] Dependencies upgraded
-- [ ] Automatic fixes applied
+- [ ] TypeScript upgraded if needed: `<pkg-manager> add -D typescript@latest`
+- [ ] Reviewed git diff for codemod changes
 
 ## Phase 3: Issues Requiring Manual Fixes
 Issues the codemod couldn't handle:

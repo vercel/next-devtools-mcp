@@ -16,7 +16,8 @@
   ],
   "scripts": {
     "dev": "tsc --watch",
-    "build": "tsc && cp -r src/mcp-prompts/*.md dist/mcp-prompts/ && cp -r src/mcp-resources/nextjs-16-knowledge dist/mcp-resources/",
+    "copy-resources": "node scripts/copy-resources.js",
+    "build": "tsc && npm run copy-resources",
     "prepublishOnly": "pnpm run clean && pnpm run build",
     "clean": "rm -rf dist",
     "test": "vitest run",

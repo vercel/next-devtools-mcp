@@ -654,27 +654,7 @@ With configuration updated, Phase 3 will start the dev server and Phase 4 will d
 
 **IMPORTANT: Only start the dev server ONCE. Do NOT restart it during this process.**
 
-### Step 1: Check for Existing Server or Stale Locks
-
-Before starting, check if there's already a dev server or stale lock files:
-
-```bash
-# Check if Next.js dev server is already running
-lsof -ti:3000 || echo "Port 3000 is free"
-```
-
-**If a server is already running:**
-- Check if it has MCP enabled (look for "__NEXT_EXPERIMENTAL_MCP_SERVER" in process env)
-- If yes: Use the existing server, proceed to Phase 4
-- If no: Stop it first, then start with MCP enabled
-
-**If you see stale lock files from previous sessions:**
-```bash
-# Only run this if there's no active dev server but lock file exists
-rm -rf .next/dev/lock
-```
-
-### Step 2: Start Dev Server (ONE TIME ONLY)
+### Step 1: Start Dev Server (ONE TIME ONLY)
 
 ```bash
 # Start dev server in background with MCP enabled
@@ -687,14 +667,14 @@ __NEXT_EXPERIMENTAL_MCP_SERVER=true <pkg-manager> dev
 - Will continue running throughout Phase 4 and Phase 5
 - Should NOT be restarted unless it crashes
 
-### Step 3: Wait for Server to Start
+### Step 2: Wait for Server to Start
 
 ```bash
 # Wait 10-15 seconds for server to initialize
 sleep 10
 ```
 
-### Step 4: Verify Server is Running and Capture URL
+### Step 3: Verify Server is Running and Capture URL
 
 Check the server output for:
 - ✅ "Ready started server on [URL]" or "Local: http://localhost:[PORT]"
@@ -709,22 +689,16 @@ From the dev server output, capture:
 - Port number: e.g., `3000` or `3001`
 
 **You will need these for:**
-- Step 5: Connecting to MCP server at `<url>:<port>/_next/mcp`
+- Step 4: Connecting to MCP server at `<url>:<port>/_next/mcp`
 - Phase 4: Making HTTP requests to routes at `<url>:<port>/[route-path]`
 
-**If you see errors:**
-
-**Lock File Error:** "Unable to acquire lock at .next/dev/lock"
-- This means another Next.js instance is running OR a stale lock exists
-- **DO NOT start the server again**
-- Either use the existing server or clean up properly first
-
-**Port In Use Error:** "Port 3000 is in use"
+**If port 3000 is already in use:**
 - Next.js will automatically use next available port (3001, 3002, etc.)
-- This is NORMAL, note the actual port being used
-- **DO NOT restart the server**
+- This is NORMAL - pkg-mgr dev handles this automatically
+- Note the actual port being used in the dev server output
+- Use that port for all subsequent steps
 
-### Step 5: Verify MCP Server is Active
+### Step 4: Verify MCP Server is Active
 
 **Connect to Next.js MCP Server:**
 
@@ -780,7 +754,7 @@ If still failing after retry:
 - `get_project_metadata` is the simplest tool to verify MCP is alive
 - Better to verify now than discover MCP is broken during route verification
 
-### Step 6: Record Server Details
+### Step 5: Record Server Details
 
 **Critical Information for Phase 4 and 5:**
 
@@ -796,7 +770,7 @@ Record these details from the dev server output:
 **Server State:**
 - ✅ Server is running in background
 - ✅ MCP server is active and verified
-- ⚠️  Do NOT stop or restart the server until Phase 6 is complete
+- ⚠️  Do NOT stop or restart the server until Phase 6 is complete (pkg-mgr dev handles port assignment automatically)
 
 ## PHASE 4: Route Verification & Error Detection
 ────────────────────────────────────────
@@ -809,7 +783,7 @@ errors to collect.
 
 **Prerequisites:**
 - ✅ Dev server is running from Phase 3 (do NOT restart it)
-- ✅ Base URL is captured from Step 4 (e.g., http://localhost:3000)
+- ✅ Base URL is captured from Step 3 (e.g., http://localhost:3000)
 - ✅ MCP Endpoint is known (e.g., http://localhost:3000/_next/mcp)
 - ✅ MCP server is verified active (get_project_metadata responded)
 - ✅ List of all routes from Phase 1
@@ -837,7 +811,7 @@ Systematically verify each route and collect errors:
    **URL:** `<base-url><route-path>`
 
    **Example:**
-   - Base URL from Step 4: `http://localhost:3001` (port 3001 if 3000 was in use)
+   - Base URL from Step 3: `http://localhost:3001` (port may vary if 3000 was in use)
    - Route path: `/dashboard`
    - Full URL: `http://localhost:3001/dashboard`
    - Tool call: playwright({ action: "navigate", url: "http://localhost:3001/dashboard" })
@@ -933,8 +907,8 @@ Systematically verify each route and collect errors:
 
 **Automation Strategy:**
 - Start Playwright browser once at the beginning of Phase 4
-- Use the Base URL captured in Step 6 for all playwright navigation
-- Use the MCP Endpoint captured in Step 6 for all get_errors calls
+- Use the Base URL captured in Step 5 for all playwright navigation
+- Use the MCP Endpoint captured in Step 5 for all get_errors calls
 - Iterate through ALL routes from Phase 1
 - For each route:
   1. Navigate with playwright({ action: "navigate", url: "..." })

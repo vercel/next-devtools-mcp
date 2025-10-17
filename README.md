@@ -60,6 +60,55 @@ Go to `Cursor Settings` → `MCP` → `New MCP Server`. Use the config provided 
 
 </details>
 
+<details>
+<summary>Gemini</summary>
+
+**Using Gemini CLI:**
+
+Project-wide installation:
+```bash
+gemini mcp add next-devtools npx next-devtools-mcp@latest
+```
+
+Global installation:
+```bash
+gemini mcp add -s user next-devtools npx next-devtools-mcp@latest
+```
+
+**Or configure manually:**
+
+Follow the MCP setup guide with these parameters:
+- Command: `npx`
+- Arguments: `-y, next-devtools-mcp@latest`
+
+</details>
+
+<details>
+<summary>Codex</summary>
+
+**Using Codex CLI:**
+
+```bash
+codex mcp add next-devtools -- npx next-devtools-mcp@latest
+```
+
+**Or configure manually:**
+
+Follow the MCP setup guide with the standard configuration format:
+- Command: `npx`
+- Arguments: `-y, next-devtools-mcp@latest`
+
+**Windows 11 Special Configuration:**
+
+Update `.codex/config.toml` with environment variables and increased startup timeout:
+
+```toml
+env = { SystemRoot="C:\\Windows", PROGRAMFILES="C:\\Program Files" }
+startup_timeout_ms = 20_000
+```
+
+</details>
+
 ### Your First Prompt
 
 Enter the following prompt in your MCP client to check if everything is working:

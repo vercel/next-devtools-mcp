@@ -115,6 +115,8 @@ Run the official codemod to handle most changes automatically:
 <pkg-exec> @next/codemod@canary upgrade beta
 ```
 
+**Note:** When prompted for options during codemod execution, select "yes" for all selections to apply all recommended changes.
+
 **What the codemod handles:**
 - ✅ Upgrades Next.js, React, and React DOM to latest versions
 - ✅ Upgrades React type definitions to latest
@@ -418,6 +420,7 @@ Report findings in this format:
 
 ## Phase 2: Codemod Execution
 - [ ] Ran codemod: `<pkg-exec> @next/codemod@canary upgrade beta`
+- [ ] Selected "yes" for all codemod prompts
 - [ ] Codemod upgraded Next.js, React, and React DOM to latest
 - [ ] Codemod upgraded React type definitions to latest
 - [ ] Codemod applied automatic fixes

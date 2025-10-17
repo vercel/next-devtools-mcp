@@ -1,11 +1,10 @@
 ## <a id="public-cache"></a>4. Public Cache Mechanics
 
-### Pattern 1: File-Level 'use cache'
+### Pattern 1: Function-Level 'use cache'
 
 ```typescript
 // Test Source: test/e2e/app-dir/use-cache/app/(partially-static)/cache-life/page.tsx
 
-'use cache'
 import { cacheLife } from 'next/cache'
 
 async function getCachedRandom() {
@@ -23,6 +22,8 @@ export default async function Page() {
 // - Initial load: x = 0.12345
 // - Refresh: x = 0.12345 (SAME VALUE - cached!)
 // - Different arg: Different cache entry
+//
+// NOTE: 'use cache' is at FUNCTION level, not file level
 ```
 
 ### Pattern 2: Component-Level 'use cache'

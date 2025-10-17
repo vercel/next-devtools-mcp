@@ -77,41 +77,34 @@ export async function oldPattern() {
 **Test Source**: `test/e2e/app-dir/use-cache/app/(partially-static)/form/page.tsx`
 
 ```typescript
-'use cache'
-import { cacheLife, cacheTag } from 'next/cache'
+import { updateTag, cacheTag } from 'next/cache'
 
-async function getTime() {
-  'use cache'
-  cacheTag('time')
-  cacheLife('hours')
-  return Date.now()
+async function refresh() {
+  'use server'
+  updateTag('home')
 }
 
 export default async function Page() {
-  const time = await getTime()
+  'use cache'
+  cacheTag('home')
 
   return (
-    <>
-      <p id="t">{time}</p>
-      <form action={async () => {
-        'use server'
-        await revalidateTag('time')
-        refresh()  // ← Refresh current page
-      }}>
-        <button id="refresh" type="submit">Refresh</button>
-      </form>
-    </>
+    <form action={refresh}>
+      <button id="refresh">Refresh</button>
+      <p id="t">{new Date().toISOString()}</p>
+    </form>
   )
 }
 
-// TEST BEHAVIOR (lines 612-633):
-// 1. Initial load: time1 = 1234567890
-// 2. Reload page: time2 = 1234567890 (same, cached)
-// 3. Click refresh button:
-//    - revalidateTag('time') called
-//    - refresh() called
-//    - Page updates in place
-// 4. Check time: time3 ≠ time2 (updated!)
+// ACTUAL TEST BEHAVIOR:
+// 1. Initial load: timestamp = "2024-01-01T12:00:00.000Z"
+// 2. Click refresh button:
+//    - updateTag('home') called (invalidates cache)
+//    - Page re-renders with new timestamp
+// 3. New timestamp displayed (cache was invalidated)
+//
+// NOTE: This uses updateTag(), not revalidateTag()
+// refresh() here is the server action name, not the next/cache function
 ```
 
 ---

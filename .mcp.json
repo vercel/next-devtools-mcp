@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "next-devtools": {
-      "command": "npx",
-      "args": ["."]
+      "command": "node",
+      "args": ["./dist/index.js"]
     }
   }
 }

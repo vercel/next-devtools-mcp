@@ -84,7 +84,7 @@ Next.js exposes an MCP (Model Context Protocol) endpoint at /_next/mcp when star
 This tool allows you to:
 1. Discover running Next.js dev servers and their ports
 2. List available MCP tools/functions exposed by the Next.js runtime
-3. Call those tools to interact with Next.js internals (e.g., get route info, clear cache, runtime diagnostics, etc.)
+3. Call those tools to interact with Next.js internals (e.g., get errors,get route info, get logs, runtime diagnostics, etc.)
 
 Typical workflow:
 1. Use action='discover_servers' to find running Next.js servers (optional - auto-discovery will be attempted)

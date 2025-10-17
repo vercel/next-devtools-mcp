@@ -424,28 +424,32 @@ export default async function Footer() {
 }
 ```
 
-**Example When Human Chooses Dynamic:**
+**Example When Human Prefers Fresher Updates:**
 ```typescript
-// DECISION: Footer with current year
-// HUMAN INPUT: Prefer dynamic to guarantee correctness
-// Kept dynamic per user preference - always shows current year
+async function Footer() {
+  "use cache";
+  // DECISION: Footer displays current year - rarely changes (annually)
+  // HUMAN INPUT: Acceptable if year shows stale for a few hours after New Year
+  // TODO: Consider adding cacheLife() to control revalidation timing:
+  //   import { cacheLife } from 'next/cache'
+  //   cacheLife({ revalidate: 3600 })  // Hourly revalidation
+  
+  const year = new Date().getFullYear();
+  return <footer>© {year} Company Name</footer>;
+}
+
 export default async function Page() {
   return (
     <div>
       <Suspense fallback={<MainContentSkeleton />}>
         <MainContent />
       </Suspense>
-      <Footer /> {/* Dynamic footer, no caching */}
+      <Footer />
     </div>
   );
 }
-
-async function Footer() {
-  await connection(); // Mark as dynamic
-  const year = new Date().getFullYear();
-  return <footer>© {year} Company Name</footer>;
-}
 ```
+
 
 ### Decision Summary Table
 
@@ -1064,15 +1068,16 @@ When to use: Content is shared across users AND doesn't change frequently
 ```diff
 +// DECISION: Blog posts are shared content that updates daily
 +// Cached to reduce server load and enable instant client navigation
-+// Revalidates hourly in background, can be manually updated via 'blog-posts' tag
++// DECISION: Uncomment and configure cacheLife() based on how often content changes
 export default async function Page() {
 + "use cache";
-+ 
++
 + import { cacheLife, cacheTag } from 'next/cache';
-+ cacheLife({ 
-+   revalidate: 3600,  // 1 hour - background revalidation
-+   expire: 86400      // 24 hours - force revalidation
-+ });
++ // UNCOMMENT and customize based on how often content changes:
++ // cacheLife({
++ //   revalidate: 3600,  // Check for updates every 1 hour
++ //   expire: 86400      // Force fresh after 24 hours
++ // });
 + cacheTag('blog-posts');
 +
   const res = await fetch('http://api.cms.com/posts');
@@ -1088,9 +1093,10 @@ export default async function Page() {
 // Cached at function level so multiple components can reuse the cache
 export async function getPosts() {
   "use cache";
-  
+
   import { cacheLife, cacheTag } from 'next/cache';
-  cacheLife({ revalidate: 3600 });
+  // UNCOMMENT and customize based on how often content changes:
+  // cacheLife({ revalidate: 3600 });
   cacheTag('posts');
 
   const res = await fetch('http://api.cms.com/posts');
@@ -1121,12 +1127,13 @@ export default async function Page() {
 
 async function CachedHeader() {
 + // CACHED: Site settings are same for all users, change infrequently
-+ // Revalidates every 6 hours, can be updated via 'site-settings' tag
++ // DECISION: Uncomment and configure cacheLife() based on how often content changes
 + "use cache";
 + import { cacheLife, cacheTag } from 'next/cache';
-+ cacheLife({ revalidate: 21600 }); // 6 hours
++ // UNCOMMENT and customize based on how often content changes:
++ // cacheLife({ revalidate: 21600 }); // 6 hours
 + cacheTag('site-settings');
-+ 
++
   const settings = await fetch('http://api.cms.com/settings');
   return <header>{/* ... */}</header>;
 }
@@ -1178,10 +1185,11 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
 + // CACHED: Each post is cached separately by slug
-+ // Revalidates hourly, can be updated via 'blog-post' tag
++ // TODO: Decide on revalidation timing - uncomment and configure cacheLife()
   "use cache";
 + import { cacheLife, cacheTag } from 'next/cache';
-+ cacheLife({ revalidate: 3600 });
++ // UNCOMMENT and customize based on how often content changes:
++ // cacheLife({ revalidate: 3600 });
 + cacheTag('blog-post');
 
   const { slug } = await params;
@@ -1218,7 +1226,8 @@ export default async function Page() {
 + // Multiple requests with same userId will share cache
   "use cache";
 + import { cacheLife } from 'next/cache';
-+ cacheLife({ revalidate: 300 }); // 5 minutes
++ // UNCOMMENT and customize based on how often content changes:
++ // cacheLife({ revalidate: 300 }); // 5 minutes
 -  const cookieStore = await cookies();
 -  const userId = cookieStore.get('userId');
 
@@ -1236,7 +1245,8 @@ export default async function Page() {
 + "use cache: private";
 +
 + import { cacheLife } from 'next/cache';
-+ cacheLife({ revalidate: 600 }); // 10 minutes
++ // UNCOMMENT and customize based on how often content changes:
++ // cacheLife({ revalidate: 600 }); // 10 minutes
 +
   const cookieStore = await cookies();
   const userId = cookieStore.get('userId');
@@ -1574,34 +1584,29 @@ Report findings in this format:
 - [file path]: Added "use cache" to individual function
 - ...
 
-### C. Dynamic Value Errors Fixed: [count]
-- [file path]: Added await connection() before Math.random()
-- [file path]: Added await connection() before new Date()
-- ...
-
-### D. Route Params Errors Fixed: [count]
+### C. Route Params Errors Fixed: [count]
 - [file path]: Added generateStaticParams with known params
 - [file path]: Added generateStaticParams for dynamic route
 - ...
 
-### E. Unavailable API Errors Fixed: [count]
+### D. Unavailable API Errors Fixed: [count]
 - [file path]: Moved cookies() call outside cache scope
 - [file path]: Moved headers() call outside cache scope
 - [file path]: Changed to "use cache: private" to allow cookies/params
 - ...
 
-### F. Route Segment Config Migrations: [count]
+### E. Route Segment Config Migrations: [count]
 - [file path]: Removed export const dynamic = 'force-static', replaced with "use cache"
 - [file path]: Removed export const revalidate = 3600, replaced with cacheLife({ revalidate: 3600 })
 - [file path]: Removed export const fetchCache, replaced with "use cache"
 - ...
 
-### G. Cache Tags Added: [count]
+### F. Cache Tags Added: [count]
 - [file path]: Added cacheTag('posts') for on-demand revalidation
 - [file path]: Added cacheTag('products') for granular control
 - ...
 
-### H. cacheLife Profiles Configured: [count]
+### G. cacheLife Profiles Configured: [count]
 - [file path]: Added cacheLife({ revalidate: 900, expire: 3600 })
 - [file path]: Added cacheLife('max') for long-lived content
 - [file path]: Added cacheLife('hours') for frequently changing content
@@ -1614,6 +1619,7 @@ Report findings in this format:
 - Total Route Segment Config exports removed: [count]
 - Total cache tags added: [count]
 - Total cacheLife profiles configured: [count]
+- Total unavailable API errors fixed: [count]
 
 ## Phase 6: Final Verification
 [x] All routes return 200 OK (with dev server running)
@@ -1643,7 +1649,7 @@ This enablement process made the following comprehensive changes:
 
 ### API Migrations (Phase 5):
 - ✅ Moved cookies()/headers() calls outside cache scope
-- ✅ Added await connection() for dynamic values
+- ✅ Handled dynamic values (connection(), "use cache" with cacheLife, or Suspense as appropriate)
 - ✅ Migrated Route Segment Config to "use cache" + cacheLife
 - ✅ Removed all export const dynamic/revalidate/fetchCache
 

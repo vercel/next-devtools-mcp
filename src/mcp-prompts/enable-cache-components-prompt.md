@@ -1165,6 +1165,198 @@ async function Component() {
 }
 ```
 
+**C.1. Cache Components Migration Pattern: Extract Dynamic Values into Separate Components**
+
+When to use: Component has mostly static content with only a small dynamic part (e.g., a time label, random value)
+
+**Key Strategy:** Instead of marking the entire component as dynamic with `await connection()`, extract just the dynamic portion into a separate component. This minimizes the dynamic area and reduces payload.
+
+**Problem Pattern (Don't do this):**
+```typescript
+// ❌ BAD: Entire page component becomes dynamic because of one timestamp
+async function Page() {
+  await connection();  // Marks ENTIRE page as dynamic
+
+  const timestamp = new Date().toISOString();
+  return (
+    <div>
+      <h1>Welcome</h1>
+      <p>Generated at: {timestamp}</p>
+      <ExpensiveStaticContent />
+    </div>
+  );
+}
+
+async function ExpensiveStaticContent() {
+  // This could be cached but now it's blocked by parent being dynamic
+  const data = await fetch('http://api.example.com/expensive');
+  return <div>{/* lots of content */}</div>;
+}
+```
+
+**Solution Pattern (Do this instead):**
+```typescript
+// ✅ GOOD: Extract dynamic part into separate component
+// Main page can be cached, only timestamp component is dynamic
+
+// Option 1: Hybrid with Suspense (if dynamic part needs per-request)
+export default async function Page() {
+  // This component is now fully cacheable
+  "use cache";
+
+  // UNCOMMENT at module level:
+  // import { cacheLife } from 'next/cache';
+  // cacheLife({ revalidate: 3600 });
+
+  return (
+    <div>
+      <h1>Welcome</h1>
+      <Suspense fallback={<TimestampSkeleton />}>
+        <CurrentTimestamp />
+      </Suspense>
+      <ExpensiveStaticContent />
+    </div>
+  );
+}
+
+async function CurrentTimestamp() {
+  // Only this small component executes per-request
+  // Dynamic: Fetches fresh timestamp on every request
+  const timestamp = new Date().toISOString();
+  return <p>Generated at: {timestamp}</p>;
+}
+
+async function ExpensiveStaticContent() {
+  // ✅ Can now be cached within parent's cache
+  const data = await fetch('http://api.example.com/expensive');
+  return <div>{/* lots of content */}</div>;
+}
+```
+
+**Option 2: Cached component with dynamic timestamp (if timestamp rarely changes):**
+```typescript
+// ✅ BETTER: Cache the timestamp too if it doesn't need per-request freshness
+
+// UNCOMMENT at module level:
+// import { cacheLife } from 'next/cache';
+
+export default async function Page() {
+  "use cache";
+  // UNCOMMENT and customize based on how often content changes:
+  // cacheLife({ revalidate: 3600 });
+
+  return (
+    <div>
+      <h1>Welcome</h1>
+      <CachedTimestamp />
+      <ExpensiveStaticContent />
+    </div>
+  );
+}
+
+async function CachedTimestamp() {
+  // DECISION: Timestamp is cached, updated hourly
+  // Only regenerates when cache expires, reducing per-request work
+  "use cache";
+
+  import { cacheLife } from 'next/cache';
+  // UNCOMMENT and customize based on acceptable staleness:
+  // cacheLife({ revalidate: 3600 }); // 1 hour - timestamp stays same for hour
+
+  const timestamp = new Date().toISOString();
+  return <p>Generated at: {timestamp}</p>;
+}
+
+async function ExpensiveStaticContent() {
+  const data = await fetch('http://api.example.com/expensive');
+  return <div>{/* lots of content */}</div>;
+}
+```
+
+**Performance Comparison: Minimizing Dynamic Boundaries**
+
+This shows how the Cache Components pattern improves performance by keeping dynamic parts small.
+
+**BEFORE: Traditional force-dynamic approach (functional but lower performance)**
+```typescript
+// Force entire page dynamic just because one small part needs real-time updates
+// Static shell: None. Page must fully render on every request.
+// Performance: Slower - all content regenerated per-request
+
+export default async function BlogPage() {
+  // Calling async connection directly in page makes it fully dynamic
+  const visitors = await db.getVisitorCount();
+  const post = await fetch('http://cms.example.com/posts/1').then(r => r.json());
+
+  return (
+    <article>
+      <h1>Blog Post Title</h1>
+      <div>{post.content}</div>
+      <div>Current visitors: {visitors}</div>  {/* Only this needs real-time data */}
+    </article>
+  );
+}
+```
+
+**AFTER: Cache Components pattern (optimized performance)**
+```typescript
+// Extract dynamic part into separate component
+// Static shell: Includes title and content. Visitor counter loads separately.
+// Performance: Faster - most content cached and prerendered
+
+// UNCOMMENT at module level:
+// import { cacheLife } from 'next/cache';
+
+export default async function BlogPage() {
+  "use cache";  // Main page can be cached
+  // UNCOMMENT and customize based on how often content changes:
+  // cacheLife({ revalidate: 3600 });
+
+  return (
+    <article>
+      <h1>Blog Post Title</h1>
+      <BlogContent />
+      <VisitorCounter />  {/* Only this small part is dynamic */}
+    </article>
+  );
+}
+
+async function BlogContent() {
+  // Cached and included in static shell
+  // Fetches from CMS and stays fresh via cacheLife
+  const post = await fetch('http://cms.example.com/posts/1').then(r => r.json());
+  return <div>{post.content}</div>;
+}
+
+async function VisitorCounter() {
+  // DYNAMIC: Updates on every request to show current visitors
+  // Isolated to this component, doesn't block parent's cache
+  await connection();
+  const visitors = await db.getVisitorCount();
+  return <div>Current visitors: {visitors}</div>;
+}
+```
+
+**Performance Impact:**
+- **BEFORE:** Entire page regenerated per-request (no static shell)
+- **AFTER:** Static shell includes 90% of content, only counter updates per-request
+- **Result:** Faster time-to-interactive, reduced server load
+
+**Key Benefits of This Pattern:**
+
+1. **Minimal Dynamic Boundaries:** Only truly dynamic parts execute per-request
+2. **Maximizes Caching:** Static content gets full benefits of "use cache"
+3. **Better Performance:** Reduces per-request workload significantly
+4. **Smaller Payload:** Less content needs to be rendered on every request
+5. **Cleaner Code:** Clear separation between static and dynamic concerns
+6. **Easier Maintenance:** Changes to static content don't affect dynamic parts
+
+**When NOT to Use This Pattern:**
+
+- If the "small" dynamic part requires lots of context from parent (pass it as props instead)
+- If extracting creates prop drilling that makes code unreadable (consider "use cache: private" instead)
+- If the components are tightly coupled and extraction creates artificial separation
+
 **D. Fixing Route Params with "use cache"**
 
 When to use: Component uses `await params` inside a cached scope

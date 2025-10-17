@@ -8,6 +8,8 @@
 - **Browser Testing**: Integrate with Playwright for browser automation and testing
 - **Chrome DevTools**: Access Chrome DevTools functionality for debugging
 - **Development Prompts**: Pre-configured prompts for common Next.js development tasks
+- **MCP Tools**: Callable tools for automating Next.js upgrades and Cache Components setup
+- **Next.js Runtime Integration**: Direct access to Next.js dev server diagnostics and error detection
 
 ## Requirements
 
@@ -146,7 +148,101 @@ Pre-configured prompts to help with common Next.js development tasks:
 - **`enable-cache-components`** - Enable caching for React components
 - **`preload-nextjs-16-knowledge`** - Load the complete Next.js 16 knowledge base into context (use resources for targeted sections instead)
 
-## Development
+## MCP Tools
+
+Callable tools for automating Next.js development workflows:
+
+### `upgrade_nextjs_16` Tool
+
+Guides through upgrading Next.js to version 16 beta with automated codemod execution.
+
+**Capabilities:**
+- Runs official Next.js codemod automatically (requires clean git state)
+- Handles async API changes (params, searchParams, cookies, headers)
+- Migrates configuration changes
+- Updates image defaults and optimization
+- Fixes parallel routes and dynamic segments
+- Handles deprecated API removals
+- Provides guidance for React 19 compatibility
+
+**Input:**
+- `project_path` (optional) - Path to Next.js project (defaults to current directory)
+
+**Output:**
+- Structured JSON with step-by-step upgrade guidance
+
+### `enable_cache_components` Tool
+
+Complete Cache Components setup and enablement for Next.js 16 with automated error detection and fixing.
+
+**Capabilities:**
+- Phase 1: Pre-flight checks (package manager, Next.js version, configuration)
+- Phase 2: Enable Cache Components configuration (experimental.cacheComponents flag)
+- Phase 3: Start dev server with MCP enabled (__NEXT_EXPERIMENTAL_MCP_SERVER=true)
+- Phase 4: Automated route verification and error detection (Playwright + Next.js MCP)
+- Phase 5: Automated error fixing with intelligent boundary setup
+  - Adds Suspense boundaries for dynamic content
+  - Adds `"use cache"` directives for cacheable content
+  - Adds `generateStaticParams` for dynamic routes
+  - Configures `cacheLife()` profiles based on content change frequency
+  - Sets up `cacheTag()` for on-demand revalidation
+- Phase 6: Final verification and build testing
+
+**Embedded Knowledge Base:**
+- Cache Components mechanics and paradigm shift
+- Public and private cache patterns
+- Runtime prefetching strategies
+- Request APIs (async params, cookies, headers)
+- Cache invalidation patterns
+- Advanced caching patterns (cacheLife, cacheTag, draft mode)
+- Build behavior and static shell generation
+- Error patterns and solutions
+- 125+ E2E test patterns and examples
+- Complete API reference
+
+**Input:**
+- `project_path` (optional) - Path to Next.js project (defaults to current directory)
+
+**Output:**
+- Structured JSON with complete setup guidance
+- Embedded knowledge base resources
+- Detailed phase-by-phase instructions
+
+**Example Usage:**
+
+With Claude Code:
+```
+Help me enable Cache Components in my Next.js 16 app
+```
+
+With other agents or programmatically:
+```json
+{
+  "tool": "enable_cache_components",
+  "args": {
+    "project_path": "/path/to/project"
+  }
+}
+```
+
+## Notable Updates
+
+### Improved `enable-cache-components` Prompt
+
+- Removed redundant port checking step (pkg-mgr dev handles port assignment automatically)
+- Removed lock file deletion logic (handled automatically)
+- Simplified Phase 3 workflow for better reliability
+- Updated step numbering and cross-references throughout
+
+### New MCP Tools for Agent Compatibility
+
+Both `upgrade-nextjs-16` and `enable-cache-components` are now available as MCP tools, enabling:
+- Direct invocation by other agents (Codex, Gemini, etc.)
+- Programmatic access to structured guidance
+- Consistent interface with other MCP tools
+- Integration in multi-agent workflows
+
+## Local Development
 
 To run the MCP server locally for development:
 
@@ -169,6 +265,11 @@ To run the MCP server locally for development:
        }
      }
    }
+   ```
+
+   or manually add, e.g. with codex:
+   ```
+   codex mcp add next-devtools-local -- node dist/index.js
    ```
 
 ## License

@@ -113,6 +113,36 @@ startup_timeout_ms = 20_000
 
 </details>
 
+### Next.js Runtime Integration (Recommended for Next.js >= 16 beta)
+
+For Next.js 16 beta or later, enable the MCP server in your Next.js application to unlock powerful runtime diagnostics and integration with Claude Code:
+
+**Update `next.config.ts` or `next.config.js`:**
+
+```js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    mcpServer: true,
+  },
+};
+
+export default nextConfig;
+```
+
+**Restart your Next.js dev server:**
+
+```bash
+npm run dev
+```
+
+**Benefits with Claude Code:**
+
+- **Real-time diagnostics**: Claude Code can query your running Next.js server for errors, routes, and build status
+- **Intelligent error detection**: Automatically identify issues in your application
+- **Runtime context**: Get accurate information about your app's current state without static analysis
+- **Better recommendations**: AI coding agents make informed decisions based on actual runtime behavior
+
 ### Your First Prompt
 
 Enter the following prompt in your MCP client to check if everything is working:
@@ -122,6 +152,14 @@ Help me upgrade my Next.js app to version 16
 ```
 
 Your MCP client should provide guidance and tools for upgrading your Next.js application.
+
+If you're on **Next.js 16 beta or later** with `experimental.mcpServer` enabled, you can also try:
+
+```
+What's the structure of my Next.js routes?
+```
+
+Claude Code will query your running dev server for actual route information and component diagnostics.
 
 ## Resources
 

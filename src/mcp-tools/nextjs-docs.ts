@@ -8,7 +8,10 @@ import {
 
 // Next.js Docs Tool
 const nextjsDocsInputSchema = z.object({
-  query: z.string().describe("Search query to find relevant Next.js documentation sections"),
+  query: z
+    .string()
+    .min(1, "Query parameter is required and must be a non-empty string")
+    .describe("Search query to find relevant Next.js documentation sections"),
   category: z
     .enum(["all", "getting-started", "guides", "api-reference", "architecture", "community"])
     .optional()
@@ -136,6 +139,7 @@ Provides access to comprehensive Next.js guides, API references, and best practi
     category = "all",
   }: z.infer<typeof nextjsDocsInputSchema>): Promise<string> => {
     // Step 1: Search MCP resources first (Next.js 16 knowledge base)
+    // Note: Arguments are now validated by Zod at the MCP server level before reaching here
     const mcpMatches = searchMcpResources(query)
 
     if (mcpMatches.length > 0) {

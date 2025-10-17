@@ -14,6 +14,7 @@ import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js"
+import { ZodError } from "zod"
 import { MCP_TOOLS } from "./mcp-tools/index.js"
 import { MCP_PROMPTS, PROMPT_HANDLERS } from "./mcp-prompts/index.js"
 import {
@@ -61,7 +62,27 @@ async function main() {
     }
 
     try {
-      const result = await tool.execute?.(args as any, {
+      // Validate arguments against the tool's input schema
+      let validatedArgs = args || {}
+      if (tool.inputSchema && typeof (tool.inputSchema as any).parse === "function") {
+        try {
+          validatedArgs = (tool.inputSchema as any).parse(args || {})
+        } catch (error) {
+          // Format Zod validation errors for better user experience
+          if (error instanceof ZodError) {
+            const formattedErrors = (error as any).issues
+              .map((err: any) => {
+                const path = err.path.length > 0 ? `${err.path.join(".")}` : "arguments"
+                return `${path}: ${err.message}`
+              })
+              .join("; ")
+            throw new Error(`Invalid arguments - ${formattedErrors}`)
+          }
+          throw error
+        }
+      }
+
+      const result = await tool.execute?.(validatedArgs as any, {
         abortSignal: new AbortController().signal,
         messages: [],
         toolCallId: String(request.params._meta?.progressToken || Date.now()),

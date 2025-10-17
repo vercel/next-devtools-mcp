@@ -6,7 +6,7 @@
 // Test Source: test/e2e/app-dir/use-cache/app/(partially-static)/cache-life/page.tsx
 
 'use cache'
-import { unstable_cacheLife as cacheLife } from 'next/cache'
+import { cacheLife } from 'next/cache'
 
 async function getCachedRandom() {
   'use cache'

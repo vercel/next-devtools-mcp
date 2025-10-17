@@ -18,7 +18,7 @@ export default function Page() {
 async function Private() {
   'use cache: private'
 
-  unstable_cacheLife({ stale: 420 })
+  cacheLife({ stale: 420 })
   const cookie = (await cookies()).get('test-cookie')
 
   const { headers } = await fetch('https://...', {
@@ -65,7 +65,7 @@ async function Private() {
 // Pattern 1: Private cache with cacheLife('seconds')
 async function ShortLivedCache() {
   'use cache: private'
-  unstable_cacheLife('seconds')  // stale: 0, revalidate: 1, expire: 1
+  cacheLife('seconds')  // stale: 0, revalidate: 1, expire: 1
   // ... BUT cacheLife('seconds') is special: stale is set to 30s!
 
   return <div id="cached-value">{Date.now()}</div>
@@ -78,7 +78,7 @@ async function ShortLivedCache() {
 // Pattern 2: Private cache with short stale time
 async function TooShort() {
   'use cache: private'
-  unstable_cacheLife({ stale: 20, revalidate: 100, expire: 200 })
+  cacheLife({ stale: 20, revalidate: 100, expire: 200 })
   return <div>{Date.now()}</div>
 }
 

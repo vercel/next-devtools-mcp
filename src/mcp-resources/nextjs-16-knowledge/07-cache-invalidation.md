@@ -78,7 +78,7 @@ export async function oldPattern() {
 
 ```typescript
 'use cache'
-import { unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 
 async function getTime() {
   'use cache'

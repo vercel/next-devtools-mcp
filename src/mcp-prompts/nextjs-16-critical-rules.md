@@ -300,3 +300,5 @@ export default async function Page(props) {
 - `nextjs16://knowledge/request-apis` - Detailed async API patterns
 - `nextjs16://knowledge/cache-invalidation` - updateTag vs revalidateTag semantics
 - `nextjs16://knowledge/error-patterns` - Common build/runtime errors
+
+(Resources use the `nextjs16://` URI scheme regardless of your MCP server name)

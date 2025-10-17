@@ -6,13 +6,21 @@ PROJECT: {{PROJECT_PATH}}
 
 The essential migration rules are embedded below. For detailed examples and test patterns, load these resources on-demand:
 
-**Available Resources (Load as Needed):**
+**Available Resources:**
 - `nextjs16://knowledge/overview` - Critical errors AI agents make, complete ToC
 - `nextjs16://knowledge/request-apis` - Detailed async params/searchParams patterns
 - `nextjs16://knowledge/cache-invalidation` - updateTag() vs revalidateTag() semantics
 - `nextjs16://knowledge/error-patterns` - Common build/runtime errors
 - `nextjs16://knowledge/test-patterns` - Real test-driven pattern library
 - `nextjs16://knowledge/reference` - Complete API reference, checklists
+
+**How to Access:**
+Resources use the URI scheme `nextjs16://knowledge/...` and are served by this MCP server:
+```
+Read resource "nextjs16://knowledge/overview"
+```
+
+Note: The resource URIs use the `nextjs16://` scheme regardless of what you named the server in your MCP client config.
 
 ---
 

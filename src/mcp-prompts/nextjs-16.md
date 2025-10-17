@@ -215,7 +215,7 @@ async function getCachedRandom(x: number, children: React.ReactNode) {
 
 async function Private() {
   'use cache: private'
-  unstable_cacheLife({ stale: 420 })
+  cacheLife({ stale: 420 })
 
   const cookie = (await cookies()).get('test-cookie')  // ✅ ALLOWED!
 
@@ -283,7 +283,7 @@ async function Private() {
 // Test Source: test/e2e/app-dir/use-cache/app/(partially-static)/cache-life/page.tsx
 
 'use cache'
-import { unstable_cacheLife as cacheLife } from 'next/cache'
+import { cacheLife } from 'next/cache'
 
 async function getCachedRandom() {
   'use cache'
@@ -462,7 +462,7 @@ export default function Page() {
 async function Private() {
   'use cache: private'
 
-  unstable_cacheLife({ stale: 420 })
+  cacheLife({ stale: 420 })
   const cookie = (await cookies()).get('test-cookie')
 
   const { headers } = await fetch('https://...', {
@@ -509,7 +509,7 @@ async function Private() {
 // Pattern 1: Private cache with cacheLife('seconds')
 async function ShortLivedCache() {
   'use cache: private'
-  unstable_cacheLife('seconds')  // stale: 0, revalidate: 1, expire: 1
+  cacheLife('seconds')  // stale: 0, revalidate: 1, expire: 1
   // ... BUT cacheLife('seconds') is special: stale is set to 30s!
 
   return <div id="cached-value">{Date.now()}</div>
@@ -522,7 +522,7 @@ async function ShortLivedCache() {
 // Pattern 2: Private cache with short stale time
 async function TooShort() {
   'use cache: private'
-  unstable_cacheLife({ stale: 20, revalidate: 100, expire: 200 })
+  cacheLife({ stale: 20, revalidate: 100, expire: 200 })
   return <div>{Date.now()}</div>
 }
 
@@ -681,14 +681,14 @@ async function PublicCached() {
 // ✅ INCLUDED in runtime prefetch:
 async function IncludedPrivate() {
   'use cache: private'
-  unstable_cacheLife('seconds')  // stale = 30s (exactly at threshold)
+  cacheLife('seconds')  // stale = 30s (exactly at threshold)
   return <div>Cached</div>
 }
 
 // ❌ EXCLUDED from runtime prefetch:
 async function ExcludedPrivate() {
   'use cache: private'
-  unstable_cacheLife({ stale: 20, revalidate: 100, expire: 200 })
+  cacheLife({ stale: 20, revalidate: 100, expire: 200 })
   return <div>Not cached</div>
 }
 ```
@@ -746,7 +746,7 @@ DYNAMIC_EXPIRE = 5 minutes (300 seconds)
 // Pattern 1: Long stale, short expire
 async function Example1() {
   'use cache'
-  unstable_cacheLife({
+  cacheLife({
     stale: 60,     // >= 30s ✅
     revalidate: 120,
     expire: 180    // < 5min
@@ -760,7 +760,7 @@ async function Example1() {
 // Pattern 2: Short stale, long expire
 async function Example2() {
   'use cache'
-  unstable_cacheLife({
+  cacheLife({
     stale: 10,     // < 30s ❌
     revalidate: 300,
     expire: 600    // >= 5min
@@ -774,7 +774,7 @@ async function Example2() {
 // Pattern 3: Both long
 async function Example3() {
   'use cache'
-  unstable_cacheLife({
+  cacheLife({
     stale: 60,     // >= 30s ✅
     revalidate: 300,
     expire: 600    // >= 5min ✅
@@ -788,7 +788,7 @@ async function Example3() {
 // Pattern 4: cacheLife('seconds') - SPECIAL CASE
 async function Example4() {
   'use cache'
-  unstable_cacheLife('seconds')
+  cacheLife('seconds')
   // Despite name, stale is set to 30s to meet threshold!
   return <div>Content</div>
 }
@@ -1092,7 +1092,7 @@ export async function oldPattern() {
 
 ```typescript
 'use cache'
-import { unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 
 async function getTime() {
   'use cache'
@@ -1359,7 +1359,7 @@ async function inner(arg: string) {
 
 async function short(arg: { id: string }) {
   'use cache'
-  unstable_cacheLife({ stale: 10, revalidate: 20, expire: 60 })
+  cacheLife({ stale: 10, revalidate: 20, expire: 60 })
   return Date.now()
 }
 
@@ -1705,7 +1705,7 @@ async function DeepCookieReader({
 // Source: test/e2e/app-dir/use-cache/app/(partially-static)/cache-life/page.tsx
 
 'use cache'
-import { unstable_cacheLife as cacheLife } from 'next/cache'
+import { cacheLife } from 'next/cache'
 
 async function getCachedRandom() {
   'use cache'
@@ -1736,7 +1736,7 @@ export default function Page() {
 
 async function Private() {
   'use cache: private'
-  unstable_cacheLife({ stale: 420 })
+  cacheLife({ stale: 420 })
 
   const cookie = (await cookies()).get('test-cookie')
 
@@ -2587,7 +2587,7 @@ async function cached(x: number, children: ReactNode) {
 ### Cache Configuration
 
 ```typescript
-import { unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 
 cacheLife('seconds')  // stale: 0→30, revalidate: 1, expire: 1 (special!)
 cacheLife('minutes')  // stale: 300, revalidate: 60, expire: 3600
@@ -3677,7 +3677,7 @@ export default async function Page() {
 
 async function shortLived() {
   "use cache"
-  unstable_cacheLife({ stale: 30, revalidate: 60, expire: 180 }) // < 300s
+  cacheLife({ stale: 30, revalidate: 60, expire: 180 }) // < 300s
   return Date.now()
 }
 
@@ -3689,7 +3689,7 @@ async function shortLived() {
 
 async function tooShortForPrefetch() {
   "use cache"
-  unstable_cacheLife({ stale: 20, revalidate: 60, expire: 180 }) // stale < 30s
+  cacheLife({ stale: 20, revalidate: 60, expire: 180 }) // stale < 30s
   return Date.now()
 }
 

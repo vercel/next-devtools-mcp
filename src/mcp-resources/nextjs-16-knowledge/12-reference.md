@@ -159,7 +159,7 @@ async function cached(x: number, children: ReactNode) {
 ### Cache Configuration
 
 ```typescript
-import { unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 
 cacheLife('seconds')  // stale: 0→30, revalidate: 1, expire: 1 (special!)
 cacheLife('minutes')  // stale: 300, revalidate: 60, expire: 3600
@@ -1249,7 +1249,7 @@ export default async function Page() {
 
 async function shortLived() {
   "use cache"
-  unstable_cacheLife({ stale: 30, revalidate: 60, expire: 180 }) // < 300s
+  cacheLife({ stale: 30, revalidate: 60, expire: 180 }) // < 300s
   return Date.now()
 }
 
@@ -1261,7 +1261,7 @@ async function shortLived() {
 
 async function tooShortForPrefetch() {
   "use cache"
-  unstable_cacheLife({ stale: 20, revalidate: 60, expire: 180 }) // stale < 30s
+  cacheLife({ stale: 20, revalidate: 60, expire: 180 }) // stale < 30s
   return Date.now()
 }
 

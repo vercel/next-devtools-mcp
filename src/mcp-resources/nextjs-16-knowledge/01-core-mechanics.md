@@ -103,7 +103,7 @@ async function getCachedRandom(x: number, children: React.ReactNode) {
 
 async function Private() {
   'use cache: private'
-  unstable_cacheLife({ stale: 420 })
+  cacheLife({ stale: 420 })
 
   const cookie = (await cookies()).get('test-cookie')  // ✅ ALLOWED!
 

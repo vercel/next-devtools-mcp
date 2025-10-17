@@ -135,14 +135,14 @@ async function PublicCached() {
 // ✅ INCLUDED in runtime prefetch:
 async function IncludedPrivate() {
   'use cache: private'
-  unstable_cacheLife('seconds')  // stale = 30s (exactly at threshold)
+  cacheLife('seconds')  // stale = 30s (exactly at threshold)
   return <div>Cached</div>
 }
 
 // ❌ EXCLUDED from runtime prefetch:
 async function ExcludedPrivate() {
   'use cache: private'
-  unstable_cacheLife({ stale: 20, revalidate: 100, expire: 200 })
+  cacheLife({ stale: 20, revalidate: 100, expire: 200 })
   return <div>Not cached</div>
 }
 ```
@@ -200,7 +200,7 @@ DYNAMIC_EXPIRE = 5 minutes (300 seconds)
 // Pattern 1: Long stale, short expire
 async function Example1() {
   'use cache'
-  unstable_cacheLife({
+  cacheLife({
     stale: 60,     // >= 30s ✅
     revalidate: 120,
     expire: 180    // < 5min
@@ -214,7 +214,7 @@ async function Example1() {
 // Pattern 2: Short stale, long expire
 async function Example2() {
   'use cache'
-  unstable_cacheLife({
+  cacheLife({
     stale: 10,     // < 30s ❌
     revalidate: 300,
     expire: 600    // >= 5min
@@ -228,7 +228,7 @@ async function Example2() {
 // Pattern 3: Both long
 async function Example3() {
   'use cache'
-  unstable_cacheLife({
+  cacheLife({
     stale: 60,     // >= 30s ✅
     revalidate: 300,
     expire: 600    // >= 5min ✅
@@ -242,7 +242,7 @@ async function Example3() {
 // Pattern 4: cacheLife('seconds') - SPECIAL CASE
 async function Example4() {
   'use cache'
-  unstable_cacheLife('seconds')
+  cacheLife('seconds')
   // Despite name, stale is set to 30s to meet threshold!
   return <div>Content</div>
 }

@@ -70,7 +70,7 @@ async function inner(arg: string) {
 
 async function short(arg: { id: string }) {
   'use cache'
-  unstable_cacheLife({ stale: 10, revalidate: 20, expire: 60 })
+  cacheLife({ stale: 10, revalidate: 20, expire: 60 })
   return Date.now()
 }
 

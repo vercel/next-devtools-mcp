@@ -6,7 +6,28 @@ PROJECT: {{PROJECT_PATH}}
 
 **✅ ALL RESOURCES PRELOADED - Complete knowledge base is embedded below**
 
-The complete Cache Components knowledge base has been preloaded into this prompt. All examples, patterns, and error solutions from the E2E test suite are available immediately. Reference this knowledge throughout the enablement process.
+**Available Resources:**
+- `nextjs16://knowledge/overview` - Critical errors AI agents make, quick reference (START HERE)
+- `nextjs16://knowledge/core-mechanics` - Fundamental paradigm shift, cacheComponents
+- `nextjs16://knowledge/public-caches` - Public cache mechanics using 'use cache'
+- `nextjs16://knowledge/private-caches` - Private cache mechanics using 'use cache: private'
+- `nextjs16://knowledge/runtime-prefetching` - Prefetch configuration and stale time rules
+- `nextjs16://knowledge/request-apis` - Async params, searchParams, cookies(), headers()
+- `nextjs16://knowledge/cache-invalidation` - updateTag(), revalidateTag() patterns
+- `nextjs16://knowledge/advanced-patterns` - cacheLife(), cacheTag(), draft mode
+- `nextjs16://knowledge/build-behavior` - What gets prerendered, static shells
+- `nextjs16://knowledge/error-patterns` - Common errors and solutions
+- `nextjs16://knowledge/test-patterns` - Real test-driven patterns from 125+ fixtures
+- `nextjs16://knowledge/reference` - Mental models, API reference, checklists
+
+**How to Access Resources:**
+Resources use the URI scheme `nextjs16://knowledge/...` and are served by this MCP server.
+The exact syntax depends on your MCP client, but typically:
+```
+Read resource "nextjs16://knowledge/overview"
+```
+
+Note: The server name in your MCP client config may be `next-devtools`, `next-devtools-mcp`, or whatever you configured it as. The resource URIs use the `nextjs16://` scheme regardless of the server name.
 
 **EMBEDDED RESOURCES (Available immediately):**
 1. Overview - Critical errors AI agents make, quick reference
@@ -36,6 +57,54 @@ The complete Cache Components knowledge base has been preloaded into this prompt
 # ENABLE WORKFLOW: Complete Cache Components Setup & Verification Guide
 
 The section below contains the comprehensive step-by-step enablement workflow. This guide includes ALL steps needed to enable Cache Components: configuration updates, flag changes, boundary setup, error detection, and automated fixing. Load the knowledge base resources above for detailed technical behavior, API semantics, and best practices.
+
+## What Are Cache Components?
+
+Cache Components are a new set of features designed to make caching in Next.js both **more explicit and more flexible**. They fundamentally change how Next.js handles rendering:
+
+**The Paradigm Shift:**
+- **Before (implicit caching):** Routes were static by default, you opted into dynamic rendering
+- **After (Cache Components):** Routes are dynamic by default, you opt into caching with `"use cache"`
+- **Goal:** Better align with developer expectations while preserving static pre-rendering capabilities
+
+**What Cache Components Achieve:**
+
+1. **Explicit Opt-In Caching:**
+   - All dynamic code executes at request time by default
+   - Use `"use cache"` directive to cache pages, components, or functions
+   - Compiler automatically generates cache keys
+
+2. **Complete PPR (Partial Prerendering) Story:**
+   - Instead of using Suspense to opt-in to dynamic (old PPR)
+   - Now use `"use cache"` to opt-in to static (new paradigm)
+   - Mix cached and dynamic content in the same route
+
+3. **Flexible Caching Levels:**
+   - `"use cache"` - Public cache for build-time prerendering
+   - `"use cache: private"` - Private cache for runtime prefetching (can access cookies/params)
+   - `"use cache: remote"` - Persistent cache for serverless environments
+
+4. **Runtime Prefetching:**
+   - Prefetch routes with actual runtime values (cookies, params, searchParams)
+   - Instant client navigations without loading states
+   - Cache snapshots of components in static shells
+
+**The Core Concept: Push Down Dynamic Boundaries**
+
+The key strategy with Cache Components is to **push dynamic boundaries as far down the component tree as possible**, making as much of your UI static as you can:
+
+```
+Static Shell (instant load)
+├─ Cached Header ("use cache")
+├─ Cached Sidebar ("use cache")
+└─ <Suspense>
+   └─ Dynamic Content (per-request)
+```
+
+This gives you:
+- ✅ Fast initial page load (static shell)
+- ✅ Reduced server load (cached components)
+- ✅ Fresh data where needed (dynamic content)
 
 ## Overview: What This Process Covers
 
@@ -82,34 +151,319 @@ This prompt automates the complete Cache Components enablement workflow:
 - Fast Refresh applies fixes instantly
 - Comprehensive fix strategies for all error types
 
-## Decision Guide: Suspense vs "use cache"
+## Decision Guide: Static vs Dynamic - A Question-Driven Approach
 
-When fixing blocking route errors, choose the right approach:
+When you encounter a Cache Components error, use this decision framework to determine the best fix:
 
-**Use Suspense When:**
-- Content is truly per-request dynamic (user-specific data, auth state, real-time data)
-- Content depends on request cookies, headers, or user session
-- Content changes frequently and shouldn't be cached
-- You want to show a loading skeleton while fetching
-- Examples: User dashboard, shopping cart, notifications, personalized feeds
+### Step 1: Analyze the Content Nature
 
-**Use "use cache" When:**
-- Content can be shared across multiple users/requests
-- Content is relatively stable (CMS data, blog posts, product listings)
-- Content is expensive to compute/fetch but doesn't change often
-- You want instant navigation without loading states
-- Examples: Blog posts, product catalogs, site settings, marketing pages
+**First, ask: "Should this content be cached or truly dynamic?"**
 
-**Use Both (Mix) When:**
-- Page has both shared and personalized content
-- Static header/footer with dynamic user sections
-- Cached product list with dynamic "Add to Cart" buttons
-- Examples: E-commerce product pages, content with personalized recommendations
+Use these questions to guide your decision:
+
+**Question 1: "Is this content the same for all users?"**
+- ✅ YES → Strong candidate for `"use cache"`
+- ❌ NO → Consider Suspense or `"use cache: private"`
+
+**Question 2: "How often does this content change?"**
+- **Rarely (days/weeks):** Perfect for `"use cache"` with long `cacheLife`
+  - Examples: Marketing pages, about page, documentation
+  - Approach: `cacheLife({ revalidate: 86400, expire: Infinity })` // 24 hours
+  
+- **Occasionally (hours):** Good for `"use cache"` with medium `cacheLife`
+  - Examples: Blog posts, product catalogs, site settings
+  - Approach: `cacheLife({ revalidate: 3600, expire: 7200 })` // 1-2 hours
+  
+- **Frequently (minutes):** Consider `"use cache"` with short `cacheLife`
+  - Examples: News feeds, stock prices, leaderboards
+  - Approach: `cacheLife({ revalidate: 60, expire: 300 })` // 1-5 minutes
+  
+- **Constantly (seconds/per-request):** Use Suspense (don't cache)
+  - Examples: User authentication state, shopping cart, notifications
+  - Approach: Wrap in `<Suspense>` boundary
+
+**Question 3: "Does this content use user-specific data?"**
+- ✅ YES, from cookies/session → Use Suspense OR `"use cache: private"`
+- ✅ YES, from route params → Can use `"use cache"` + `generateStaticParams`
+- ❌ NO → Use `"use cache"`
+
+**Question 4: "Can this content be revalidated on-demand?"**
+- ✅ YES (e.g., CMS updates, admin actions) → Use `"use cache"` + `cacheTag()`
+- ❌ NO (no clear trigger) → Use time-based `cacheLife` or Suspense
+
+### Step 2: Make Your Decision and Document It
+
+Based on your answers, choose one of these approaches:
+
+**Approach A: Cache It (Static)**
+```typescript
+// DECISION: This content is shared across users and changes rarely (daily)
+// Cached to reduce server load and enable instant navigation
+export default async function Page() {
+  "use cache";
+  
+  cacheLife({
+    revalidate: 3600,  // Revalidate in background after 1 hour
+    expire: 86400,     // Force revalidation after 24 hours
+  });
+  cacheTag('blog-posts'); // Enable on-demand revalidation
+  
+  const posts = await fetch('http://api.cms.com/posts');
+  return <div>{/* render */}</div>;
+}
+```
+
+**Approach B: Make It Dynamic (Per-Request)**
+```typescript
+// DECISION: This content is user-specific and changes per request
+// Using Suspense to show loading state while fetching fresh data
+export default async function Page() {
+  return (
+    <Suspense fallback={<Skeleton />}>
+      <UserDashboard />
+    </Suspense>
+  );
+}
+
+async function UserDashboard() {
+  // Dynamic: Executes at request time with fresh user data
+  const user = await getCurrentUser();
+  return <div>{user.name}</div>;
+}
+```
+
+**Approach C: Mix Both (Hybrid)**
+```typescript
+// DECISION: Header is shared (cache it), user content is personal (dynamic)
+export default async function Page() {
+  return (
+    <div>
+      <CachedHeader />
+      <Suspense fallback={<Loading />}>
+        <DynamicUserContent />
+      </Suspense>
+    </div>
+  );
+}
+
+async function CachedHeader() {
+  "use cache";
+  cacheLife({ revalidate: 3600 });
+  cacheTag('site-settings');
+  
+  // Static: Same for all users, changes infrequently
+  const settings = await fetch('http://api.cms.com/settings');
+  return <header>{/* ... */}</header>;
+}
+
+async function DynamicUserContent() {
+  // Dynamic: Per-request, user-specific
+  const user = await getCurrentUser();
+  return <div>{user.notifications}</div>;
+}
+```
+
+**Approach D: Private Cache (Prefetchable Dynamic)**
+```typescript
+// DECISION: Uses cookies but can be prefetched during navigation
+// Changes per user but can be rendered ahead of actual navigation
+export default async function Page() {
+  "use cache: private";
+  
+  const cookieStore = await cookies();
+  const userId = cookieStore.get('userId');
+  
+  // Will be prefetched with actual cookie values during navigation
+  const userData = await fetch(`http://api.example.com/users/${userId}`);
+  return <div>{/* render */}</div>;
+}
+```
+
+### Step 3: Apply Your Decision with Comments
+
+**Critical: Always leave comments explaining your caching decision**
+
+When you add `"use cache"`:
+```typescript
+// ✅ CACHED: Blog posts are shared content that updates daily via CMS
+// Revalidates every hour in background, expires after 24 hours
+// Can be manually revalidated via 'blog-posts' tag when content is published
+export default async function Page() {
+  "use cache";
+  cacheLife({ revalidate: 3600, expire: 86400 });
+  cacheTag('blog-posts');
+  // ...
+}
+```
+
+When you add Suspense:
+```typescript
+// ✅ DYNAMIC: User notifications are personal and real-time
+// Must execute at request time to show fresh data per user
+// Loading state improves perceived performance
+export default async function Page() {
+  return (
+    <Suspense fallback={<NotificationSkeleton />}>
+      <Notifications />
+    </Suspense>
+  );
+}
+```
+
+When you mix both:
+```typescript
+// ✅ HYBRID APPROACH:
+// - Header: Cached (shared settings, changes rarely)
+// - Main content: Dynamic (user-specific, real-time)
+export default async function Page() {
+  return (
+    <div>
+      <CachedHeader />  {/* Shared, cached */}
+      <Suspense>
+        <UserContent />  {/* Personal, dynamic */}
+      </Suspense>
+    </div>
+  );
+}
+```
+
+### Step 4: Ask Human for Ambiguous Cases, Then Guess if Needed
+
+**CRITICAL: Always ask the human when uncertain about caching decisions**
+
+**When to Ask the Human:**
+
+1. **Edge Cases with Infrequent Changes:**
+   - Content that changes very infrequently (yearly, monthly)
+   - Example: Footer showing current year (`new Date().getFullYear()`)
+   - Question: "Should I cache this footer with the current year, or keep it dynamic?"
+   - Tradeoff: Caching saves server cost but year might be stale for first requests after New Year
+
+2. **Business Logic Uncertainty:**
+   - When you can't determine how often content should update
+   - Example: Product availability, pricing
+   - Question: "How often does [content] change? Should it be cached?"
+   
+3. **User-Specific Content with Caching Potential:**
+   - Content that varies by user but could be prefetched
+   - Example: User preferences, settings
+   - Question: "Should I use 'use cache: private' for prefetching, or keep it fully dynamic?"
+
+4. **Performance vs Freshness Tradeoffs:**
+   - When caching would help performance but freshness is unclear
+   - Example: Dashboards, analytics
+   - Question: "What's the acceptable staleness for [content]? Minutes? Hours?"
+
+**How to Ask:**
+```
+I found a component that [describe what it does].
+
+Caching Decision Needed:
+- Content: [what content is being rendered]
+- Current behavior: [dynamic/using Date/etc]
+- Caching would: [benefits - reduced server load, faster response]
+- Not caching would: [benefits - always fresh data]
+
+Questions:
+1. How often does this content need to update?
+2. Is it acceptable if this shows slightly stale data?
+3. Should I cache it with revalidation, or keep it dynamic?
+
+What's your preference?
+```
+
+**Example - Footer with Current Year:**
+```
+I found a footer component that displays `new Date().getFullYear()`.
+
+Caching Decision Needed:
+- Content: Current year (2025)
+- Current behavior: Generates date on every request
+- Caching would: Save server resources, year only changes once per year
+- Not caching would: Guaranteed correct year, but minimal benefit
+
+Questions:
+1. Should I cache this component with a revalidation strategy?
+   Option A: Cache with daily revalidation (basically static until New Year)
+   Option B: Keep dynamic (executes on every request)
+2. Is it acceptable if the year shows 2025 for a few hours into 2026?
+
+What's your preference?
+```
+
+**If Human is Unavailable or Confirms to Proceed:**
+
+Then use this heuristic for simple cases:
+
+1. **Conservative Default:** If content looks like it could be shared, try caching it
+   - Add `"use cache"` with conservative `cacheLife`
+   - Add comment explaining the assumption
+   
+2. **Monitor and Adjust:** After applying the fix:
+   - Test the route to ensure it works correctly
+   - Note in comments that this is a tentative decision
+   - Flag for human review
+   
+3. **Iterate:** Adjust based on actual usage or human feedback:
+   - Too stale? → Reduce `revalidate` time
+   - Too much server load? → Increase cache duration
+   - Actually user-specific? → Switch to Suspense
+
+**Example of Tentative Approach (after asking human):**
+```typescript
+// DECISION: Footer with current year
+// HUMAN INPUT: Acceptable to cache with daily revalidation
+// Caching to reduce server load - year changes once annually
+// Revalidates daily to ensure correct year after New Year
+export default async function Footer() {
+  "use cache";
+  cacheLife({ revalidate: 86400 }); // 24 hours
+  
+  const year = new Date().getFullYear();
+  return <footer>© {year} Company Name</footer>;
+}
+```
+
+**Example When Human Chooses Dynamic:**
+```typescript
+// DECISION: Footer with current year
+// HUMAN INPUT: Prefer dynamic to guarantee correctness
+// Kept dynamic per user preference - always shows current year
+export default async function Page() {
+  return (
+    <div>
+      <Suspense fallback={<MainContentSkeleton />}>
+        <MainContent />
+      </Suspense>
+      <Footer /> {/* Dynamic footer, no caching */}
+    </div>
+  );
+}
+
+async function Footer() {
+  await connection(); // Mark as dynamic
+  const year = new Date().getFullYear();
+  return <footer>© {year} Company Name</footer>;
+}
+```
+
+### Decision Summary Table
+
+| Content Type | User-Specific? | Update Frequency | Recommended Approach |
+|--------------|----------------|------------------|----------------------|
+| Marketing pages | No | Rarely | `"use cache"` + long `cacheLife` |
+| Blog posts | No | Daily/Weekly | `"use cache"` + `cacheTag()` |
+| Product catalog | No | Hourly | `"use cache"` + medium `cacheLife` |
+| News feed | No | Minutes | `"use cache"` + short `cacheLife` |
+| User dashboard | Yes | Per-request | `<Suspense>` |
+| Shopping cart | Yes | Per-request | `<Suspense>` |
+| User settings page | Yes | Occasionally | `"use cache: private"` |
+| Auth-gated content | Yes | Varies | `"use cache: private"` |
 
 **Special Cases:**
-- `"use cache: private"` - For content that uses cookies/params but can still be prefetched
-- `"use cache: remote"` - For serverless/Vercel to persist cache across requests
-- Suspense around `<body>` - Most permissive, traditional SSR behavior (no static shell)
+- `"use cache: private"` - Content uses cookies/params but can be prefetched
+- `"use cache: remote"` - Serverless/Vercel persistent cache across requests
+- Suspense around `<body>` - Most permissive, traditional SSR (no static shell)
 
 ## PHASE 1: Pre-Flight Checks
 ────────────────────────────────────────
@@ -132,8 +486,16 @@ Before enabling Cache Components:
    Action: If < 16.0.0, run upgrade-nextjs-16 prompt first
 
 3. **Existing Configuration Check**
-   Read: next.config.js or next.config.ts
-   Look for:
+   **Find the config file first:**
+   Check for these files in order (use the first one found):
+   - `next.config.ts`
+   - `next.config.mjs`
+   - `next.config.js`
+   - `next.config.cjs`
+   
+   If no config file exists, you'll create `next.config.js` in Phase 2.
+   
+   **Read the config file and look for:**
    - `experimental.cacheComponents` (new name)
    - `experimental.dynamicIO` (old name - needs migration)
    - `experimental.ppr` (removed - incompatible with Next.js 16)
@@ -157,10 +519,21 @@ Before enabling Cache Components:
 ────────────────────────────────────────
 Update the Next.js configuration to enable Cache Components. This phase handles ALL configuration and flag changes needed.
 
-**Step 1: Backup existing config**
-Copy current next.config.js or next.config.ts before making changes
+**Step 1: Identify config file format**
+From Phase 1, you should know which config file exists:
+- `next.config.ts` (TypeScript)
+- `next.config.mjs` (ESM)
+- `next.config.js` (CommonJS)
+- `next.config.cjs` (CommonJS explicit)
+- Or no config file (will create `next.config.js`)
 
-**Step 2: Update experimental.cacheComponents flag**
+Use the same format/extension when making changes.
+
+**Step 2: Backup existing config**
+If config file exists, copy it before making changes.
+If no config exists, you'll create a new one in the next step.
+
+**Step 3: Update experimental.cacheComponents flag**
 
 The `experimental.cacheComponents` flag is the PRIMARY configuration change. Choose the right option based on your current config:
 
@@ -260,12 +633,14 @@ Document all Route Segment Config locations now - you'll migrate them in Phase 5
 
 **Step 6: Verify configuration changes**
 
-After making changes, verify:
+After making changes, verify by reading the config file:
+- ✅ Config file was updated successfully (read it to confirm)
 - ✅ `experimental.cacheComponents: true` is set
 - ✅ Incompatible flags removed (`experimental.ppr`)
 - ✅ Compatible flags preserved (if any)
 - ✅ Route Segment Config locations documented
 - ✅ Config file syntax is valid (no syntax errors)
+- ✅ File format matches original (`.ts` stays `.ts`, `.js` stays `.js`, etc.)
 
 **What's Next:**
 With configuration updated, Phase 3 will start the dev server and Phase 4 will detect any runtime errors that need fixing.
@@ -475,7 +850,7 @@ Systematically verify each route and collect errors:
    - Connect to this endpoint
    - Call `get_errors` tool with no arguments
 
-   The `get_errors` tool reads errors from the chrome session you
+   The `get_errors` tool reads errors from the browser session you
    just created in step 1.
 
    Record:
@@ -593,14 +968,54 @@ This phase handles ALL code changes needed for Cache Components:
 - Configuring cacheLife profiles for fine-grained control
 - Moving unavailable APIs outside cache scope
 
+**Critical: Apply the Decision Guide for Every Fix**
+
+For each error, before applying a fix:
+
+1. **Analyze:** Use the Decision Guide questions (Step 1)
+   - Is content the same for all users?
+   - How often does it change?
+   - Does it use user-specific data?
+   - Can it be revalidated on-demand?
+
+2. **Ask Human for Ambiguous Cases:** (Decision Guide Step 4)
+   - **ALWAYS ask the human** when uncertain about caching decisions
+   - Edge cases: Infrequently changing content (yearly, monthly)
+   - Business logic: Unknown update frequency
+   - Tradeoffs: Performance vs freshness unclear
+   - Present options and let human decide
+   - Examples: Current year in footer, pricing, dashboards
+
+3. **Decide:** Choose the appropriate approach (Step 2)
+   - Based on human input if asked, or analysis if clear-cut
+   - Cache it (static) with `"use cache"`
+   - Make it dynamic with `<Suspense>`
+   - Mix both (hybrid)
+   - Use `"use cache: private"` for prefetchable user content
+
+4. **Document:** Always add comments explaining your decision (Step 3)
+   - Include human input if applicable ("HUMAN INPUT: ...")
+   - Why you chose to cache or not cache
+   - What the expected update frequency is
+   - How content will be revalidated
+
+5. **Implement:** Apply the fix with proper configuration
+   - Add `cacheLife()` based on content change frequency
+   - Add `cacheTag()` if on-demand revalidation is needed
+   - Add descriptive comments with human decisions noted
+
 Fix errors systematically based on error type:
 
 **A. Fixing Blocking Route Errors - Option 1: Add Suspense Boundary**
 
 Best for: Truly dynamic, per-request content (user data, real-time info)
 
+When to use: Content is user-specific OR changes constantly (per-request)
+
 ```diff
 // Option 1a: Add Suspense in the page
++// DECISION: User dashboard content is personal and changes per request
++// Using Suspense to show skeleton while loading fresh user data
 export default async function Page() {
   return (
 +   <Suspense fallback={<Skeleton />}>
@@ -610,6 +1025,7 @@ export default async function Page() {
 }
 
 async function DynamicContent() {
++ // Dynamic: Executes at request time with current user session
   const res = await fetch('http://api.example.com/data');
   const data = await res.json();
   return <div>{data.title}</div>;
@@ -618,6 +1034,8 @@ async function DynamicContent() {
 
 ```diff
 // Option 1b: Add Suspense in layout (applies to all child routes)
++// DECISION: All child routes need per-request data
++// Layout-level Suspense provides consistent loading state
 export default function Layout({ children }) {
   return (
 +   <Suspense fallback={<Loading />}>
@@ -629,6 +1047,8 @@ export default function Layout({ children }) {
 
 ```typescript
 // Option 1c: Use loading.tsx file (simplest for page-level)
+// DECISION: Page content is dynamic and requires per-request execution
+// loading.tsx provides fallback UI during server-side rendering
 // Create: app/[route]/loading.tsx
 export default function Loading() {
   return <Skeleton />;
@@ -639,9 +1059,21 @@ export default function Loading() {
 
 Best for: Content that can be cached and reused across requests
 
+When to use: Content is shared across users AND doesn't change frequently
+
 ```diff
++// DECISION: Blog posts are shared content that updates daily
++// Cached to reduce server load and enable instant client navigation
++// Revalidates hourly in background, can be manually updated via 'blog-posts' tag
 export default async function Page() {
 + "use cache";
++ 
++ import { cacheLife, cacheTag } from 'next/cache';
++ cacheLife({ 
++   revalidate: 3600,  // 1 hour - background revalidation
++   expire: 86400      // 24 hours - force revalidation
++ });
++ cacheTag('blog-posts');
 +
   const res = await fetch('http://api.cms.com/posts');
   const { posts } = await res.json();
@@ -652,8 +1084,14 @@ export default async function Page() {
 
 ```typescript
 // Can also cache individual functions
+// DECISION: getPosts() is shared utility that fetches same data for all users
+// Cached at function level so multiple components can reuse the cache
 export async function getPosts() {
   "use cache";
+  
+  import { cacheLife, cacheTag } from 'next/cache';
+  cacheLife({ revalidate: 3600 });
+  cacheTag('posts');
 
   const res = await fetch('http://api.cms.com/posts');
   return res.json();
@@ -667,6 +1105,9 @@ export default async function Page() {
 
 ```diff
 // Mix cached and dynamic content
++// DECISION: Hybrid approach
++// - Header: Shared settings (cached, changes rarely)
++// - Main content: User-specific data (dynamic, per-request)
 export default async function Page() {
   return (
     <div>
@@ -679,31 +1120,54 @@ export default async function Page() {
 }
 
 async function CachedHeader() {
++ // CACHED: Site settings are same for all users, change infrequently
++ // Revalidates every 6 hours, can be updated via 'site-settings' tag
 + "use cache";
++ import { cacheLife, cacheTag } from 'next/cache';
++ cacheLife({ revalidate: 21600 }); // 6 hours
++ cacheTag('site-settings');
++ 
   const settings = await fetch('http://api.cms.com/settings');
   return <header>{/* ... */}</header>;
+}
+
+async function DynamicContent() {
+  // DYNAMIC: User notifications are personal and real-time
+  // Must execute at request time for each user
+  const user = await getCurrentUser();
+  return <div>{user.notifications}</div>;
 }
 ```
 
 **C. Fixing Dynamic Value in Static Shell**
 
+When to use: Component uses `Math.random()`, `new Date()`, or other sync dynamic APIs
+
 ```diff
 + import { connection } from 'next/server';
 
++// DECISION: This component generates random values per request
++// Using connection() to mark as dynamic and execute at request time
 async function Component() {
 + await connection();
++ // Dynamic: Everything after connection() executes per-request
   const random = Math.random();
   const now = new Date();
 
-  // These dynamic values now execute at request time
+  return <div>{random} - {now.toISOString()}</div>;
 }
 ```
 
 **D. Fixing Route Params with "use cache"**
 
+When to use: Component uses `await params` inside a cached scope
+
 ```diff
++// DECISION: Blog posts are shared content, can be prerendered with known slugs
++// Using generateStaticParams to provide known routes at build time
++// Each slug gets its own cached version
 + export async function generateStaticParams() {
-+   // Provide known params at build time
++   // Fetch all known post slugs at build time
 +   const posts = await fetch('http://api.cms.com/posts').then(r => r.json());
 +   return posts.map(post => ({ slug: post.slug }));
 + }
@@ -713,7 +1177,12 @@ export default async function Page({
 }: {
   params: Promise<{ slug: string }>;
 }) {
++ // CACHED: Each post is cached separately by slug
++ // Revalidates hourly, can be updated via 'blog-post' tag
   "use cache";
++ import { cacheLife, cacheTag } from 'next/cache';
++ cacheLife({ revalidate: 3600 });
++ cacheTag('blog-post');
 
   const { slug } = await params;
   const post = await fetch(`http://api.cms.com/posts/${slug}`).then(r => r.json());
@@ -724,9 +1193,14 @@ export default async function Page({
 
 **E. Fixing Unavailable APIs in "use cache"**
 
+When to use: Cached component tries to use `cookies()`, `headers()`, or `searchParams`
+
 ```diff
 // Option 1: Move dynamic API outside cache scope
++// DECISION: User data is cacheable but userId comes from cookies
++// Reading cookies outside cache scope, passing userId as prop
 export default async function Page() {
++ // Read cookies at request time (outside cache)
 + const cookieStore = await cookies();
 + const userId = cookieStore.get('userId');
 +
@@ -740,7 +1214,11 @@ export default async function Page() {
 
 - async function CachedContent() {
 + async function CachedContent({ userId }: { userId: string }) {
++ // CACHED: User data is cached per userId
++ // Multiple requests with same userId will share cache
   "use cache";
++ import { cacheLife } from 'next/cache';
++ cacheLife({ revalidate: 300 }); // 5 minutes
 -  const cookieStore = await cookies();
 -  const userId = cookieStore.get('userId');
 
@@ -751,30 +1229,41 @@ export default async function Page() {
 
 ```diff
 // Option 2: Use "use cache: private" for runtime prefetching
++// DECISION: User settings page can be prefetched with actual cookie values
++// Changes per user but can be rendered during navigation prefetch
 export default async function Page() {
 - "use cache";
 + "use cache: private";
 +
++ import { cacheLife } from 'next/cache';
++ cacheLife({ revalidate: 600 }); // 10 minutes
++
   const cookieStore = await cookies();
   const userId = cookieStore.get('userId');
 
-  // This can now be prefetched with actual cookie values
+  // This will be prefetched with actual cookie values during navigation
+  const settings = await fetch(`http://api.example.com/users/${userId}/settings`);
   return <div>{/* ... */}</div>;
 }
 ```
 
 **F. Fixing Route Segment Config Conflicts**
 
+When to use: Route has `export const dynamic`, `export const revalidate`, etc.
+
 ```diff
++// MIGRATION: Converting Route Segment Config to Cache Components pattern
 - export const dynamic = 'force-static';
 - export const revalidate = 3600;
 
++// DECISION: Marketing page content is shared and changes daily
++// Cached with 1-hour revalidation, matching previous Route Segment Config
 export default async function Page() {
 + "use cache";
 +
-+ import { unstable_cacheLife as cacheLife } from 'next/cache';
++ import { cacheLife } from 'next/cache';
 + cacheLife({
-+   revalidate: 3600,
++   revalidate: 3600,   // 1 hour (matches previous config)
 +   expire: Infinity,
 + });
 
@@ -783,32 +1272,73 @@ export default async function Page() {
 }
 ```
 
-**G. Adding cacheLife Profiles**
+**G. Adding cacheLife Profiles Based on Content Change Frequency**
+
+When to use: After determining content update frequency from Decision Guide
 
 ```typescript
-import { unstable_cacheLife as cacheLife } from 'next/cache';
+import { cacheLife } from 'next/cache';
 
-export default async function Page() {
+// Example 1: Frequently changing content (news, stock prices)
+// DECISION: News feed updates every few minutes
+// Short revalidation window with moderate expire time
+export default async function NewsPage() {
   "use cache";
 
   cacheLife({
-    revalidate: 900,    // 15 minutes - revalidate in background
-    expire: 3600,       // 1 hour - block on revalidation after this
+    revalidate: 60,     // 1 minute - check for updates frequently
+    expire: 300,        // 5 minutes - force fresh data after this
   });
 
-  const data = await fetch('http://api.example.com/data');
+  const news = await fetch('http://api.news.com/latest');
+  return <div>{/* ... */}</div>;
+}
+
+// Example 2: Occasionally changing content (blog, products)
+// DECISION: Product catalog updates a few times per day
+// Medium revalidation with longer expire
+export default async function ProductsPage() {
+  "use cache";
+
+  cacheLife({
+    revalidate: 3600,   // 1 hour - reasonable freshness
+    expire: 14400,      // 4 hours - acceptable staleness
+  });
+
+  const products = await db.products.findMany();
+  return <div>{/* ... */}</div>;
+}
+
+// Example 3: Rarely changing content (documentation, about pages)
+// DECISION: About page changes rarely, maybe once a month
+// Long revalidation, essentially static until manual revalidation
+export default async function AboutPage() {
+  "use cache";
+
+  cacheLife({
+    revalidate: 86400,  // 24 hours - very long cache
+    expire: Infinity,   // Never expire automatically
+  });
+
+  const content = await fetch('http://api.cms.com/about');
   return <div>{/* ... */}</div>;
 }
 ```
 
 **H. Using Cache Tags for On-Demand Revalidation**
 
-```typescript
-import { unstable_cacheTag as cacheTag } from 'next/cache';
+When to use: Content has clear update triggers (CMS publish, admin actions)
 
+```typescript
+import { cacheTag, cacheLife } from 'next/cache';
+
+// DECISION: Blog posts should update immediately when published
+// Using cacheTag for on-demand revalidation from CMS webhook
 export async function getPosts() {
   "use cache";
+  
   cacheTag('posts');
+  cacheLife({ revalidate: 3600, expire: Infinity });
 
   const res = await fetch('http://api.cms.com/posts');
   return res.json();
@@ -816,13 +1346,17 @@ export async function getPosts() {
 ```
 
 ```typescript
-// In server action or API route
+// In server action or API route (webhook from CMS)
 'use server';
 import { revalidateTag } from 'next/cache';
 
+// DECISION: When new post is published, immediately invalidate 'posts' cache
+// This triggers rebuild of all routes using the 'posts' tag
 export async function createPost(data) {
   await db.posts.create(data);
-  revalidateTag('posts'); // Rebuilds all routes using 'posts' tag
+  
+  // Invalidate all cached content tagged with 'posts'
+  revalidateTag('posts'); // Rebuilds blog list, RSS feed, etc.
 }
 ```
 
@@ -842,23 +1376,49 @@ export default function RootLayout({ children }) {
 ```
 
 **After Each Fix:**
-1. Save the file
-2. Wait for Fast Refresh to apply changes (dev server still running, no restart needed)
-3. Re-load the route in browser: playwright({ action: "navigate", url: "<base-url><route-path>" })
-4. Connect to MCP Endpoint: `<base-url>/_next/mcp` (using endpoint from Step 6)
-5. Call get_errors again via MCP to verify fix (collects from browser session)
-6. Verify error is resolved
-7. Move to next error
+
+1. **Review Your Decision:**
+   - Did you add a comment explaining why you chose cache vs dynamic?
+   - Did you add `cacheLife()` with appropriate times based on content change frequency?
+   - Did you add `cacheTag()` if there's a clear revalidation trigger?
+   - For dynamic content, did you explain why it needs to be per-request?
+
+2. **Save the file**
+   - Fast Refresh will automatically apply changes
+   - Dev server continues running (no restart needed)
+
+3. **Verify the fix:**
+   - Re-load the route in browser: `playwright({ action: "navigate", url: "<base-url><route-path>" })`
+   - Connect to MCP Endpoint: `<base-url>/_next/mcp` (using endpoint from Phase 3)
+   - Call `get_errors` again via MCP to verify fix (collects from browser session)
+   - Verify error is resolved
+
+4. **Validate the decision:**
+   - Does the cached content render correctly?
+   - If dynamic, does Suspense show appropriate loading state?
+   - Does the route respond quickly?
+
+5. **Move to next error**
+
+**Quality Checklist for Each Fix:**
+- ✅ Comment added explaining cache/dynamic decision
+- ✅ `cacheLife()` configured based on content change frequency (if cached)
+- ✅ `cacheTag()` added if content has clear update triggers (if cached)
+- ✅ Route loads without errors
+- ✅ Content displays correctly
+- ✅ Performance is acceptable
 
 **Continue until:**
 - All routes return 200 OK
-- get_errors returns no errors
+- `get_errors` returns no errors
 - No console warnings related to Cache Components
+- All fixes have explanatory comments
 
 **Important:**
 - The dev server should REMAIN RUNNING throughout all fixes
 - Fast Refresh automatically applies your changes
 - Do NOT restart the server unless it crashes
+- Every fix should include comments explaining the decision
 
 ## PHASE 6: Final Verification
 ────────────────────────────────────────

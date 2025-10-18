@@ -137,13 +137,18 @@ This prompt automates the complete Cache Components enablement workflow:
 - ✅ Verify MCP server is active and responding
 - ✅ Capture base URL and MCP endpoint for error detection
 
-**Error Detection (Phase 4):**
+**Error Detection (Phase 4 - Optional):**
 - ✅ Start Playwright browser and load every route using playwright tool
 - ✅ Collect errors from browser session using Next.js MCP `get_errors` tool
 - ✅ Categorize all Cache Components errors by type
 - ✅ Build comprehensive error list before fixing
+- ℹ️  Phase 4 can be skipped if proceeding directly to Phase 5 build-first approach
 
-**Automated Fixing (Phase 5):**
+**Automated Fixing (Phase 5 - Build-First Strategy):**
+- ✅ Run `<pkg-manager> run build` to identify all failing routes at once
+- ✅ Get explicit error messages for every issue in build output
+- ✅ Fix errors directly based on clear error messages from build
+- ✅ Or verify in dev server with `next dev` for interactive fixing with Fast Refresh
 - ✅ Fix blocking route errors (add Suspense boundaries or "use cache")
 - ✅ Fix dynamic value errors (add `await connection()`)
 - ✅ Fix route params errors (add `generateStaticParams`)
@@ -663,6 +668,11 @@ These options will cause build errors and MUST be migrated:
 - `revalidate: 3600` → Use `cacheLife({ revalidate: 3600 })`
 - `fetchCache: 'force-cache'` → Use `"use cache"`
 
+**Important:** When removing `export const dynamic`, replace it with a comment documenting the original static/dynamic mode:
+- `export const dynamic = 'force-static'` → Replace with: `// MIGRATED: Was force-static mode - now using "use cache"`
+- `export const dynamic = 'force-dynamic'` → Replace with: `// MIGRATED: Was force-dynamic mode - now using <Suspense>`
+- This preserves the original mode information for later verification
+
 Document all Route Segment Config locations now - you'll migrate them in Phase 5.
 
 **Step 6: Verify configuration changes**
@@ -679,10 +689,12 @@ After making changes, verify by reading the config file:
 **What's Next:**
 With configuration updated, Phase 3 will start the dev server and Phase 4 will detect any runtime errors that need fixing.
 
-## PHASE 3: Start Dev Server with MCP
+## PHASE 3: Start Dev Server with MCP (Optional)
 ────────────────────────────────────────
 
-**IMPORTANT: Only start the dev server ONCE. Do NOT restart it during this process.**
+**IMPORTANT: This phase is optional.** You can skip directly to Phase 5 (build-first approach) if you prefer to identify all errors upfront from the build output.
+
+**If using Phase 3/Phase 4 workflow:** Only start the dev server ONCE. Do NOT restart it during this process.
 
 ### Step 1: Start Dev Server (ONE TIME ONLY)
 
@@ -962,9 +974,37 @@ Systematically verify each route and collect errors:
 ────────────────────────────────────────
 
 **Prerequisites:**
-- ✅ Dev server is still running from Phase 3 (do NOT restart it)
 - ✅ Comprehensive error list collected from Phase 4
 - ✅ Fast Refresh will apply changes automatically (no restart needed)
+
+**NEW STRATEGY: Build-First Approach**
+
+This phase uses an optimized two-step verification strategy:
+
+**Step 1: Run Full Build to Identify All Failing Routes**
+```bash
+<pkg-manager> run build
+```
+
+This build identifies all routes with Cache Components errors at once, giving you a comprehensive view of what needs to be fixed:
+- Build output shows all failing routes
+- Error messages are explicit and clear
+- All missing Suspense boundaries/cache directives are identified
+- Stack traces point to exact locations needing fixes
+
+**Step 2: Use Dev Server for Interactive Verification & Fixing**
+```bash
+# Dev server may already be running from Phase 3
+# If not, start it:
+__NEXT_EXPERIMENTAL_MCP_SERVER=true <pkg-manager> dev
+```
+
+For each failing route:
+1. **If error is explicit from build logs:** Fix directly based on the error message
+2. **If error needs verification:** Start dev server, test the route, and fix interactively with Fast Refresh
+3. **Re-verify:** After fixing, either:
+   - Run build again to check that route
+   - Test in dev to verify with Fast Refresh
 
 **⚠️ MANDATORY: Load error-specific resources BEFORE fixing any errors**
 
@@ -1032,7 +1072,11 @@ For detailed code examples and patterns for each error type, refer to the knowle
 - B. Dynamic values → Use connection() or extract to separate component
 - C. Route params → Add generateStaticParams
 - D. Unavailable APIs in cache → Move outside cache scope or use "use cache: private"
-- E. Route Segment Config → Migrate to "use cache" + cacheLife
+- E. Route Segment Config → Migrate to "use cache" + cacheLife with documentation
+  - **When removing `export const dynamic`:** Replace with a comment documenting the original mode for later verification
+  - Example: If removing `export const dynamic = 'force-static'`, add comment: `// MIGRATED: Was force-static mode - now using "use cache"`
+  - Example: If removing `export const dynamic = 'force-dynamic'`, add comment: `// MIGRATED: Was force-dynamic mode - now using <Suspense>`
+  - This helps track what the original static/dynamic mode was for verification purposes
 - F. Caching strategies → Configure cacheLife() and cacheTag()
 
 **After Each Fix:**
@@ -1068,14 +1112,72 @@ For detailed code examples and patterns for each error type, refer to the knowle
 - ✅ Content displays correctly
 - ✅ Performance is acceptable
 
+**Handling Unclear Cases That Can't Be Resolved:**
+
+If after multiple attempts a fix continues to fail or the issue is unclear, leave a comment documenting the problem:
+
+```typescript
+// ⚠️ UNRESOLVED: Unable to determine caching strategy for this component
+// Issue: Third-party component [ComponentName] from [package] - internal implementation unclear
+// Error: [specific error that persists]
+// Recommendation: Review third-party documentation or consider alternative approach
+// TODO: Revisit this when [condition - e.g., package updates, documentation available]
+```
+
+**Common Unclear Cases:**
+- Third-party components with unknown/complex internal state management
+- Components using undocumented async patterns
+- External library integrations with unclear rendering behavior
+- Timing-dependent code that behaves differently in cache vs runtime
+
+**When to Leave This Comment:**
+1. You've tried multiple caching strategies (cache, Suspense, private cache)
+2. All attempts result in the same error or unexpected behavior
+3. The root cause is unclear (third-party code, complex state, etc.)
+4. You've verified the error isn't due to missing Suspense/cache directives
+5. The component works but you can't determine the appropriate caching mode
+
+**Example Scenarios:**
+```typescript
+// ⚠️ UNRESOLVED: Cannot determine caching strategy for PaymentGateway
+// Issue: Third-party payment component uses internal async provider pattern
+// Error: Blocks route regardless of Suspense boundary placement
+// Recommendation: Check payment provider's Cache Components compatibility docs
+// TODO: Revisit after upgrading to payment SDK v3.0+
+
+// ⚠️ UNRESOLVED: Analytics dashboard component timing issue
+// Issue: Component works in dev but different behavior in build prerender
+// Error: Cached value inconsistent between prerender and runtime
+// Recommendation: Investigate hydration mismatch, may need "use cache: private"
+// TODO: Profile in production build to understand timing behavior
+```
+
+This allows the codebase to be functional while clearly marking areas needing future investigation.
+
 **Continue until:**
 - All routes return 200 OK
 - `get_errors` returns no errors
 - No console warnings related to Cache Components
 - All fixes have explanatory comments
 
+**Verification Strategy After All Fixes:**
+
+Once all errors are fixed, choose the verification approach based on total route count:
+
+**If total routes < 8 (Small Project):**
+- ✅ Use `<pkg-manager> run build` to verify all fixes
+- Build verification is comprehensive and efficient for small projects
+- Provides detailed error output if any issues remain
+- Skips dev server verification (faster, no Fast Refresh needed)
+
+**If total routes >= 8 (Larger Project):**
+- ✅ Use dev server with `next dev` and Fast Refresh for interactive verification
+- Faster feedback during fixing iterations
+- Better for testing dynamic content behavior
+- Can verify routes progressively without full build
+
 **Important:**
-- The dev server should REMAIN RUNNING throughout all fixes
+- The dev server should REMAIN RUNNING throughout all fixes (if using dev verification)
 - Fast Refresh automatically applies your changes
 - Do NOT restart the server unless it crashes
 - Every fix should include comments explaining the decision
@@ -1113,14 +1215,24 @@ Run comprehensive checks:
    # (You can now safely stop it)
    ```
 
-3. **Build Test**
+3. **Build Test with Debug Prerender**
    ```bash
+   # First, attempt with debug-prerender flag if available
+   <pkg-manager> run build -- --debug-prerender
+   ```
+
+   If `--debug-prerender` is not supported:
+   ```bash
+   # Fallback to standard build
    <pkg-manager> run build
    ```
+
    Expected:
    - Build succeeds without errors
    - Build output shows cache status for each route
+   - With `--debug-prerender`: Detailed prerender diagnostics and cache analysis
    - Check for any build-time errors that didn't appear in dev
+   - All routes prerendered or marked as dynamic correctly
 
 4. **Dev Mode Test**
    ```bash
@@ -1349,9 +1461,12 @@ Cache Components is now fully enabled with:
 Begin Cache Components enablement:
 1. Start with Phase 1 pre-flight checks
 2. Enable Cache Components in config (Phase 2)
-3. Start dev server with MCP (Phase 3) - **START ONLY ONCE, DO NOT RESTART**
-4. Systematically verify each route and collect errors (Phase 4)
-5. Fix all errors automatically (Phase 5)
+3. Start dev server with MCP (Phase 3) - **START ONLY ONCE, DO NOT RESTART** (optional - may not be needed for Phase 5)
+4. Verify routes and collect errors (Phase 4) - **OPTIONAL, can skip and go directly to Phase 5**
+5. Fix all errors using build-first approach (Phase 5):
+   - Run `<pkg-manager> run build` to see all errors
+   - Fix based on explicit error messages
+   - Verify in dev with Fast Refresh if needed
 6. Run final verification (Phase 6)
 
 **Critical Rules:**

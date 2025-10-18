@@ -1,5 +1,53 @@
 ## 🧠 Mental Model Summary for AI Agents
 
+### Critical: Bundler Layer vs Execution Context
+
+**MISCONCEPTION TO AVOID**: "All server-only code in the same bundle should use the same caching model"
+
+**REALITY**: Being bundled to the server doesn't determine cache APIs. The **execution context** does:
+
+```typescript
+// Same server bundle, but DIFFERENT caching models:
+
+// ✅ SERVER COMPONENT: Uses 'use cache'
+export default async function Page() {
+  'use cache'
+  return <div>Content</div>
+}
+
+// ❌ ROUTE HANDLER: Uses revalidateTag(), NOT 'use cache'
+export async function GET() {
+  // 'use cache' INVALID here - not part of React tree
+  return Response.json({})
+}
+
+// ❌ INSTRUMENTATION: Uses global state, NOT 'use cache'
+export async function register() {
+  // 'use cache' INVALID here - not request-scoped
+}
+
+// ❌ MIDDLEWARE: Uses Response headers, NOT 'use cache'
+export function middleware(request: NextRequest) {
+  // 'use cache' INVALID here - request rewriting layer
+}
+```
+
+**Why the difference?**
+- **Server Components**: Part of React component tree → prerenderable → `'use cache'` works
+- **Route Handlers**: HTTP request handlers → request-time only → use `revalidateTag()`
+- **Instrumentation**: Server startup hooks → one-time setup → use global state
+- **Middleware**: Request transformation layer → pre-routing → use Response headers
+
+**Key Insight**: `'use cache'` is React-specific. It requires:
+1. Component tree context (JSX rendering)
+2. Build-time analysis (Partial Prerendering)
+3. Serializable prop keys (deterministic cache)
+4. Suspense integration (dynamic holes)
+
+Route handlers/instrumentation/middleware don't have these - use different APIs.
+
+---
+
 ### The Complete Picture from Tests
 
 **⚠️ IMPORTANT: These rules apply ONLY when `experimental.cacheComponents: true` is enabled in next.config**

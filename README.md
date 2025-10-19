@@ -138,7 +138,7 @@ Help me upgrade my Next.js app to version 16
 
 Your MCP client should provide guidance and tools for upgrading your Next.js application.
 
-If you're on **Next.js 16 beta or later** with `experimental.mcpServer` enabled, you can also try:
+If you're on **Next.js 16 or later** with `experimental.mcpServer` enabled, you can also try:
 
 ```
 What's the structure of my Next.js routes?
@@ -191,7 +191,7 @@ Callable tools for automating Next.js development workflows:
 
 ### `upgrade_nextjs_16` Tool
 
-Guides through upgrading Next.js to version 16 beta with automated codemod execution.
+Guides through upgrading Next.js to version 16 with automated codemod execution.
 
 **Capabilities:**
 - Runs official Next.js codemod automatically (requires clean git state)
@@ -311,5 +311,5 @@ To run the MCP server locally for development:
 
 ## License
 
-See LICENSE file for details.
+MIT License
 

@@ -1,11 +1,12 @@
 import type { GetPromptResult, Prompt } from "@modelcontextprotocol/sdk/types.js"
 import { readFileSync } from "fs"
 import { join } from "path"
+import { readBetaToStableGuide } from "../mcp-resources/nextjs-16-beta-to-stable.js"
 
 export const upgradeNextjs16Prompt: Prompt = {
   name: "upgrade-nextjs-16",
   description:
-    "Guide through upgrading Next.js to version 16 beta. CRITICAL: Runs the official codemod FIRST (requires clean git state) for automatic upgrades and fixes, then handles remaining issues manually. The codemod upgrades Next.js, React, and React DOM automatically. Covers async API changes, config moves, image defaults, parallel routes, and deprecations.",
+    "Guide through upgrading Next.js to version 16. CRITICAL: Runs the official codemod FIRST (requires clean git state) for automatic upgrades and fixes, then handles remaining issues manually. The codemod upgrades Next.js, React, and React DOM automatically. Covers async API changes, config moves, image defaults, parallel routes, and deprecations.",
   arguments: [
     {
       name: "project_path",
@@ -18,11 +19,14 @@ export const upgradeNextjs16Prompt: Prompt = {
 export function getUpgradeNextjs16Prompt(args?: Record<string, string>): GetPromptResult {
   const projectPath = args?.project_path || process.cwd()
 
-  // TEMPORARY: Set to false once Next.js 16 beta supports experimental.cacheComponents
-  const REQUIRES_CANARY_FOR_CACHE_COMPONENTS = true
+  // TEMPORARY: Set to false once Next.js 16 supports experimental.cacheComponents
+  const REQUIRES_CANARY_FOR_CACHE_COMPONENTS = false
 
   // Load critical rules (always embedded)
   const criticalRules = readFileSync(join(__dirname, "nextjs-16-critical-rules.md"), "utf-8")
+
+  // Load beta-to-stable migration guide (always embedded)
+  const betaToStableGuide = readBetaToStableGuide()
 
   // Load prompt template
   let promptTemplate = readFileSync(join(__dirname, "upgrade-nextjs-16-prompt.md"), "utf-8")
@@ -30,6 +34,7 @@ export function getUpgradeNextjs16Prompt(args?: Record<string, string>): GetProm
   // Replace sentinel values
   promptTemplate = promptTemplate.replace(/{{PROJECT_PATH}}/g, projectPath)
   promptTemplate = promptTemplate.replace(/{{CRITICAL_RULES}}/g, criticalRules)
+  promptTemplate = promptTemplate.replace(/{{BETA_TO_STABLE_GUIDE}}/g, betaToStableGuide)
 
   // Handle conditional blocks
   if (REQUIRES_CANARY_FOR_CACHE_COMPONENTS) {

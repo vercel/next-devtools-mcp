@@ -16,7 +16,7 @@ const upgradeNextjs16InputSchema = z.object({
 })
 
 export const upgradeNextjs16Tool = tool({
-  description: `Guide through upgrading Next.js to version 16 beta.
+  description: `Guide through upgrading Next.js to version 16.
 
 CRITICAL: Runs the official codemod FIRST (requires clean git state) for automatic upgrades and fixes, then handles remaining issues manually. The codemod upgrades Next.js, React, and React DOM automatically.
 

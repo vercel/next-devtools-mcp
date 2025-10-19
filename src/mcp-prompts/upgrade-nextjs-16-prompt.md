@@ -112,7 +112,7 @@ Run the official codemod to handle most changes automatically:
 # - Convert async params/searchParams automatically
 # - Update experimental config locations
 # - Fix other breaking changes
-<pkg-exec> @next/codemod@canary upgrade beta
+<pkg-exec> @next/codemod@canary upgrade latest
 ```
 
 **Note:** When prompted for options during codemod execution, select "yes" for all selections to apply all recommended changes.
@@ -153,7 +153,7 @@ If your project already uses `'use cache'` directives from Next.js 15 canary, yo
 <pkg-manager> add -D eslint-config-next@canary
 ```
 
-Otherwise, the beta version is recommended for most projects.
+Otherwise, the stable version is recommended for most projects.
 {{/IF_REQUIRES_CANARY}}
 
 ## PHASE 3: Analyze Remaining Issues
@@ -261,7 +261,15 @@ After the codemod runs, check for any remaining issues it might have missed:
    }
    ```
 
-**I. Edge Cases the Codemod May Miss**
+**I. Beta to Stable Migration (REQUIRED if upgrading from v16 beta)**
+
+   If you're upgrading from Next.js 16 **beta** to 16 **stable**, there are additional config migrations required:
+
+   {{BETA_TO_STABLE_GUIDE}}
+
+   **Key migration**: `experimental.cacheLife` must be moved to top-level `cacheLife`
+
+**J. Edge Cases the Codemod May Miss**
    Review these manually:
 
    - Complex async destructuring patterns
@@ -302,7 +310,7 @@ After the codemod runs, check for any remaining issues it might have missed:
    }
    ```
 
-**J. ViewTransition API Renamed (NOT handled by codemod)**
+**K. ViewTransition API Renamed (NOT handled by codemod)**
    Files: Search for imports of `unstable_ViewTransition` from React
    Action: Rename to `ViewTransition` (now stable in v16)
 
@@ -311,7 +319,7 @@ After the codemod runs, check for any remaining issues it might have missed:
    + import { ViewTransition } from 'react'
    ```
 
-**K. revalidateTag API Changes (Deprecation - NOT handled by codemod)**
+**L. revalidateTag API Changes (Deprecation - NOT handled by codemod)**
    Files: Search for `revalidateTag(` calls
    Check: All revalidateTag calls now require a profile parameter
 
@@ -398,7 +406,7 @@ Report findings in this format:
 [ ] Git working directory is clean (no uncommitted changes)
 
 ## Phase 2: Codemod Execution
-- [ ] Ran codemod: `<pkg-exec> @next/codemod@canary upgrade beta`
+- [ ] Ran codemod: `<pkg-exec> @next/codemod@canary upgrade latest`
 - [ ] Selected "yes" for all codemod prompts
 - [ ] Codemod upgraded Next.js, React, and React DOM to latest
 - [ ] Codemod upgraded React type definitions to latest
@@ -419,6 +427,7 @@ Issues the codemod couldn't handle:
 [ ] next.config.js: turbopackPersistentCachingForDev → turbopackFileSystemCacheForDev
 [ ] next.config.js: Remove eslint config object
 [ ] next.config.js: Move serverComponentsExternalPackages out of experimental
+[ ] next.config.js: Move cacheLife out of experimental (beta → stable migration)
 [ ] revalidateTag API changes
 [ ] Edge cases in async APIs
 [ ] Deprecated features to update

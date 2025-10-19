@@ -27,6 +27,11 @@ import {
   readFundamentalsSection,
   isNextjsFundamentalsUri,
 } from "./mcp-resources/nextjs-fundamentals-knowledge.js"
+import {
+  getBetaToStableResource,
+  readBetaToStableGuide,
+  isBetaToStableUri,
+} from "./mcp-resources/nextjs-16-beta-to-stable.js"
 
 async function main() {
   // Create MCP server instance
@@ -130,7 +135,8 @@ async function main() {
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     const nextjs16Resources = getNextjs16KnowledgeResources()
     const fundamentalsResources = getNextjsFundamentalsResources()
-    const resources = [...nextjs16Resources, ...fundamentalsResources]
+    const betaToStableResource = getBetaToStableResource()
+    const resources = [...nextjs16Resources, ...fundamentalsResources, betaToStableResource]
 
     return { resources }
   })
@@ -146,6 +152,8 @@ async function main() {
         content = readKnowledgeSection(uri)
       } else if (isNextjsFundamentalsUri(uri)) {
         content = readFundamentalsSection(uri)
+      } else if (isBetaToStableUri(uri)) {
+        content = readBetaToStableGuide()
       } else {
         throw new Error(`Unknown resource URI: ${uri}`)
       }

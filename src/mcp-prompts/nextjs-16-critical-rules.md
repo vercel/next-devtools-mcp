@@ -226,13 +226,15 @@ export default {
 If you have `@modal`, `@auth`, etc. folders (any `@` folder except `@children`):
 
 ```typescript
-// MUST create: app/@modal/default.tsx
+// MUST create: app/@modal/default.tsx (only for non-leaf segments with routable children)
 export default function Default() {
   return null
 }
 ```
 
-**Note:** `@children` is a special implicit slot and does NOT require a `default.js` file.
+**Note:** 
+- `@children` is a special implicit slot and does NOT require a `default.js` file.
+- `default.tsx` is only required for non-leaf segments with routable children, not for all parallel route folders.
 
 ## 🛡️ Image Security
 
@@ -316,6 +318,8 @@ If you're using `@types/react` and `@types/react-dom`, upgrade them to the lates
 - [ ] `headers().get()` → `(await headers()).get()`
 - [ ] `draftMode().isEnabled` → `(await draftMode()).isEnabled`
 - [ ] `revalidateTag(tag)` → `updateTag(tag, 'max')` or `revalidateTag(tag, 'max')`
+- [ ] Add `default.tsx` for parallel route `@` folders with non-leaf segments (only when needed for routable children)
+- [ ] Update `unstable_ViewTransition` → `ViewTransition` and remove `viewTransition` flag
 
 **Dependencies:**
 - [ ] Upgrade `@types/react` and `@types/react-dom` to latest (if using TypeScript)
@@ -324,8 +328,6 @@ If you're using `@types/react` and `@types/react-dom`, upgrade them to the lates
 - [ ] Rename `turbopackPersistentCachingForDev` → `turbopackFileSystemCacheForDev`
 - [ ] Remove `eslint` config object (move to .eslintrc.json or eslint.config.js)
 - [ ] Move `serverComponentsExternalPackages` out of `experimental` to top-level
-- [ ] Add `default.tsx` for all parallel route `@` folders
-- [ ] Update `unstable_ViewTransition` → `ViewTransition` and remove `viewTransition` flag
 - [ ] Review image config defaults (if using local images with query strings)
 
 ---

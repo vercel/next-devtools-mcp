@@ -196,7 +196,7 @@ import { unstable_ViewTransition } from 'react'
 import { ViewTransition } from 'react'
 ```
 
-**Note:** The `viewTransition` flag is no longer needed when using the stable `ViewTransition` API. Remove it from your Next.js config:
+**Note:** The `experimental.viewTransition` flag in next.config is no longer needed when using the stable `ViewTransition` API. Remove it from your Next.js config:
 
 ```typescript
 // ❌ BEFORE - Remove this flag
@@ -293,14 +293,7 @@ export default async function Page(props) {
 If you're using `@types/react` and `@types/react-dom`, upgrade them to the latest versions:
 
 ```bash
-# npm
-npm install --save-dev @types/react@latest @types/react-dom@latest
-
-# yarn
-yarn add -D @types/react@latest @types/react-dom@latest
-
-# pnpm
-pnpm add -D @types/react@latest @types/react-dom@latest
+<package-manager> add -D @types/react@latest @types/react-dom@latest
 ```
 
 **Why this matters:**

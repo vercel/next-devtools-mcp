@@ -146,9 +146,14 @@ What's the structure of my Next.js routes?
 
 Claude Code will query your running dev server for actual route information and component diagnostics.
 
-## Resources
+## MCP Resources
 
-Next.js 16 knowledge base resources are automatically available to your AI assistant. These resources provide comprehensive documentation split into focused sections for efficient context management:
+Next.js 16 knowledge base resources are automatically available to your AI assistant. 
+
+These resources provide comprehensive documentation split into focused sections for efficient context management:
+
+<details>
+<summary>📚 Available Knowledge Base Resources (click to expand)</summary>
 
 - **`nextjs16://knowledge/overview`** - Overview and critical errors AI agents make
 - **`nextjs16://knowledge/core-mechanics`** - Fundamental paradigm shift and how cacheComponents works
@@ -163,15 +168,22 @@ Next.js 16 knowledge base resources are automatically available to your AI assis
 - **`nextjs16://knowledge/test-patterns`** - E2E patterns from 125+ test fixtures
 - **`nextjs16://knowledge/reference`** - API reference, checklists, and comprehensive nuances
 
+</details>
+
 Resources are loaded on-demand by your AI assistant, providing targeted knowledge without overwhelming the context window.
 
-## Prompts
+## MCP Prompts
 
 Pre-configured prompts to help with common Next.js development tasks:
+
+<details>
+<summary>💡 Available Prompts (click to expand)</summary>
 
 - **`upgrade-nextjs-16`** - Guide for upgrading to Next.js 16
 - **`enable-cache-components`** - Enable caching for React components
 - **`preload-nextjs-16-knowledge`** - Load the complete Next.js 16 knowledge base into context (use resources for targeted sections instead)
+
+</details>
 
 ## MCP Tools
 

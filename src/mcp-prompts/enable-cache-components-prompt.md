@@ -193,15 +193,15 @@ Use these questions to guide your decision:
 **Question 2: "How often does this content change?"**
 - **Rarely (days/weeks):** Perfect for `"use cache"` with long `cacheLife`
   - Examples: Marketing pages, about page, documentation
-  - Approach: `cacheLife({ revalidate: 86400, expire: Infinity })` // 24 hours
+  - Approach: `cacheLife('days')` or `cacheLife('weeks')`
   
 - **Occasionally (hours):** Good for `"use cache"` with medium `cacheLife`
   - Examples: Blog posts, product catalogs, site settings
-  - Approach: `cacheLife({ revalidate: 3600, expire: 7200 })` // 1-2 hours
+  - Approach: `cacheLife('hours')`
   
 - **Frequently (minutes):** Consider `"use cache"` with short `cacheLife`
   - Examples: News feeds, stock prices, leaderboards
-  - Approach: `cacheLife({ revalidate: 60, expire: 300 })` // 1-5 minutes
+  - Approach: `cacheLife('minutes')`
   
 - **Constantly (seconds/per-request):** Use Suspense (don't cache)
   - Examples: User authentication state, shopping cart, notifications
@@ -227,10 +227,7 @@ Based on your answers, choose one of these approaches:
 export default async function Page() {
   "use cache";
   
-  cacheLife({
-    revalidate: 3600,  // Revalidate in background after 1 hour
-    expire: 86400,     // Force revalidation after 24 hours
-  });
+  cacheLife('hours'); // Revalidates every hour, expires after 1 day
   cacheTag('blog-posts'); // Enable on-demand revalidation
   
   const posts = await fetch('http://api.cms.com/posts');
@@ -273,7 +270,7 @@ export default async function Page() {
 
 async function CachedHeader() {
   "use cache";
-  cacheLife({ revalidate: 3600 });
+  cacheLife('hours'); // Revalidates every hour
   cacheTag('site-settings');
   
   // Static: Same for all users, changes infrequently
@@ -315,7 +312,7 @@ When you add `"use cache"`:
 // Can be manually revalidated via 'blog-posts' tag when content is published
 export default async function Page() {
   "use cache";
-  cacheLife({ revalidate: 3600, expire: 86400 });
+  cacheLife('hours'); // Revalidates every hour, expires after 1 day
   cacheTag('blog-posts');
   // ...
 }
@@ -442,7 +439,7 @@ Then use this heuristic for simple cases:
 // Revalidates daily to ensure correct year after New Year
 export default async function Footer() {
   "use cache";
-  cacheLife({ revalidate: 86400 }); // 24 hours
+  cacheLife('days'); // Revalidates daily, suitable for yearly content
   
   const year = new Date().getFullYear();
   return <footer>© {year} Company Name</footer>;
@@ -457,7 +454,7 @@ async function Footer() {
   // HUMAN INPUT: Acceptable if year shows stale for a few hours after New Year
   // TODO: Consider adding cacheLife() to control revalidation timing:
   //   import { cacheLife } from 'next/cache'
-  //   cacheLife({ revalidate: 3600 })  // Hourly revalidation
+  //   cacheLife('hours')  // Revalidates every hour
   
   const year = new Date().getFullYear();
   return <footer>© {year} Company Name</footer>;
@@ -665,7 +662,7 @@ Search for existing Route Segment Config exports in your routes:
 These options will cause build errors and MUST be migrated:
 - `dynamic: 'force-static'` → Use `"use cache"` directive
 - `dynamic: 'force-dynamic'` → Use Suspense boundary
-- `revalidate: 3600` → Use `cacheLife({ revalidate: 3600 })`
+- `revalidate: 3600` → Use `cacheLife('hours')` or custom profile
 - `fetchCache: 'force-cache'` → Use `"use cache"`
 
 **Important:** When removing `export const dynamic`, replace it with a comment documenting the original static/dynamic mode:
@@ -1056,7 +1053,7 @@ For each error, before applying a fix:
 
 5. **Implement:** Apply the fix with proper configuration
    - Add `cacheLife()` based on content change frequency
-   - Add `cacheTag()` if on-demand revalidation is needed
+   - Add `cacheTag()` if there's a clear revalidation trigger
    - Add descriptive comments with human decisions noted
 
 Fix errors systematically based on error type. For code examples and detailed patterns, refer to the loaded knowledge resources above.
@@ -1078,6 +1075,310 @@ For detailed code examples and patterns for each error type, refer to the knowle
   - Example: If removing `export const dynamic = 'force-dynamic'`, add comment: `// MIGRATED: Was force-dynamic mode - now using <Suspense>`
   - This helps track what the original static/dynamic mode was for verification purposes
 - F. Caching strategies → Configure cacheLife() and cacheTag()
+
+### Importing and Commenting cacheLife() and cacheTag() - Let Users Decide
+
+**IMPORTANT: Always Include Imports with Decision Comments**
+
+When adding `"use cache"` to any component or function, follow this template pattern:
+
+```typescript
+// ⚠️ CACHING STRATEGY DECISION NEEDED:
+// This component uses "use cache" - decide on revalidation strategy
+// 
+// Uncomment ONLY ONE of the following strategies based on your needs:
+
+// Option A: Time-based revalidation (most common)
+// import { cacheLife } from 'next/cache';
+// cacheLife('hours');  // Revalidates every hour, expires after 1 day
+
+// Option B: On-demand tag-based revalidation
+// import { cacheTag } from 'next/cache';
+// cacheTag('resource-name');  // Tag for manual revalidation via updateTag/revalidateTag
+
+// Option C: Long-term caching (use sparingly)
+// import { cacheLife } from 'next/cache';
+// cacheLife('max');  // Revalidates every 30 days, cached for 1 year
+
+// Option D: Short-lived cache (frequently updated content)
+// import { cacheLife } from 'next/cache';
+// cacheLife('minutes');  // Revalidates every minute, expires after 1 hour
+
+// Option E: Custom inline profile (advanced)
+// import { cacheLife } from 'next/cache';
+// cacheLife({ 
+//   stale: 300,      // Client caches for 5 minutes
+//   revalidate: 3600,  // Revalidates every hour
+//   expire: 86400      // Expires after 24 hours
+// });
+
+export default async function Page() {
+  "use cache";
+  // User should uncomment and configure ONE of the cacheLife/cacheTag options above
+  
+  const data = await fetch('...');
+  return <div>{data}</div>;
+}
+```
+
+**Why This Matters:**
+
+1. **User-Driven Decisions:** Each team's caching needs are different. Don't guess - let the developer decide
+2. **Explicit Documentation:** The comments make the decision point obvious and unavoidable
+3. **Clear Options:** All valid strategies are present and documented
+4. **Easy to Update:** When requirements change, users can quickly update the caching strategy
+5. **No Silent Defaults:** If developer forgets to configure, they'll see the commented imports as a reminder
+
+**Detailed Guidance for Each Strategy:**
+
+**Strategy A: Time-Based Revalidation (Recommended for most cases)**
+```typescript
+// DECISION: Blog posts change daily, cached for speed
+// Using 'hours' profile: revalidates every hour, expires after 1 day
+// Uncomment the import below AND the cacheLife call in the function:
+// import { cacheLife } from 'next/cache';
+
+export default async function BlogPost() {
+  "use cache";
+  
+  // Uncomment the line below to enable time-based revalidation:
+  // cacheLife('hours');
+  
+  const post = await fetchFromCMS();
+  return <article>{post}</article>;
+}
+```
+**When to use:**
+- Content that changes on a predictable schedule
+- User-facing pages that can show slightly stale data
+- High-traffic routes that need caching performance
+
+**Strategy B: Tag-Based Revalidation (For event-triggered updates)**
+```typescript
+// DECISION: Product details cached, but revalidate on inventory changes
+// Use cacheTag to manually trigger revalidation when product updates
+// Uncomment the import below AND the cacheTag call in the function:
+// import { cacheTag } from 'next/cache';
+
+export default async function ProductPage() {
+  "use cache";
+  
+  // Uncomment the line below to enable tag-based revalidation:
+  // cacheTag('products', `product-${id}`);
+  
+  const product = await fetchProduct(id);
+  return <ProductDisplay product={product} />;
+}
+```
+**When to use:**
+- Content that updates unpredictably (admin actions)
+- E-commerce products with inventory changes
+- Content managed in CMS with manual publish events
+- Multiple related resources that revalidate together
+
+**Strategy C: Long-Term Caching (Use Sparingly)**
+```typescript
+// ⚠️ DECISION: Content rarely changes (e.g., archived pages, historical data)
+// Using 'max' profile: revalidates every 30 days, cached for 1 year
+// Uncomment the import below AND the cacheLife call in the function:
+// import { cacheLife } from 'next/cache';
+
+export default async function StaticContent() {
+  "use cache";
+  
+  // Uncomment the line below for long-term caching:
+  // cacheLife('max');
+  
+  const content = await fetchArchive();
+  return <Archive content={content} />;
+}
+```
+**When to use:**
+- Truly immutable content (historical data, archived pages)
+- Reference content that never changes
+- Static files rendered as components
+
+**Strategy D: Short-Lived Cache (For frequently updating content)**
+```typescript
+// DECISION: Metrics update frequently, need low revalidation time
+// Using 'minutes' profile: revalidates every minute, expires after 1 hour
+// Uncomment the import below AND the cacheLife call in the function:
+// import { cacheLife } from 'next/cache';
+
+export default async function RealtimeMetrics() {
+  "use cache";
+  
+  // Uncomment the line below to enable short-lived caching:
+  // cacheLife('minutes');
+  
+  const metrics = await fetchMetrics();
+  return <Dashboard metrics={metrics} />;
+}
+```
+**When to use:**
+- Dashboards and real-time data
+- Leaderboards and rankings
+- Stock prices and live data
+- Activity feeds
+
+**When to Use Multiple Tags:**
+```typescript
+// DECISION: Cache user-specific dashboard with multiple revalidation triggers
+// Revalidate on: user profile changes, new comments, new notifications
+// Uncomment the import below AND the cacheTag calls in the function:
+// import { cacheTag } from 'next/cache';
+
+export default async function UserDashboard({ userId }: Props) {
+  "use cache";
+  
+  // Uncomment the lines below to enable multi-tag revalidation:
+  // cacheTag('user-dashboard', `user-${userId}`);
+  // cacheTag('user-profile', `user-${userId}`);
+  // cacheTag('user-comments', `user-${userId}`);
+  // cacheTag('user-notifications', `user-${userId}`);
+  
+  const dashboard = await buildDashboard(userId);
+  return <Dashboard data={dashboard} />;
+}
+```
+
+**Migration Checklist - cacheLife/cacheTag:**
+
+For EVERY component/function with `"use cache"`:
+
+- [ ] **Review imports:** Are `cacheLife` and/or `cacheTag` imports commented but visible?
+- [ ] **User decision:** Has someone decided which revalidation strategy to use?
+- [ ] **Configuration:** Is the chosen strategy uncommented and configured?
+- [ ] **Documentation:** Does the code comment explain WHY this strategy was chosen?
+- [ ] **Testing:** Have you verified the cache behavior matches expectations?
+
+**Red Flags - cacheLife/cacheTag Issues:**
+
+- ❌ **`"use cache"` without any cacheLife/cacheTag:** Will cache forever by default - decide intentionally
+- ❌ **cacheLife configured but no comment:** Future developers won't know why this value was chosen
+- ❌ **Multiple conflicting cacheTag calls:** May cause unexpected revalidation behavior
+- ❌ **cacheTag on non-revalidatable routes:** Tag-based revalidation won't work on static routes
+- ❌ **Very short revalidation times:** (< 30 seconds) - Consider if caching helps performance at all
+
+### Special Case: Handling `new Date()` and `Math.random()` in Cache Components
+
+When migrating to Cache Components, you'll frequently encounter `new Date()` and `Math.random()` usage. These require explicit handling because:
+
+- **Problem:** These return different values on every call
+- **In Static Rendering:** They're captured at build time and stay the same across all requests
+- **In Cache Components:** They create ambiguity - should the value be frozen at cache time or fresh per-request?
+
+**Decision Framework for `new Date()` / `Math.random()`:**
+
+When you encounter these patterns, ask: **"Should this value be captured at cache time, or fresh per-request?"**
+
+**Option 1: Fresh Per-Request (Recommended for most cases)**
+```typescript
+// ⚠️ Requires making component dynamic
+// Use this for: timestamps, random IDs, request-specific values
+
+export default async function Page() {
+  "use cache: private"; // Always fresh, never cached
+  const timestamp = new Date().toISOString(); // Fresh on every render
+  return <div>Generated at: {timestamp}</div>;
+}
+```
+
+**Option 2: Captured at Cache Time (With Awareness)**
+```typescript
+// ✅ Value is frozen when component is cached
+// Use this for: "createdAt" timestamps, random seed values that should be stable
+// MUST document the tradeoff
+
+export default async function Page() {
+  "use cache";
+  cacheLife('days'); // Revalidates daily, timestamp refreshes once per day
+  
+  // ⚠️ CACHE DECISION: This timestamp is frozen at cache time
+  // It will stay the same for all users for 24 hours
+  // After cacheLife revalidation, a new timestamp is generated
+  const generatedAt = new Date().toISOString();
+  
+  return <div>Generated at: {generatedAt}</div>;
+}
+```
+
+**Option 3: Extract to Separate Dynamic Component**
+```typescript
+// ✅ Best for mixed static + dynamic content
+// Cache the static part, render dynamic part separately
+
+export default async function Page() {
+  "use cache"; // Page content cached
+  cacheLife('days'); // Revalidates daily for static content
+  
+  const staticContent = <MainContent />; // Cached
+  
+  return (
+    <div>
+      {staticContent}
+      <Suspense fallback={<Spinner />}>
+        <DynamicTimestamp /> {/* Fresh per-request */}
+      </Suspense>
+    </div>
+  );
+}
+
+async function DynamicTimestamp() {
+  "use cache: private"; // Always fresh
+  const timestamp = new Date().toISOString();
+  return <p>Rendered at: {timestamp}</p>;
+}
+```
+
+**Migration Checklist for Date/Random Values:**
+
+When you encounter `new Date()` or `Math.random()`:
+
+1. **Identify the usage:**
+   - Is it used in a cached component?
+   - Is it used in multiple components?
+   - What is the intended behavior?
+
+2. **Add a comment explaining your decision:**
+   ```typescript
+   // DECISION: Timestamp should be fresh for user authentication
+   // Strategy: Using "use cache: private" for always-fresh rendering
+   const userId = Math.random(); // Fresh random ID per request
+   ```
+
+3. **Choose your approach:**
+   - [ ] Keep in `"use cache: private"` - Always fresh (recommended)
+   - [ ] Keep in `"use cache"` - Frozen at cache time (document why)
+   - [ ] Extract to separate dynamic component - Mixed strategy
+
+4. **Document the behavior:**
+   ```typescript
+   // ⚠️ CACHE TRADEOFF: This random value is generated once per cache revalidation
+   // All users see the same value until cache expires (revalidate: 3600)
+   const sessionId = Math.random();
+   ```
+
+5. **Test the behavior:**
+   - In dev mode: Check that values refresh/stay same as expected
+   - In build mode: Verify prerendered pages show consistent values
+   - After revalidation: Confirm new values are generated
+
+**Common Patterns:**
+
+| Pattern | Behavior | Fix |
+|---------|----------|-----|
+| `new Date()` in cached component (timestamp) | Frozen at cache time | Add comment explaining tradeoff, or extract to `"use cache: private"` |
+| `Math.random()` for IDs | Same ID for all users/requests until cache revalidates | Use `"use cache: private"` if ID should be unique per user/request |
+| `new Date()` in SSR server function | Captured at build time, frozen forever | Use `await connection()` to mark as dynamic, or move to `"use cache: private"` |
+| `Math.random()` in static page | Same number on every visit | Intentional or bug? Add comment explaining |
+
+**Red Flags - These Require Explicit Handling:**
+
+- ❌ **Using current time for cache keys:** Use `cacheTag()` for invalidation instead of relying on timestamps
+- ❌ **Expecting different random values per user:** Use `"use cache: private"` to ensure per-request freshness
+- ❌ **Seed-based random without documentation:** Add comments explaining why the seed matters
+- ❌ **Comparing timestamps across cache boundaries:** Document the expected behavior explicitly
 
 **After Each Fix:**
 
@@ -1368,7 +1669,7 @@ Report findings in this format:
 
 ### E. Route Segment Config Migrations: [count]
 - [file path]: Removed export const dynamic = 'force-static', replaced with "use cache"
-- [file path]: Removed export const revalidate = 3600, replaced with cacheLife({ revalidate: 3600 })
+- [file path]: Removed export const revalidate = 3600, replaced with cacheLife('hours')
 - [file path]: Removed export const fetchCache, replaced with "use cache"
 - ...
 
@@ -1378,9 +1679,9 @@ Report findings in this format:
 - ...
 
 ### G. cacheLife Profiles Configured: [count]
-- [file path]: Added cacheLife({ revalidate: 900, expire: 3600 })
+- [file path]: Added cacheLife('minutes') for frequently updating content
 - [file path]: Added cacheLife('max') for long-lived content
-- [file path]: Added cacheLife('hours') for frequently changing content
+- [file path]: Added cacheLife('hours') for hourly updates
 - ...
 
 ### Summary of All Code Changes:

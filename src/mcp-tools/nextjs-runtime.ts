@@ -12,13 +12,14 @@ const nextjsRuntimeInputSchema = z.object({
     .enum(["discover_servers", "list_tools", "call_tool"])
     .describe(
       "Action to perform:\n" +
-      "- 'discover_servers': Find and list all running Next.js dev servers (use for queries about 'how many', 'show all', 'list', 'running servers')\n" +
-      "- 'list_tools': Show available MCP tools/functions from a specific Next.js server (use after discovering servers)\n" +
-      "- 'call_tool': Execute a specific Next.js runtime tool (use to interact with Next.js internals)"
+        "- 'discover_servers': Find and list all running Next.js dev servers (use for queries about 'how many', 'show all', 'list', 'running servers')\n" +
+        "- 'list_tools': Show available MCP tools/functions from a specific Next.js server (use after discovering servers)\n" +
+        "- 'call_tool': Execute a specific Next.js runtime tool (use to interact with Next.js internals)"
     ),
 
   port: z
-    .number()
+    .union([z.string(), z.number()])
+    .transform((val) => (typeof val === "string" ? parseInt(val, 10) : val))
     .optional()
     .describe(
       "Port number of the Next.js dev server. If not provided, will attempt to auto-discover. Required for 'list_tools' and 'call_tool' actions."
@@ -111,8 +112,8 @@ If the MCP endpoint is not available:
           if (servers.length === 0) {
             return JSON.stringify({
               success: false,
-              message: verifyMCP 
-                ? "No running Next.js dev servers with MCP enabled found" 
+              message: verifyMCP
+                ? "No running Next.js dev servers with MCP enabled found"
                 : "No running Next.js dev servers found",
               hint: "For Next.js < 16: Start with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true. For Next.js >= 16: MCP is enabled by default.",
               count: 0,
@@ -130,9 +131,13 @@ If the MCP endpoint is not available:
               mcpEndpoint: `http://localhost:${s.port}/_next/mcp`,
             })),
             message: verifyMCP
-              ? `Found ${servers.length} Next.js server${servers.length === 1 ? '' : 's'} running with MCP support`
-              : `Found ${servers.length} Next.js server${servers.length === 1 ? '' : 's'} running (MCP verification skipped)`,
-            summary: servers.map((s) => `Server on port ${s.port} (PID: ${s.pid})`).join('\n'),
+              ? `Found ${servers.length} Next.js server${
+                  servers.length === 1 ? "" : "s"
+                } running with MCP support`
+              : `Found ${servers.length} Next.js server${
+                  servers.length === 1 ? "" : "s"
+                } running (MCP verification skipped)`,
+            summary: servers.map((s) => `Server on port ${s.port} (PID: ${s.pid})`).join("\n"),
           })
         }
 

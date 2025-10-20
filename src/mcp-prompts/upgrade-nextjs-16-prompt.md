@@ -134,8 +134,14 @@ Run the official codemod to handle most changes automatically:
    ```bash
    <pkg-manager> add -D typescript@latest
    ```
+3. **Verify the upgrade by running a build:**
+   ```bash
+   <pkg-manager> run build
+   # If this succeeds, the automated upgrade is complete
+   # If it fails, proceed to Phase 3 to identify and fix remaining issues
+   ```
 
-**Wait for codemod to complete before proceeding to Phase 3**
+**Wait for codemod to complete and verify the build before proceeding to Phase 3**
 
 {{IF_REQUIRES_CANARY}}
 **⚠️ TEMPORARY: Upgrade to Canary (Optional for Advanced Caching)**
@@ -369,33 +375,6 @@ Based on Phase 3 analysis, apply only the necessary manual fixes:
    +   const slug = params.slug
    ```
 
-## PHASE 5: Test & Verify
-────────────────────────────────────────
-Run tests:
-
-1. **Dev Server**
-   ```bash
-   __NEXT_EXPERIMENTAL_MCP_SERVER=true <pkg-manager> dev
-   # Check for warnings/errors in console
-   ```
-
-2. **Build**
-   ```bash
-   <pkg-manager> run build
-   # Should succeed without errors
-   ```
-
-3. **Production Test**
-   ```bash
-   <pkg-manager> start
-   # Test all routes
-   ```
-
-4. **Check for Warnings**
-   - Image component deprecation warnings
-   - Runtime API warnings
-   - Any other console warnings
-
 ## OUTPUT FORMAT
 ────────────────────────────────────────
 Report findings in this format:
@@ -430,6 +409,7 @@ Report findings in this format:
 {{/IF_REQUIRES_CANARY}}
 - [ ] TypeScript upgraded if needed: `<pkg-manager> add -D typescript@latest`
 - [ ] Reviewed git diff for codemod changes
+- [ ] **Verified build: `<pkg-manager> run build` (if this passes, upgrade is complete!)**
 
 ## Phase 3: Issues Requiring Manual Fixes
 Issues the codemod couldn't handle:
@@ -450,14 +430,14 @@ Issues the codemod couldn't handle:
 
 ## Phase 4: Manual Changes Applied
 - [List of manual fixes made]
+- [ ] **Final build verification: `<pkg-manager> run build` (must succeed)**
 
-## Phase 5: Testing Results
-- [ ] Dev server runs
-- [ ] Build succeeds
-- [ ] No runtime errors
+## Completion Status
+- [ ] Upgrade complete - build succeeds without errors
+- [ ] All manual fixes applied (if any were needed)
 
 ## Next Steps
-- [What to do next]
+- [What to do next, e.g., commit changes, test in staging, etc.]
 ```
 
 # START HERE
@@ -465,6 +445,7 @@ Begin migration:
 1. **FIRST: Check if this is a monorepo** - If yes, navigate to each Next.js app directory and run the workflow there (NOT at monorepo root)
 2. Start with Phase 1 pre-flight checks (ensure clean git state)
 3. Run the codemod in Phase 2 (this handles most changes automatically)
-4. Only after codemod completes, analyze and fix remaining issues
+4. **Verify with build** - If `<pkg-manager> run build` succeeds, you're done!
+5. Only if build fails, proceed to Phase 3 and Phase 4 to fix remaining issues
 
 **⚠️ MONOREPO USERS:** If you're in a monorepo, you MUST be in the specific Next.js app directory (e.g., `apps/web/`) before starting. The codemod will fail if run from the monorepo root.

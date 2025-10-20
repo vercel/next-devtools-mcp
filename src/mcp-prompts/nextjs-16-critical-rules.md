@@ -196,6 +196,22 @@ import { unstable_ViewTransition } from 'react'
 import { ViewTransition } from 'react'
 ```
 
+**Note:** The `viewTransition` flag is no longer needed when using the stable `ViewTransition` API. Remove it from your Next.js config:
+
+```typescript
+// ❌ BEFORE - Remove this flag
+export default {
+  experimental: {
+    viewTransition: true,
+  },
+}
+
+// ✅ AFTER - No flag needed
+export default {
+  // viewTransition flag removed
+}
+```
+
 ### Middleware Deprecation
 ```typescript
 // ⚠️ DEPRECATED (still works, warning only)
@@ -270,6 +286,28 @@ export default async function Page(props) {
 }
 ```
 
+## 📦 Dependencies
+
+### TypeScript Type Definitions (REQUIRED if using TypeScript)
+
+If you're using `@types/react` and `@types/react-dom`, upgrade them to the latest versions:
+
+```bash
+# npm
+npm install --save-dev @types/react@latest @types/react-dom@latest
+
+# yarn
+yarn add -D @types/react@latest @types/react-dom@latest
+
+# pnpm
+pnpm add -D @types/react@latest @types/react-dom@latest
+```
+
+**Why this matters:**
+- Next.js 16 requires React 19+ type definitions
+- Older `@types/react` versions will cause type errors with async components and request APIs
+- The latest types include proper Promise types for `params` and `searchParams`
+
 ## 📝 Quick Checklist
 
 **For every file with these patterns, make it async and await:**
@@ -286,12 +324,15 @@ export default async function Page(props) {
 - [ ] `draftMode().isEnabled` → `(await draftMode()).isEnabled`
 - [ ] `revalidateTag(tag)` → `updateTag(tag, 'max')` or `revalidateTag(tag, 'max')`
 
+**Dependencies:**
+- [ ] Upgrade `@types/react` and `@types/react-dom` to latest (if using TypeScript)
+
 **Config changes in next.config.js:**
 - [ ] Rename `turbopackPersistentCachingForDev` → `turbopackFileSystemCacheForDev`
 - [ ] Remove `eslint` config object (move to .eslintrc.json or eslint.config.js)
 - [ ] Move `serverComponentsExternalPackages` out of `experimental` to top-level
 - [ ] Add `default.tsx` for all parallel route `@` folders
-- [ ] Update `unstable_ViewTransition` → `ViewTransition`
+- [ ] Update `unstable_ViewTransition` → `ViewTransition` and remove `viewTransition` flag
 - [ ] Review image config defaults (if using local images with query strings)
 
 ---

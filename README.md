@@ -113,22 +113,7 @@ startup_timeout_ms = 20_000
 
 </details>
 
-### Next.js Runtime Integration (Recommended for Next.js >= 16 beta)
-
-For Next.js 16 beta or later, enable the MCP server in your Next.js application to unlock powerful runtime diagnostics and integration with Claude Code:
-
-**Update `next.config.ts` or `next.config.js`:**
-
-```js
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  experimental: {
-    mcpServer: true,
-  },
-};
-
-export default nextConfig;
-```
+### Next.js Runtime Integration (Recommended for Next.js >= 16)
 
 **Restart your Next.js dev server:**
 

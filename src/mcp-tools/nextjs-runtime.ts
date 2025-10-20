@@ -78,8 +78,8 @@ REQUIREMENTS:
 - If you're on Next.js 15 or earlier, use the 'upgrade-nextjs-16' MCP prompt to upgrade first
 
 Next.js exposes an MCP (Model Context Protocol) endpoint at /_next/mcp when started with:
-- experimental.mcpServer: true in next.config.js, OR
-- __NEXT_EXPERIMENTAL_MCP_SERVER=true environment variable
+- For Next.js < 16: experimental.mcpServer: true in next.config.js, OR __NEXT_EXPERIMENTAL_MCP_SERVER=true environment variable
+- For Next.js >= 16: MCP is enabled by default (no configuration needed)
 
 This tool allows you to:
 1. Discover running Next.js dev servers and their ports
@@ -98,7 +98,8 @@ IMPORTANT: When calling tools:
 
 If the MCP endpoint is not available:
 1. Check if you're running Next.js 16+ (if not, use the 'upgrade-nextjs-16' prompt)
-2. Ensure the dev server is started with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true`,
+2. For Next.js < 16: Ensure the dev server is started with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true
+3. For Next.js >= 16: MCP should be enabled by default - check if the dev server is running`,
   inputSchema: nextjsRuntimeInputSchema,
   execute: async (args: z.infer<typeof nextjsRuntimeInputSchema>): Promise<string> => {
     try {
@@ -113,7 +114,7 @@ If the MCP endpoint is not available:
               message: verifyMCP 
                 ? "No running Next.js dev servers with MCP enabled found" 
                 : "No running Next.js dev servers found",
-              hint: "Start a Next.js dev server with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true",
+              hint: "For Next.js < 16: Start with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true. For Next.js >= 16: MCP is enabled by default.",
               count: 0,
             })
           }

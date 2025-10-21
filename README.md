@@ -6,12 +6,11 @@
 
 ## Features
 
+- **MCP Tools**: Callable tools for automating Next.js upgrades and Cache Components setup
+- **Development Prompts**: Pre-configured prompts for common Next.js development tasks
 - **Next.js Documentation**: Access Next.js documentation and best practices
 - **Browser Testing**: Integrate with Playwright for browser automation and testing
-- **Chrome DevTools**: Access Chrome DevTools functionality for debugging
-- **Development Prompts**: Pre-configured prompts for common Next.js development tasks
-- **MCP Tools**: Callable tools for automating Next.js upgrades and Cache Components setup
-- **Next.js Runtime Integration**: Direct access to Next.js dev server diagnostics and error detection
+- **Next.js Agent**: Access internal state, diagnostics, and errors from running Next.js dev servers via MCP
 
 ## Requirements
 
@@ -155,7 +154,7 @@ Navigate to `Settings | AI | Manage MCP Servers` and select `+ Add` to register 
 
 </details>
 
-### Next.js Runtime Integration (Recommended for Next.js >= 16)
+### Next.js Internal State Access (Recommended for Next.js >= 16)
 
 **Restart your Next.js dev server:**
 
@@ -163,12 +162,12 @@ Navigate to `Settings | AI | Manage MCP Servers` and select `+ Add` to register 
 npm run dev
 ```
 
-**Benefits with Claude Code:**
+**Benefits:**
 
-- **Real-time diagnostics**: Claude Code can query your running Next.js server for errors, routes, and build status
-- **Intelligent error detection**: Automatically identify issues in your application
-- **Runtime context**: Get accurate information about your app's current state without static analysis
-- **Better recommendations**: AI coding agents make informed decisions based on actual runtime behavior
+- **MCP Server Discovery**: Automatically discover and connect to Next.js dev servers running with MCP enabled
+- **Internal State Access**: Query your running Next.js instance for errors, routes, build status, and diagnostics
+- **Real-time Error Detection**: Access internal Next.js error state and compiler diagnostics through MCP
+- **Direct Communication**: AI coding agents communicate directly with Next.js through MCP protocol for accurate, real-time information
 
 ### Your First Prompt
 

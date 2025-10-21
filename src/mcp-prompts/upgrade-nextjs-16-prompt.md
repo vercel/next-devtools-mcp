@@ -105,14 +105,16 @@ The codemod requires a clean git working directory. It will fail with this error
 
 Run the official codemod to handle most changes automatically:
 
+{{CODEMOD_COMMAND}}
+
 ```bash
 # This will:
-# - Upgrade Next.js, React, and React DOM to latest versions
-# - Upgrade @types/react and @types/react-dom to latest
+# - Upgrade Next.js, React, and React DOM to {{UPGRADE_CHANNEL}} versions
+# - Upgrade @types/react and @types/react-dom to {{UPGRADE_CHANNEL}}
 # - Convert async params/searchParams automatically
 # - Update experimental config locations
 # - Fix other breaking changes
-<pkg-exec> @next/codemod@canary upgrade latest
+<pkg-exec> @next/codemod@canary upgrade {{UPGRADE_CHANNEL}}
 ```
 
 **Note:** When prompted for options during codemod execution, select "yes" for all selections to apply all recommended changes.
@@ -261,13 +263,13 @@ After the codemod runs, check for any remaining issues it might have missed:
    }
    ```
 
-**I. Beta to Stable Migration (REQUIRED if upgrading from v16 beta)**
+{{IF_BETA_CHANNEL}}**I. Beta to Stable Migration (REQUIRED for beta channel users)**
 
-   If you're upgrading from Next.js 16 **beta** to 16 **stable**, there are additional config migrations required:
+   You are currently upgrading to Next.js 16 **beta** channel. When Next.js 16 **stable** is released, you will need to apply additional config migrations:
 
    {{BETA_TO_STABLE_GUIDE}}
 
-   **Key migration**: `experimental.cacheLife` must be moved to top-level `cacheLife`
+   **Key migration when stable is released**: `experimental.cacheLife` must be moved to top-level `cacheLife`{{/IF_BETA_CHANNEL}}
 
 **J. Edge Cases the Codemod May Miss**
    Review these manually:
@@ -392,7 +394,7 @@ Report findings in this format:
 
 ## Summary
 - Current Version: [version]
-- Target Version: 16
+- Target Version: 16 ({{UPGRADE_CHANNEL}} channel)
 - Package Manager: [npm/pnpm/yarn/bun]
 - Monorepo: [Yes/No]
 - If Monorepo, Apps to Upgrade: [list of app directories]
@@ -406,10 +408,10 @@ Report findings in this format:
 [ ] Git working directory is clean (no uncommitted changes)
 
 ## Phase 2: Codemod Execution
-- [ ] Ran codemod: `<pkg-exec> @next/codemod@canary upgrade latest`
+- [ ] Ran codemod: `<pkg-exec> @next/codemod@canary upgrade {{UPGRADE_CHANNEL}}`
 - [ ] Selected "yes" for all codemod prompts
-- [ ] Codemod upgraded Next.js, React, and React DOM to latest
-- [ ] Codemod upgraded React type definitions to latest
+- [ ] Codemod upgraded Next.js, React, and React DOM to {{UPGRADE_CHANNEL}}
+- [ ] Codemod upgraded React type definitions to {{UPGRADE_CHANNEL}}
 - [ ] Codemod applied automatic fixes
 {{IF_REQUIRES_CANARY}}
 - [ ] (Optional) Upgraded to canary: `<pkg-manager> add next@canary`
@@ -427,8 +429,8 @@ Issues the codemod couldn't handle:
 [ ] next.config.js: turbopackPersistentCachingForDev → turbopackFileSystemCacheForDev
 [ ] next.config.js: Remove eslint config object
 [ ] next.config.js: Move serverComponentsExternalPackages out of experimental
-[ ] next.config.js: Move cacheLife out of experimental (beta → stable migration)
-[ ] revalidateTag API changes
+{{IF_BETA_CHANNEL}}[ ] next.config.js: Move cacheLife out of experimental (required when stable is released)
+{{/IF_BETA_CHANNEL}}[ ] revalidateTag API changes
 [ ] Edge cases in async APIs
 [ ] Deprecated features to update
 

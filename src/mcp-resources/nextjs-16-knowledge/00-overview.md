@@ -30,6 +30,7 @@ Based on analyzing the complete E2E test suite, AI agents consistently make thes
 11. **Using `revalidateTag()` without the `profile` parameter** (deprecated)
 12. **Passing non-serializable props to cached components** (cache key issues)
 13. **Using `unstable_ViewTransition`** (renamed to `ViewTransition` in Next.js 16)
+14. **Using empty `await headers()` or `await cookies()` calls just to mark component as dynamic** (anti-pattern - use `await connection()` instead)
 
 ---
 

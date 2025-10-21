@@ -94,7 +94,7 @@ directly from the Next.js dev server. Only use Playwright's console_messages act
 tools are not available or when you specifically need to test client-side browser behavior that Next.js runtime cannot capture.
 
 Available actions:
-- start: Start Playwright browser (automatically installs if needed)
+- start: Start Playwright browser (automatically installs if needed). Verbose logging is always enabled.
 - navigate: Navigate to a URL
 - click: Click on an element
 - type: Type text into an element
@@ -121,6 +121,7 @@ Note: The playwright-mcp server will be automatically installed if not present.`
           success: true,
           message: `Playwright browser started (${args.browser || "chrome"}, headless: ${args.headless !== false})`,
           connection: "connected",
+          verbose_logging: "Verbose logging enabled - Playwright logs will appear in stderr",
         })
       }
 

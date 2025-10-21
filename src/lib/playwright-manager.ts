@@ -60,7 +60,7 @@ export async function startPlaywrightMCP(options?: {
     return playwrightConnection
   }
 
-  console.error("[Playwright Manager] Starting playwright-mcp server...")
+  console.error("[Playwright Manager] Starting playwright-mcp server with verbose logging...")
 
   // Build args for playwright-mcp
   const args: string[] = ["@playwright/mcp@latest"]
@@ -69,15 +69,25 @@ export async function startPlaywrightMCP(options?: {
     args.push("--browser", options.browser)
   }
 
-  if (options?.headless !== undefined) {
-    args.push("--headless", String(options.headless))
+  // --headless is a flag (no value needed)
+  // Pass the flag only if headless is true
+  if (options?.headless === true) {
+    args.push("--headless")
+  }
+
+  // Always enable verbose logging via environment variables
+  const env = {
+    ...process.env,
+    DEBUG: "pw:api,pw:browser*",
+    VERBOSE: "1",
   }
 
   // Connect to playwright-mcp using npx
-  const connection = await connectToMCPServer("npx", args)
+  const connection = await connectToMCPServer("npx", args, { env })
 
   playwrightConnection = connection
-  console.error("[Playwright Manager] Successfully connected to playwright-mcp")
+  console.error("[Playwright Manager] Successfully connected to playwright-mcp (verbose mode enabled)")
+  console.error("[Playwright Manager] Playwright logs will be shown below:")
 
   return connection
 }

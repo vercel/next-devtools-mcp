@@ -127,8 +127,8 @@ This prompt automates the complete Cache Components enablement workflow:
 
 **Configuration & Flags (Phase 1-2):**
 - ✅ Detect package manager (npm/pnpm/yarn/bun)
-- ✅ Verify Next.js version (16.0.0+)
-- ✅ Update next.config to enable `experimental.cacheComponents`
+- ✅ Verify Next.js version (16.0.0 stable or canary only - beta NOT supported)
+- ✅ Enable cacheComponents (experimental in 16.0.0, stable in canary)
 - ✅ Migrate from `experimental.dynamicIO` or `experimental.ppr` if needed
 - ✅ Document existing Route Segment Config for migration
 
@@ -517,7 +517,7 @@ Before enabling Cache Components:
    ```
 
 2. **Next.js Version Check**
-   Required: Next.js 16.0.0 or later
+   Required: 16.0.0 stable or 16.x-canary.x (beta NOT supported)
    Check: package.json → dependencies.next
    Action: If < 16.0.0, run upgrade-nextjs-16 prompt first
 
@@ -532,14 +532,9 @@ Before enabling Cache Components:
    If no config file exists, you'll create `next.config.js` in Phase 2.
    
    **Read the config file and look for:**
-   - `experimental.cacheComponents` (new name)
-   - `experimental.dynamicIO` (old name - needs migration)
-   - `experimental.ppr` (removed - incompatible with Next.js 16)
-
-   If `experimental.ppr` exists:
-   ⚠️  WARNING: The `experimental.ppr` flag has been removed in Next.js 16
-   ⚠️  You must migrate to `experimental.cacheComponents` instead
-   ⚠️  Note: There are implementation differences - review your PPR usage
+   - `cacheComponents` or `experimental.cacheComponents` (current)
+   - `experimental.dynamicIO` (old name - migrate to cacheComponents)
+   - `experimental.ppr` (removed - migrate to cacheComponents)
 
 4. **Route Structure Analysis**
    Scan: app directory structure
@@ -547,9 +542,12 @@ Before enabling Cache Components:
    Note: List all routes for Phase 3 verification
 
 5. **Existing Route Segment Config Check**
-   Search for: `export const dynamic`, `export const revalidate`, `export const fetchCache`
+   Search for all Route Segment Config exports using:
+   - Pattern: `"export const (dynamic|revalidate|fetchCache|runtime|preferredRegion|dynamicParams)"`
+   - Path: `"app"`
+   
    ⚠️  WARNING: Route Segment Config options are DISABLED with Cache Components
-   Action: Document these for migration - will need to be replaced with `"use cache"` + `cacheLife`
+   Action: Document all locations - will migrate to `"use cache"` + `cacheLife` in Phase 5
 
 ## PHASE 2: Enable Cache Components Configuration
 ────────────────────────────────────────
@@ -569,49 +567,41 @@ Use the same format/extension when making changes.
 If config file exists, copy it before making changes.
 If no config exists, you'll create a new one in the next step.
 
-**Step 3: Update experimental.cacheComponents flag**
+**Step 3: Update cacheComponents flag**
 
-The `experimental.cacheComponents` flag is the PRIMARY configuration change. Choose the right option based on your current config:
+Enable the `cacheComponents` flag in your Next.js config. The flag location differs by version:
 
-**Option A - If starting fresh (no existing experimental flags):**
+**Version-Aware Configuration:**
+
+Check your Next.js version: `grep '"next":' package.json`
+
+- **16.0.0 stable**: `experimental.cacheComponents = true`
+- **Canary (16.x-canary.x)**: `cacheComponents = true` (no longer experimental)
+
+**Starting Fresh:**
 ```typescript
 // next.config.ts (or .js)
+// For 16.0.0: Put cacheComponents inside experimental: {}
+// For canary: Put cacheComponents at root level
 const nextConfig = {
+  cacheComponents: true,  // canary only
   experimental: {
-    cacheComponents: true,  // Enable Cache Components
+    cacheComponents: true,  // 16.0.0 only - use ONE of these
   },
 }
-
-export default nextConfig
 ```
 
-**Option B - If migrating from experimental.dynamicIO:**
+**Migrating from experimental.dynamicIO or experimental.ppr:**
 ```diff
   const nextConfig = {
     experimental: {
--     dynamicIO: true,         // Old name (deprecated)
-+     cacheComponents: true,   // New name (current)
+-     dynamicIO: true,  // or ppr: true (both removed)
++     cacheComponents: true,  // 16.0.0 - for canary, move to root level
     },
   }
 ```
 
-**Option C - If migrating from experimental.ppr:**
-```diff
-  const nextConfig = {
-    experimental: {
--     ppr: true,               // Removed in Next.js 16
-+     cacheComponents: true,   // Replacement feature
-    },
-  }
-```
-
-⚠️  **Important for PPR Migration:**
-If you were using `experimental.ppr`, note that Cache Components has:
-- Different implementation details and behavior
-- Additional features (cacheLife, cacheTag, "use cache: private", etc.)
-- Different static shell generation rules
-- May require code adjustments in your routes
-- Review route-level cache behavior after migration
+⚠️  **Note**: PPR and dynamicIO are replaced by cacheComponents with enhanced features (cacheLife, cacheTag, "use cache: private")
 
 **Step 3: Remove incompatible flags**
 
@@ -627,61 +617,55 @@ If present, REMOVE these flags (they conflict with Cache Components):
 
 **Step 4: Preserve compatible flags**
 
-These experimental flags CAN coexist with cacheComponents:
-- `turbo` - Turbopack configuration (separate feature)
-- `serverActions` - Server Actions config (separate feature)
-- `mdxRs` - MDX support (separate feature)
-- Other non-caching related flags
+These flags CAN coexist with cacheComponents:
+- `turbo`, `serverActions`, `mdxRs` - All compatible
 
-Example of valid combined config:
+Example:
 ```typescript
 const nextConfig = {
+  cacheComponents: true,  // canary - or inside experimental: {} for 16.0.0
   experimental: {
-    cacheComponents: true,     // Cache Components
-    turbo: {                   // Turbopack config (compatible)
-      rules: { /* ... */ }
-    },
-    serverActions: {           // Server Actions (compatible)
-      bodySizeLimit: '2mb'
-    },
+    turbo: { rules: {} },
+    serverActions: { bodySizeLimit: '2mb' },
   },
 }
 ```
 
 **Step 5: Document Route Segment Config usage**
 
-Search for existing Route Segment Config exports in your routes:
-- `export const dynamic = ...`
-- `export const revalidate = ...`
-- `export const fetchCache = ...`
-- `export const runtime = ...`
-- `export const preferredRegion = ...`
+Search for Route Segment Config exports (these are DISABLED with Cache Components):
 
-⚠️  **CRITICAL: Route Segment Config is DISABLED with Cache Components**
+**Search Pattern:**
+- Use search with pattern: `"export const (dynamic|revalidate|fetchCache|runtime|preferredRegion|dynamicParams)"`
+- In path: `"app"`
+- This will find ALL Route Segment Config exports that need migration
 
-These options will cause build errors and MUST be migrated:
-- `dynamic: 'force-static'` → Use `"use cache"` directive
-- `dynamic: 'force-dynamic'` → Use Suspense boundary
-- `revalidate: 3600` → Use `cacheLife('hours')` or custom profile
-- `fetchCache: 'force-cache'` → Use `"use cache"`
+⚠️  **CRITICAL: All Route Segment Config options are DISABLED with Cache Components**
 
-**Important:** When removing `export const dynamic`, replace it with a comment documenting the original static/dynamic mode:
-- `export const dynamic = 'force-static'` → Replace with: `// MIGRATED: Was force-static mode - now using "use cache"`
-- `export const dynamic = 'force-dynamic'` → Replace with: `// MIGRATED: Was force-dynamic mode - now using <Suspense>`
-- This preserves the original mode information for later verification
+**Migration Map:**
+- `export const dynamic = 'force-static'` → Add `"use cache"` + cacheLife
+- `export const dynamic = 'force-dynamic'` → Add `<Suspense>` boundary
+- `export const revalidate = 3600` → Use `cacheLife('hours')` or custom profile
+- `export const fetchCache = 'force-cache'` → Add `"use cache"`
+- `export const runtime = 'edge'` → Keep (still supported, just remove the export)
+- `export const dynamicParams = true` → Use `generateStaticParams` instead
 
-Document all Route Segment Config locations now - you'll migrate them in Phase 5.
+**When removing exports, add migration comments:**
+```typescript
+// MIGRATED: Was 'force-static' (export const dynamic) - now using "use cache"
+// MIGRATED: Was 'force-dynamic' (export const dynamic) - now using <Suspense>
+// MIGRATED: Was revalidate: 3600 - now using cacheLife('hours')
+```
+
+Document all locations now - you'll migrate them in Phase 5.
 
 **Step 6: Verify configuration changes**
 
-After making changes, verify by reading the config file:
-- ✅ Config file was updated successfully (read it to confirm)
-- ✅ `experimental.cacheComponents: true` is set
-- ✅ Incompatible flags removed (`experimental.ppr`)
-- ✅ Compatible flags preserved (if any)
-- ✅ Route Segment Config locations documented
-- ✅ Config file syntax is valid (no syntax errors)
-- ✅ File format matches original (`.ts` stays `.ts`, `.js` stays `.js`, etc.)
+Verify by reading the config file:
+- ✅ cacheComponents enabled (location depends on version)
+- ✅ Incompatible flags removed (ppr, dynamicIO)
+- ✅ Compatible flags preserved
+- ✅ Valid syntax, correct file format
 
 **What's Next:**
 With configuration updated, Phase 3 will start the dev server and Phase 4 will detect any runtime errors that need fixing.
@@ -765,10 +749,10 @@ If your dev server started on port 3001 (because 3000 was in use):
 - ✅ Tool responds successfully with project metadata:
   - Project name and version
   - Next.js version
-  - Configuration (including experimental.cacheComponents status)
+  - Configuration (including cacheComponents status)
   - Installed dependencies
 - This confirms the MCP server is alive and ready for error detection
-- You should see `cacheComponents: true` in the config if Phase 2 was successful
+- You should see cacheComponents enabled in the config if Phase 2 was successful
 
 **If the tool is not available or connection fails:**
 
@@ -1069,11 +1053,14 @@ For detailed code examples and patterns for each error type, refer to the knowle
 - B. Dynamic values → Use connection() or extract to separate component
 - C. Route params → Add generateStaticParams
 - D. Unavailable APIs in cache → Move outside cache scope or use "use cache: private"
-- E. Route Segment Config → Migrate to "use cache" + cacheLife with documentation
-  - **When removing `export const dynamic`:** Replace with a comment documenting the original mode for later verification
-  - Example: If removing `export const dynamic = 'force-static'`, add comment: `// MIGRATED: Was force-static mode - now using "use cache"`
-  - Example: If removing `export const dynamic = 'force-dynamic'`, add comment: `// MIGRATED: Was force-dynamic mode - now using <Suspense>`
-  - This helps track what the original static/dynamic mode was for verification purposes
+- E. Route Segment Config → Remove ALL exports and migrate to Cache Components patterns
+  - `export const dynamic` → Remove, add `"use cache"` or `<Suspense>` + migration comment
+  - `export const revalidate` → Remove, use `cacheLife()` with appropriate profile
+  - `export const fetchCache` → Remove, use `"use cache"` if needed
+  - `export const runtime` → Keep runtime value (edge/nodejs) but remove the export const
+  - `export const preferredRegion` → Keep value but remove the export const
+  - `export const dynamicParams` → Remove, use `generateStaticParams` instead
+  - **Always add migration comments** to document what was removed
 - F. Caching strategies → Configure cacheLife() and cacheTag()
 
 ### Importing and Commenting cacheLife() and cacheTag() - Let Users Decide
@@ -1605,19 +1592,19 @@ Report findings in this format:
 - Package Manager: [detected manager]
 
 ## Phase 1: Pre-Flight Checks
-[x] Next.js version verified (16.0.0+)
+[x] Next.js version verified (16.0.0+ stable or canary - NOT beta)
 [x] Package manager detected: [manager]
 [x] Existing config checked
 [x] Routes identified: [count] routes
 [x] Route Segment Config usage documented
 
 ## Phase 2: Configuration & Flags
-[x] Cache Components flag enabled: experimental.cacheComponents = true
+[x] cacheComponents enabled (version-aware: experimental for 16.0.0, root level for canary)
 [x] Configuration backed up
-[x] Incompatible flags removed (experimental.ppr if present)
+[x] Incompatible flags removed (ppr, dynamicIO)
 [x] Compatible flags preserved
-[x] Route Segment Config locations documented for migration
-[x] Config file syntax validated
+[x] Route Segment Config documented
+[x] Config syntax validated
 
 ## Phase 3: Dev Server
 [x] Checked for existing servers/stale locks
@@ -1707,10 +1694,10 @@ Report findings in this format:
 This enablement process made the following comprehensive changes:
 
 ### Configuration Changes (Phase 2):
-- ✅ Enabled experimental.cacheComponents flag in next.config
-- ✅ Removed incompatible flags (experimental.ppr if present)
-- ✅ Preserved compatible experimental flags
-- ✅ Documented Route Segment Config for migration
+- ✅ Enabled cacheComponents (location depends on version)
+- ✅ Removed incompatible flags (ppr, dynamicIO)
+- ✅ Preserved compatible flags
+- ✅ Documented Route Segment Config
 
 ### Boundary & Cache Setup (Phase 5):
 - ✅ Added Suspense boundaries for dynamic content

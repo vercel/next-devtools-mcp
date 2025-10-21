@@ -40,7 +40,7 @@ const nextjsRuntimeInputSchema = z.object({
     ),
 
   includeUnverified: z
-    .boolean()
+    .union([z.boolean(), z.string().transform((val) => val === "true")])
     .optional()
     .describe(
       "For 'discover_servers' action: Include Next.js servers even if MCP endpoint verification fails. Defaults to false (only show verified MCP-enabled servers)."

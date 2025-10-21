@@ -28,7 +28,7 @@ const playwrightInputSchema = z.object({
     .optional()
     .describe("Browser to use (default: chrome). Only used with 'start' action."),
   headless: z
-    .boolean()
+    .union([z.boolean(), z.string().transform((val) => val === "true")])
     .optional()
     .describe("Run browser in headless mode (default: true). Only used with 'start' action."),
 
@@ -38,7 +38,10 @@ const playwrightInputSchema = z.object({
   // Click action
   element: z.string().optional().describe("Element to interact with (CSS selector or text)"),
   ref: z.string().optional().describe("Reference to element from accessibility snapshot"),
-  doubleClick: z.boolean().optional().describe("Perform double click instead of single click"),
+  doubleClick: z
+    .union([z.boolean(), z.string().transform((val) => val === "true")])
+    .optional()
+    .describe("Perform double click instead of single click"),
   button: z.enum(["left", "right", "middle"]).optional().describe("Mouse button to use"),
   modifiers: z.array(z.string()).optional().describe("Keyboard modifiers (e.g., ['Control', 'Shift'])"),
 
@@ -60,10 +63,16 @@ const playwrightInputSchema = z.object({
   script: z.string().optional().describe("JavaScript code to evaluate in browser context"),
 
   // Screenshot action
-  fullPage: z.boolean().optional().describe("Take full page screenshot"),
+  fullPage: z
+    .union([z.boolean(), z.string().transform((val) => val === "true")])
+    .optional()
+    .describe("Take full page screenshot"),
 
   // Console messages
-  errorsOnly: z.boolean().optional().describe("Only return error messages from console"),
+  errorsOnly: z
+    .union([z.boolean(), z.string().transform((val) => val === "true")])
+    .optional()
+    .describe("Only return error messages from console"),
 
   // Drag action
   startElement: z.string().optional().describe("Starting element for drag operation"),
@@ -79,6 +88,14 @@ export const playwrightTool = tool({
   description: `Automate and test web applications using Playwright browser automation.
 This tool connects to playwright-mcp server and provides access to all Playwright capabilities.
 
+CRITICAL FOR PAGE VERIFICATION:
+When verifying pages in Next.js projects (especially during upgrades or testing), you MUST use Playwright to load pages
+in a real browser instead of curl or simple HTTP requests. This is because:
+- Playwright actually renders the page and executes JavaScript (curl only fetches HTML)
+- Detects runtime errors, hydration issues, and client-side problems that curl cannot catch
+- Verifies the full user experience, not just HTTP status codes
+- Captures browser console errors and warnings via console_messages action
+
 IMPORTANT FOR NEXT.JS PROJECTS:
 If working with a Next.js application, PRIORITIZE using the 'nextjs_runtime' tool instead of browser console log forwarding.
 Next.js has built-in MCP integration that provides superior error reporting, build diagnostics, and runtime information
@@ -86,7 +103,7 @@ directly from the Next.js dev server. Only use Playwright's console_messages act
 tools are not available or when you specifically need to test client-side browser behavior that Next.js runtime cannot capture.
 
 Available actions:
-- start: Start Playwright browser (automatically installs if needed)
+- start: Start Playwright browser (automatically installs if needed). Verbose logging is always enabled.
 - navigate: Navigate to a URL
 - click: Click on an element
 - type: Type text into an element
@@ -113,6 +130,7 @@ Note: The playwright-mcp server will be automatically installed if not present.`
           success: true,
           message: `Playwright browser started (${args.browser || "chrome"}, headless: ${args.headless !== false})`,
           connection: "connected",
+          verbose_logging: "Verbose logging enabled - Playwright logs will appear in stderr",
         })
       }
 

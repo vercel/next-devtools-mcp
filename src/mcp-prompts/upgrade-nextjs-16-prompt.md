@@ -143,7 +143,41 @@ Run the official codemod to handle most changes automatically:
    # If it fails, proceed to Phase 3 to identify and fix remaining issues
    ```
 
-**Wait for codemod to complete and verify the build before proceeding to Phase 3**
+4. **Browser Verification with Playwright (RECOMMENDED):**
+   After the build succeeds, verify pages actually load correctly in a browser:
+   
+   a. Start the Next.js dev server:
+   ```bash
+   <pkg-manager> run dev
+   ```
+   
+   b. Use the Playwright MCP tool to verify pages load correctly:
+   ```
+   # Start Playwright browser
+   Use playwright tool with action="start"
+   
+   # Navigate to key pages and verify they load
+   Use playwright tool with action="navigate", url="http://localhost:3000"
+   Use playwright tool with action="navigate", url="http://localhost:3000/users/1"
+   # ... test other important routes
+   
+   # Check for console errors
+   Use playwright tool with action="console_messages", errorsOnly=true
+   
+   # Close browser when done
+   Use playwright tool with action="close"
+   ```
+   
+   **Why Playwright instead of curl:**
+   - ✅ Playwright actually renders the page and executes JavaScript
+   - ✅ Detects runtime errors that curl/HTTP requests cannot catch
+   - ✅ Verifies client-side hydration and React component mounting
+   - ✅ Captures browser console errors and warnings
+   - ✅ Tests the full user experience, not just HTTP status codes
+   
+   **Note:** If you only use curl or simple HTTP GET requests, you'll miss client-side errors, hydration issues, and JavaScript runtime problems.
+
+**Wait for codemod to complete and verify both build and browser tests before proceeding to Phase 3**
 
 {{IF_REQUIRES_CANARY}}
 **⚠️ TEMPORARY: Upgrade to Canary (Optional for Advanced Caching)**
@@ -420,6 +454,13 @@ Report findings in this format:
 - [ ] TypeScript upgraded if needed: `<pkg-manager> add -D typescript@latest`
 - [ ] Reviewed git diff for codemod changes
 - [ ] **Verified build: `<pkg-manager> run build` (if this passes, upgrade is complete!)**
+- [ ] **Browser verification with Playwright (RECOMMENDED):**
+  - [ ] Started dev server: `<pkg-manager> run dev`
+  - [ ] Started Playwright browser with action="start"
+  - [ ] Navigated to key routes and verified pages load
+  - [ ] Checked for console errors with action="console_messages"
+  - [ ] Closed Playwright browser with action="close"
+  - [ ] No client-side errors or hydration issues detected
 
 ## Phase 3: Issues Requiring Manual Fixes
 Issues the codemod couldn't handle:
@@ -442,9 +483,14 @@ Issues the codemod couldn't handle:
 ## Phase 4: Manual Changes Applied
 - [List of manual fixes made]
 - [ ] **Final build verification: `<pkg-manager> run build` (must succeed)**
+- [ ] **Final browser verification with Playwright:**
+  - [ ] All key routes load successfully in browser
+  - [ ] No console errors or warnings
+  - [ ] Client-side hydration works correctly
 
 ## Completion Status
 - [ ] Upgrade complete - build succeeds without errors
+- [ ] Browser verification passed (using Playwright, not curl)
 - [ ] All manual fixes applied (if any were needed)
 
 ## Next Steps
@@ -456,7 +502,10 @@ Begin migration:
 1. **FIRST: Check if this is a monorepo** - If yes, navigate to each Next.js app directory and run the workflow there (NOT at monorepo root)
 2. Start with Phase 1 pre-flight checks (ensure clean git state)
 3. Run the codemod in Phase 2 (this handles most changes automatically)
-4. **Verify with build** - If `<pkg-manager> run build` succeeds, you're done!
-5. Only if build fails, proceed to Phase 3 and Phase 4 to fix remaining issues
+4. **Verify with build** - If `<pkg-manager> run build` succeeds, continue to browser verification
+5. **Verify with Playwright** - Use the Playwright MCP tool to load pages in a real browser (NOT curl). This catches client-side errors that build verification misses
+6. Only if build or browser verification fails, proceed to Phase 3 and Phase 4 to fix remaining issues
+
+**⚠️ CRITICAL: Always use Playwright for page verification, never curl or simple HTTP requests. Playwright actually renders the page and detects runtime errors, hydration issues, and JavaScript problems that curl cannot catch.**
 
 **⚠️ MONOREPO USERS:** If you're in a monorepo, you MUST be in the specific Next.js app directory (e.g., `apps/web/`) before starting. The codemod will fail if run from the monorepo root.

@@ -79,6 +79,14 @@ export const playwrightTool = tool({
   description: `Automate and test web applications using Playwright browser automation.
 This tool connects to playwright-mcp server and provides access to all Playwright capabilities.
 
+CRITICAL FOR PAGE VERIFICATION:
+When verifying pages in Next.js projects (especially during upgrades or testing), you MUST use Playwright to load pages
+in a real browser instead of curl or simple HTTP requests. This is because:
+- Playwright actually renders the page and executes JavaScript (curl only fetches HTML)
+- Detects runtime errors, hydration issues, and client-side problems that curl cannot catch
+- Verifies the full user experience, not just HTTP status codes
+- Captures browser console errors and warnings via console_messages action
+
 IMPORTANT FOR NEXT.JS PROJECTS:
 If working with a Next.js application, PRIORITIZE using the 'nextjs_runtime' tool instead of browser console log forwarding.
 Next.js has built-in MCP integration that provides superior error reporting, build diagnostics, and runtime information

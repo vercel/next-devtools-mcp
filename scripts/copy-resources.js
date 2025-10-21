@@ -22,6 +22,11 @@ const resources = [
     dest: 'dist/mcp-resources/'
   },
   {
+    type: 'files',
+    src: 'src/mcp-resources/nextjs-16-migration-examples.md',
+    dest: 'dist/mcp-resources/'
+  },
+  {
     type: 'dir',
     src: 'src/mcp-resources/nextjs-16-knowledge',
     dest: 'dist/mcp-resources/nextjs-16-knowledge'

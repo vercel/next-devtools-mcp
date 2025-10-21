@@ -1,5 +1,19 @@
 # Next.js 16 Critical Migration Rules
 
+**📖 For detailed code examples:** Load resource `nextjs16://migration/examples` for comprehensive before/after examples, edge cases, and complete migration patterns.
+
+This document provides quick-reference rules and minimal examples. For full implementation details, use the migration examples resource.
+
+---
+
+## 🚨 Version Requirements (Breaking)
+
+| Requirement | Version | Notes |
+|------------|---------|-------|
+| **Node.js** | 20.9+ | Node.js 18 no longer supported |
+| **TypeScript** | 5.1+ | TypeScript 5.0 minimum |
+| **Browsers** | Chrome 111+, Edge 111+, Firefox 111+, Safari 16.4+ | Updated minimum versions |
+
 ## 🚨 MUST-CHANGE APIs (Breaking Changes)
 
 ### 1. Async Request APIs
@@ -107,6 +121,40 @@ import { revalidateTag } from 'next/cache'
 revalidateTag('posts', 'max')  // For background invalidation
 ```
 
+## 🚫 Completely Removed Features
+
+These features have been completely removed in Next.js 16:
+
+### AMP Support
+- **Removed:** `useAmp` hook, `export const config = { amp: true }`
+- **Action:** Remove all AMP code. No replacement available.
+
+### Runtime Config
+- **Removed:** `serverRuntimeConfig`, `publicRuntimeConfig` from next.config.js
+- **Action:** Use environment variables (`.env` files) instead
+
+### PPR Flags
+- **Removed:** `experimental.ppr` flag, `experimental_ppr` route export
+- **Action:** Use `experimental.cacheComponents: true` instead
+
+### experimental.dynamicIO
+- **Renamed:** `experimental.dynamicIO` → `experimental.cacheComponents`
+- **Action:** Update config to use new name
+
+### unstable_rootParams()
+- **Removed:** `unstable_rootParams()` API
+- **Action:** Alternative API coming in upcoming minor. Use params from props temporarily
+
+### Auto scroll-behavior
+- **Removed:** Automatic `scroll-behavior: smooth` on HTML
+- **Action:** Add `data-scroll-behavior="smooth"` to `<html>` tag if needed
+
+### devIndicators Config Options
+- **Removed:** `appIsrStatus`, `buildActivity`, `buildActivityPosition` options
+- **Action:** Remove these options. The dev indicator itself remains
+
+**📖 See `nextjs16://migration/examples` → "Removed Features Examples" for complete code examples**
+
 ## 🔍 Detection Rules (When to Make Functions Async)
 
 **ONLY make async if the function uses these 5 APIs:**
@@ -124,53 +172,23 @@ revalidateTag('posts', 'max')  // For background invalidation
 ## ⚙️ Config Migrations
 
 ### 1. Turbopack Config Rename (REQUIRED for canary users)
-```typescript
-// ❌ BEFORE
-// next.config.js
-export default {
-  turbopackPersistentCachingForDev: true,
-}
-
-// ✅ AFTER
-// next.config.js
-export default {
-  turbopackFileSystemCacheForDev: true,
-}
-```
+- `turbopackPersistentCachingForDev` → `turbopackFileSystemCacheForDev`
 
 ### 2. ESLint Config Removal (REQUIRED)
-```typescript
-// ❌ BEFORE - Remove this from next.config.js
-export default {
-  eslint: {
-    ignoreDuringBuilds: true,
-    dirs: ['app', 'src'],
-  },
-}
-
-// ✅ AFTER - Move to .eslintrc.json or eslint.config.js
-// ESLint configuration should now be in dedicated ESLint config files
-```
+- Remove `eslint` config object from next.config.js
+- Move to `.eslintrc.json` or `eslint.config.js`
 
 ### 3. serverComponentsExternalPackages (BREAKING)
-```typescript
-// ❌ BEFORE - In experimental
-export default {
-  experimental: {
-    serverComponentsExternalPackages: ['package-name'],
-  },
-}
+- Move from `experimental.serverComponentsExternalPackages` to top-level `serverComponentsExternalPackages`
 
-// ✅ AFTER - Top-level config
-export default {
-  serverComponentsExternalPackages: ['package-name'],
-}
-```
+**📖 See `nextjs16://migration/examples` → "Config Migration Examples" for complete code**
 
 ### 4. Image Defaults Changed (No Action Needed)
 These changed automatically - override if needed:
 - `minimumCacheTTL`: 60s → 14400s (4 hours)
 - `qualities`: [1..100] → [75]
+- `imageSizes`: removed `16` from default sizes
+- `dangerouslyAllowLocalIP`: now `false` by default (blocks local IP optimization)
 - `maximumRedirects`: unlimited → 3
 
 ## 🚫 Removed/Deprecated
@@ -188,117 +206,72 @@ export const runtime = 'edge'
 ```
 
 ### API Renames
-```typescript
-// ❌ OLD
-import { unstable_ViewTransition } from 'react'
+- `unstable_ViewTransition` → `ViewTransition` (now stable)
+- Remove `experimental.viewTransition` flag from next.config.js
 
-// ✅ NEW
-import { ViewTransition } from 'react'
-```
-
-**Note:** The `experimental.viewTransition` flag in next.config is no longer needed when using the stable `ViewTransition` API. Remove it from your Next.js config:
-
-```typescript
-// ❌ BEFORE - Remove this flag
-export default {
-  experimental: {
-    viewTransition: true,
-  },
-}
-
-// ✅ AFTER - No flag needed
-export default {
-  // viewTransition flag removed
-}
-```
+**📖 See `nextjs16://migration/examples` → "ViewTransition API Migration"**
 
 ### Middleware → Proxy Migration
-```typescript
-// ⚠️ DEPRECATED (still works, warning only)
-// middleware.ts
-export function middleware(request) {
-  return NextResponse.next()
-}
+**⚠️ Deprecated (still works with warnings)**
 
-// ✅ RECOMMENDED
-// proxy.ts
-export function proxy(request) {
-  return NextResponse.next()
-}
-```
+File renames:
+- `middleware.ts` → `proxy.ts`
+- Export `middleware` → `proxy`
 
-**Config property renames:**
+Config property renames:
 - `experimental.middlewarePrefetch` → `experimental.proxyPrefetch`
 - `experimental.middlewareClientMaxBodySize` → `experimental.proxyClientMaxBodySize`
 - `experimental.externalMiddlewareRewritesResolve` → `experimental.externalProxyRewritesResolve`
 - `skipMiddlewareUrlNormalize` → `skipProxyUrlNormalize`
 
+**📖 See `nextjs16://migration/examples` → "Middleware to Proxy Examples"**
+
 ## 📁 Parallel Routes Requirement
 
-If you have `@modal`, `@auth`, etc. folders (any `@` folder except `@children`):
+All parallel route slots (e.g., `@modal`, `@auth`) **must** have `default.js` files:
+- Required for non-leaf segments with routable children
+- `@children` is special and does NOT need `default.js`
 
-```typescript
-// MUST create: app/@modal/default.tsx (only for non-leaf segments with routable children)
-export default function Default() {
-  return null
-}
-```
-
-**Note:** 
-- `@children` is a special implicit slot and does NOT require a `default.js` file.
-- `default.tsx` is only required for non-leaf segments with routable children, not for all parallel route folders.
+**📖 See `nextjs16://migration/examples` → "Parallel Routes Examples"**
 
 ## 🛡️ Image Security
 
-If using local images with query strings:
+If using local images with query strings, add `images.localPatterns` config.
 
-```typescript
-// next.config.js
-export default {
-  images: {
-    localPatterns: [{ pathname: '/img/**' }]
-  }
-}
-```
+**📖 See `nextjs16://migration/examples` → "Image Configuration Examples"**
+
+## 🚀 Turbopack Improvements
+
+**Default Bundler:**
+- Turbopack is now default (remove `--turbopack` flags)
+- Use `--webpack` flag if needed
+- Automatically enables Babel if config found
+
+**Config Rename (canary users):**
+- `turbopackPersistentCachingForDev` → `turbopackFileSystemCacheForDev`
+
+**📖 See `nextjs16://migration/examples` → "Config Migration Examples"**
+
+## ℹ️ Additional Improvements (Automatic)
+
+These improvements are automatic in Next.js 16:
+
+- **Terminal Output:** Redesigned with clearer formatting and better error messages
+- **Separate Output Dirs:** `next dev` and `next build` use separate directories (concurrent execution)
+- **Lockfile Mechanism:** Prevents multiple instances on same project
+- **Modern Sass:** `sass-loader` v16 with modern syntax support
+- **ESLint Flat Config:** `@next/eslint-plugin-next` defaults to Flat Config format
+- **Native TypeScript:** Use `--experimental-next-config-strip-types` for native TS in `next.config.ts`
 
 ## 🧪 Common Edge Cases
 
-### Destructuring in Function Signature
-```typescript
-// ❌ WILL BREAK
-export default async function Page({ params }) {
-  // params is still a Promise here!
-}
+**Critical patterns:**
+- ❌ Cannot destructure `params` in function signature (it's a Promise)
+- ❌ Cannot nested destructure (e.g., `{ params: { slug } }`)
+- ✅ Always `await props.params` before accessing
+- ✅ Always await even in conditionals
 
-// ✅ CORRECT
-export default async function Page(props) {
-  const params = await props.params
-}
-```
-
-### Nested Access
-```typescript
-// ❌ WILL BREAK
-export default async function Page({ params: { slug } }) {
-  // Cannot destructure Promise
-}
-
-// ✅ CORRECT
-export default async function Page(props) {
-  const { slug } = await props.params
-}
-```
-
-### Conditional Usage
-```typescript
-// ✅ CORRECT - Always await even in conditionals
-export default async function Page(props) {
-  const searchParams = await props.searchParams
-  if (searchParams.debug) {
-    // ...
-  }
-}
-```
+**📖 See `nextjs16://migration/examples` → "Async API Migration Examples" for complete patterns**
 
 ## 📦 Dependencies
 
@@ -317,8 +290,21 @@ If you're using `@types/react` and `@types/react-dom`, upgrade them to the lates
 
 ## 📝 Quick Checklist
 
-**For every file with these patterns, make it async and await:**
+**Version Requirements:**
+- [ ] Node.js 20.9+
+- [ ] TypeScript 5.1+ (if using TypeScript)
+- [ ] Browser support: Chrome 111+, Edge 111+, Firefox 111+, Safari 16.4+
 
+**Completely Removed Features:**
+- [ ] Remove AMP support (`useAmp`, `amp: true` config)
+- [ ] Migrate `serverRuntimeConfig`/`publicRuntimeConfig` to environment variables
+- [ ] Remove `experimental.ppr` flag and `experimental_ppr` exports
+- [ ] Rename `experimental.dynamicIO` → `experimental.cacheComponents`
+- [ ] Remove `unstable_rootParams()` usage
+- [ ] Add `data-scroll-behavior="smooth"` if needed (no longer automatic)
+- [ ] Remove `devIndicators` config options (appIsrStatus, buildActivity, buildActivityPosition)
+
+**For every file with these patterns, make it async and await:**
 - [ ] `function Page({ params })` → `async function Page(props)` + `await props.params`
 - [ ] `function Page({ searchParams })` → `async function Page(props)` + `await props.searchParams`
 - [ ] `function Layout({ params })` → `async function Layout(props)` + `await props.params`
@@ -331,16 +317,19 @@ If you're using `@types/react` and `@types/react-dom`, upgrade them to the lates
 - [ ] `draftMode().isEnabled` → `(await draftMode()).isEnabled`
 - [ ] `revalidateTag(tag)` → `updateTag(tag, 'max')` or `revalidateTag(tag, 'max')`
 - [ ] Add `default.tsx` for parallel route `@` folders with non-leaf segments (only when needed for routable children)
-- [ ] Update `unstable_ViewTransition` → `ViewTransition` and remove `viewTransition` flag
+- [ ] Update `unstable_ViewTransition` → `ViewTransition` and remove `experimental.viewTransition` flag
 
 **Dependencies:**
 - [ ] Upgrade `@types/react` and `@types/react-dom` to latest (if using TypeScript)
 
 **Config changes in next.config.js:**
-- [ ] Rename `turbopackPersistentCachingForDev` → `turbopackFileSystemCacheForDev`
+- [ ] Remove `--turbopack` flags from scripts (now default; use `--webpack` for webpack)
+- [ ] Rename `turbopackPersistentCachingForDev` → `turbopackFileSystemCacheForDev` (canary users)
 - [ ] Remove `eslint` config object (move to .eslintrc.json or eslint.config.js)
 - [ ] Move `serverComponentsExternalPackages` out of `experimental` to top-level
 - [ ] Review image config defaults (if using local images with query strings)
+- [ ] Rename middleware.ts → proxy.ts (deprecated, still works with warnings)
+- [ ] Update middleware config properties to proxy equivalents
 
 ---
 

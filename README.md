@@ -175,7 +175,7 @@ npm run dev
 Enter the following prompt in your MCP client to check if everything is working:
 
 ```
-Help me upgrade my Next.js app to version 16
+Next Devtools, help me upgrade my Next.js app to version 16
 ```
 
 Your MCP client should provide guidance and tools for upgrading your Next.js application.
@@ -183,7 +183,7 @@ Your MCP client should provide guidance and tools for upgrading your Next.js app
 If you're on **Next.js 16 or later** with `experimental.mcpServer` enabled, you can also try:
 
 ```
-What's the structure of my Next.js routes?
+Next Devtools, what's the structure of my Next.js routes?
 ```
 
 Claude Code will query your running dev server for actual route information and component diagnostics.
@@ -223,15 +223,94 @@ Pre-configured prompts to help with common Next.js development tasks:
 
 - **`upgrade-nextjs-16`** - Guide for upgrading to Next.js 16
 - **`enable-cache-components`** - Enable caching for React components
-- **`preload-nextjs-16-knowledge`** - Load the complete Next.js 16 knowledge base into context (use resources for targeted sections instead)
 
 </details>
 
 ## MCP Tools
 
-Callable tools for automating Next.js development workflows:
+<details>
+<summary><code>nextjs_docs</code></summary>
 
-### `upgrade_nextjs_16` Tool
+Search and retrieve Next.js official documentation and knowledge base.
+
+**Capabilities:**
+- First searches MCP resources (Next.js 16 knowledge base) for latest information
+- Falls back to official Next.js documentation if nothing is found
+- Provides access to comprehensive Next.js guides, API references, and best practices
+- Smart keyword matching for topics like cache, prefetch, params, cookies, headers, etc.
+
+**Input:**
+- `query` (required) - Search query to find relevant Next.js documentation sections
+- `category` (optional) - Filter by category: `all`, `getting-started`, `guides`, `api-reference`, `architecture`, `community`
+
+**Output:**
+- Relevant documentation sections from Next.js 16 knowledge base (with content preview)
+- Links to official Next.js documentation pages
+
+</details>
+
+<details>
+<summary><code>playwright</code></summary>
+
+Automate and test web applications using Playwright browser automation.
+
+**When to use:**
+- Verifying pages in Next.js projects (especially during upgrades or testing)
+- Testing user interactions and flows
+- Taking screenshots for visual verification
+- Detecting runtime errors, hydration issues, and client-side problems
+- Capturing browser console errors and warnings
+
+**Important:** For Next.js projects, prioritize using the `nextjs_runtime` tool instead of browser console log forwarding. Only use Playwright's `console_messages` action as a fallback when `nextjs_runtime` tools are not available.
+
+**Available actions:**
+- `start` - Start Playwright browser (automatically installs if needed)
+- `navigate` - Navigate to a URL
+- `click` - Click on an element
+- `type` - Type text into an element
+- `fill_form` - Fill multiple form fields at once
+- `evaluate` - Execute JavaScript in browser context
+- `screenshot` - Take a screenshot of the page
+- `console_messages` - Get browser console messages
+- `close` - Close the browser
+- `drag` - Perform drag and drop
+- `upload_file` - Upload files
+- `list_tools` - List all available Playwright tools from the server
+
+**Input:**
+- `action` (required) - The action to perform
+- `browser` (optional) - Browser to use: `chrome`, `firefox`, `webkit`, `msedge` (default: `chrome`)
+- `headless` (optional) - Run browser in headless mode (default: `true`)
+- Action-specific parameters (see tool description for details)
+
+**Output:**
+- JSON with action result, screenshots (base64), console messages, or error information
+
+</details>
+
+<details>
+<summary><code>nextjs_runtime</code></summary>
+
+Discover running MCP servers from Next.js instances and invoke their MCP devtools.
+
+**Requirements:**
+- Next.js 16 or later (MCP support added in v16)
+- MCP is enabled by default in Next.js 16+
+
+**Input:**
+- `action` (required) - Action to perform: `discover_servers`, `list_tools`, `call_tool`
+- `port` (optional) - Port number of Next.js dev server (auto-discovers if not provided)
+- `toolName` (optional) - Name of the Next.js MCP tool to call (required for `call_tool`)
+- `args` (optional) - Arguments object to pass to the tool
+- `includeUnverified` (optional) - Include servers even if MCP verification fails
+
+**Output:**
+- JSON with discovered servers, available tools, or tool execution results
+
+</details>
+
+<details>
+<summary><code>upgrade_nextjs_16</code></summary>
 
 Guides through upgrading Next.js to version 16 with automated codemod execution.
 
@@ -250,48 +329,32 @@ Guides through upgrading Next.js to version 16 with automated codemod execution.
 **Output:**
 - Structured JSON with step-by-step upgrade guidance
 
-### `enable_cache_components` Tool
+</details>
+
+<details>
+<summary><code>enable_cache_components</code></summary>
 
 Complete Cache Components setup and enablement for Next.js 16 with automated error detection and fixing.
 
 **Capabilities:**
-- Phase 1: Pre-flight checks (package manager, Next.js version, configuration)
-- Phase 2: Enable Cache Components configuration (experimental.cacheComponents flag)
-- Phase 3: Start dev server with MCP enabled (__NEXT_EXPERIMENTAL_MCP_SERVER=true)
-- Phase 4: Automated route verification and error detection (Playwright + Next.js MCP)
-- Phase 5: Automated error fixing with intelligent boundary setup
-  - Adds Suspense boundaries for dynamic content
-  - Adds `"use cache"` directives for cacheable content
-  - Adds `generateStaticParams` for dynamic routes
-  - Configures `cacheLife()` profiles based on content change frequency
-  - Sets up `cacheTag()` for on-demand revalidation
-- Phase 6: Final verification and build testing
-
-**Embedded Knowledge Base:**
-- Cache Components mechanics and paradigm shift
-- Public and private cache patterns
-- Runtime prefetching strategies
-- Request APIs (async params, cookies, headers)
-- Cache invalidation patterns
-- Advanced caching patterns (cacheLife, cacheTag, draft mode)
-- Build behavior and static shell generation
-- Error patterns and solutions
-- 125+ E2E test patterns and examples
-- Complete API reference
+- Pre-flight checks (package manager, Next.js version, configuration)
+- Enable Cache Components configuration
+- Start dev server with MCP enabled
+- Automated route verification and error detection
+- Automated error fixing with intelligent boundary setup (Suspense, caching directives, static params)
+- Final verification and build testing
 
 **Input:**
 - `project_path` (optional) - Path to Next.js project (defaults to current directory)
 
 **Output:**
-- Structured JSON with complete setup guidance
-- Embedded knowledge base resources
-- Detailed phase-by-phase instructions
+- Structured JSON with complete setup guidance and phase-by-phase instructions
 
 **Example Usage:**
 
 With Claude Code:
 ```
-Help me enable Cache Components in my Next.js 16 app
+Next Devtools, help me enable Cache Components in my Next.js 16 app
 ```
 
 With other agents or programmatically:
@@ -304,22 +367,7 @@ With other agents or programmatically:
 }
 ```
 
-## Notable Updates
-
-### Improved `enable-cache-components` Prompt
-
-- Removed redundant port checking step (pkg-mgr dev handles port assignment automatically)
-- Removed lock file deletion logic (handled automatically)
-- Simplified Phase 3 workflow for better reliability
-- Updated step numbering and cross-references throughout
-
-### New MCP Tools for Agent Compatibility
-
-Both `upgrade-nextjs-16` and `enable-cache-components` are now available as MCP tools, enabling:
-- Direct invocation by other agents (Codex, Gemini, etc.)
-- Programmatic access to structured guidance
-- Consistent interface with other MCP tools
-- Integration in multi-agent workflows
+</details>
 
 ## Local Development
 
@@ -329,12 +377,9 @@ To run the MCP server locally for development:
 2. Install dependencies:
    ```bash
    pnpm install
-   ```
-3. Build the project:
-   ```bash
    pnpm build
    ```
-4. Configure your MCP client to use the local version:
+3. Configure your MCP client to use the local version:
    ```json
    {
      "mcpServers": {

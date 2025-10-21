@@ -28,7 +28,7 @@ const playwrightInputSchema = z.object({
     .optional()
     .describe("Browser to use (default: chrome). Only used with 'start' action."),
   headless: z
-    .boolean()
+    .union([z.boolean(), z.string().transform((val) => val === "true")])
     .optional()
     .describe("Run browser in headless mode (default: true). Only used with 'start' action."),
 
@@ -38,7 +38,10 @@ const playwrightInputSchema = z.object({
   // Click action
   element: z.string().optional().describe("Element to interact with (CSS selector or text)"),
   ref: z.string().optional().describe("Reference to element from accessibility snapshot"),
-  doubleClick: z.boolean().optional().describe("Perform double click instead of single click"),
+  doubleClick: z
+    .union([z.boolean(), z.string().transform((val) => val === "true")])
+    .optional()
+    .describe("Perform double click instead of single click"),
   button: z.enum(["left", "right", "middle"]).optional().describe("Mouse button to use"),
   modifiers: z.array(z.string()).optional().describe("Keyboard modifiers (e.g., ['Control', 'Shift'])"),
 
@@ -60,10 +63,16 @@ const playwrightInputSchema = z.object({
   script: z.string().optional().describe("JavaScript code to evaluate in browser context"),
 
   // Screenshot action
-  fullPage: z.boolean().optional().describe("Take full page screenshot"),
+  fullPage: z
+    .union([z.boolean(), z.string().transform((val) => val === "true")])
+    .optional()
+    .describe("Take full page screenshot"),
 
   // Console messages
-  errorsOnly: z.boolean().optional().describe("Only return error messages from console"),
+  errorsOnly: z
+    .union([z.boolean(), z.string().transform((val) => val === "true")])
+    .optional()
+    .describe("Only return error messages from console"),
 
   // Drag action
   startElement: z.string().optional().describe("Starting element for drag operation"),

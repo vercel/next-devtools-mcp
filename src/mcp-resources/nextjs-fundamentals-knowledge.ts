@@ -27,6 +27,14 @@ export const NEXTJS_FUNDAMENTALS_SECTIONS: FundamentalsSection[] = [
       "Learn when and why to use 'use client' in Server Components. Includes: when to mark components as client-only, why props must be serializable (functions/classes can't cross server-client boundary), composition patterns (moving 'use client' down tree, passing Server Components as children, context providers), common anti-patterns and fixes (wrapping entire app, passing functions from server), Server Actions as alternative to callbacks, React hooks that require 'use client', browser APIs, optimization checklist, and decision tree for Server vs Client components. Use this when confused about server/client boundaries, serialization errors, hydration issues, or deciding where to add 'use client'",
     mimeType: "text/markdown",
   },
+  {
+    file: "02-dynamic-rendering.md",
+    uri: "nextjs-fundamentals://knowledge/dynamic-rendering",
+    name: "Dynamic vs Static Rendering",
+    description:
+      "Learn how components become dynamic in Next.js and when to use each API. Includes: how headers(), cookies(), draftMode() automatically make components dynamic, when and why to use connection() to explicitly mark components as dynamic, why you should NEVER use empty headers()/cookies() calls just to mark as dynamic (anti-pattern), real-world examples with current year/timestamps/random values, static vs dynamic decision guide, debugging dynamic rendering, common mistakes and fixes. CRITICAL: Use connection() to mark as dynamic, NOT empty headers() calls. Use this when deciding between static/dynamic rendering, using Date.now()/Math.random(), or getting 'used outside use cache without connection()' warnings.",
+    mimeType: "text/markdown",
+  },
 ]
 
 /**

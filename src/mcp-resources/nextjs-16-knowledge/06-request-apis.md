@@ -160,6 +160,66 @@ export default async function Page({
 
 ## <a id="connection-api"></a>21. connection() Deep Dive
 
+### ⭐ When to Use connection()
+
+**Official Purpose** ([Next.js Docs](https://nextjs.org/docs/app/api-reference/functions/connection)):
+> The `connection()` function allows you to indicate rendering should wait for an incoming user request before continuing.
+> 
+> It's useful when a component doesn't use Dynamic APIs, but you want it to be dynamically rendered at runtime and not statically rendered at build time. This usually occurs when you access external information that you intentionally want to change the result of a render, such as `Math.random()` or `new Date()`.
+
+**Use connection() to explicitly mark a component as dynamic:**
+
+```typescript
+import { connection } from 'next/server'
+
+export default async function Page() {
+  await connection()  // ✅ Marks component as dynamic
+  
+  const currentYear = new Date().getFullYear()
+  const random = Math.random()
+  
+  return <div>{currentYear} - {random}</div>
+}
+```
+
+**Key Points:**
+- `connection()` replaces `unstable_noStore` (stabilized in Next.js 15)
+- Only necessary when dynamic rendering is required and common Dynamic APIs (`headers()`, `cookies()`, `draftMode()`) are NOT used
+- Perfect for `Math.random()`, `Date.now()`, or any time-based/random rendering
+
+### ❌ Anti-Pattern: Empty headers()/cookies() Calls
+
+**WRONG - Do NOT do this:**
+
+```typescript
+import { headers } from 'next/headers'
+
+export default async function Footer() {
+  await headers()  // ❌ BAD - Using as side effect just to mark dynamic
+  
+  const currentYear = new Date().getFullYear()
+  return <footer>{currentYear}</footer>
+}
+```
+
+**Why it's bad:**
+- Not semantically correct (you're not using headers)
+- Misleading to other developers
+- Future readers think you need headers data
+
+**RIGHT - Use connection() instead:**
+
+```typescript
+import { connection } from 'next/server'
+
+export default async function Footer() {
+  await connection()  // ✅ GOOD - Clear intent to mark as dynamic
+  
+  const currentYear = new Date().getFullYear()
+  return <footer>{currentYear}</footer>
+}
+```
+
 ### Test Pattern: Math.random() and Date.now()
 
 **Test Source**: `test/development/app-dir/cache-components-warnings/` (disabled but shows pattern)

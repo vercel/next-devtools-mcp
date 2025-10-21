@@ -549,6 +549,22 @@ Before enabling Cache Components:
    ⚠️  WARNING: Route Segment Config options are DISABLED with Cache Components
    Action: Document all locations - will migrate to `"use cache"` + `cacheLife` in Phase 5
 
+6. **unstable_noStore Usage Check**
+   Search for all `unstable_noStore()` calls:
+   - Pattern: `"unstable_noStore"`
+   - Path: `"app"`
+   
+   ⚠️  WARNING: `unstable_noStore()` is INCOMPATIBLE with Cache Components
+   
+   **Why:** With Cache Components, everything is dynamic by default. `unstable_noStore()` was used to opt-out of static rendering in the old model, but this is now the default behavior.
+   
+   **📖 For detailed migration examples, load:**
+   ```
+   Read resource "nextjs16://migration/examples" (see unstable_noStore Examples section)
+   ```
+   
+   Action: Document all locations - will remove in Phase 5
+
 ## PHASE 2: Enable Cache Components Configuration
 ────────────────────────────────────────
 Update the Next.js configuration to enable Cache Components. This phase handles ALL configuration and flag changes needed.
@@ -1063,7 +1079,59 @@ For detailed code examples and patterns for each error type, refer to the knowle
   - `export const preferredRegion` → Keep value but remove the export const
   - `export const dynamicParams` → Remove, use `generateStaticParams` instead
   - **Always add migration comments** to document what was removed
-- F. Caching strategies → Configure cacheLife() and cacheTag()
+- F. unstable_noStore Removal → Remove all `unstable_noStore()` calls
+  - `unstable_noStore()` → Remove completely (dynamic is now the default)
+  - No replacement needed - Cache Components makes everything dynamic by default
+  - If you want to cache specific content, use `"use cache"` instead
+  - **Add migration comment** explaining the removal
+- G. Caching strategies → Configure cacheLife() and cacheTag()
+
+### Removing unstable_noStore() Usage
+
+**CRITICAL: unstable_noStore() is incompatible with Cache Components**
+
+The `unstable_noStore()` API was used in the old caching model to opt-out of static rendering. With Cache Components, this API is no longer needed because:
+
+1. **Everything is dynamic by default** - No need to opt-out of caching
+2. **Use "use cache" to opt-in** - The paradigm is reversed
+3. **unstable_noStore() causes errors** - Will break Cache Components behavior
+
+**📖 For complete migration patterns and code examples, load:**
+```
+Read resource "nextjs16://migration/examples"
+```
+
+Then navigate to the **"unstable_noStore Examples"** section for:
+- Basic removal (keep dynamic)
+- Migration with Suspense boundary
+- Migration to cached content
+- Complete before/after examples
+- Hybrid approach patterns
+
+**Quick Migration Steps:**
+
+1. **Search for usage:**
+   ```bash
+   grep -r "unstable_noStore" app/ src/
+   ```
+
+2. **Remove the import and calls:**
+   ```typescript
+   // Remove: import { unstable_noStore } from 'next/cache';
+   // Remove: unstable_noStore();
+   ```
+
+3. **Add migration comment:**
+   ```typescript
+   // MIGRATED: Removed unstable_noStore() - dynamic by default with Cache Components
+   ```
+
+4. **Choose migration path:**
+   - **Keep dynamic (most common):** No changes needed - already dynamic by default
+   - **Add Suspense:** Wrap in `<Suspense>` for better UX with loading states
+   - **Cache instead:** Add `"use cache"` if content should actually be cached
+
+5. **Load the resource for detailed examples** specific to your use case
 
 ### Importing and Commenting cacheLife() and cacheTag() - Let Users Decide
 
@@ -1599,6 +1667,7 @@ Report findings in this format:
 [x] Existing config checked
 [x] Routes identified: [count] routes
 [x] Route Segment Config usage documented
+[x] unstable_noStore() usage documented
 
 ## Phase 2: Configuration & Flags
 [x] cacheComponents enabled (version-aware: experimental for 16.0.0, root level for canary)
@@ -1662,12 +1731,18 @@ Report findings in this format:
 - [file path]: Removed export const fetchCache, replaced with "use cache"
 - ...
 
-### F. Cache Tags Added: [count]
+### F. unstable_noStore Removals: [count]
+- [file path]: Removed unstable_noStore() call (dynamic by default)
+- [file path]: Removed unstable_noStore() and added "use cache" instead
+- [file path]: Removed unstable_noStore() and added Suspense boundary
+- ...
+
+### G. Cache Tags Added: [count]
 - [file path]: Added cacheTag('posts') for on-demand revalidation
 - [file path]: Added cacheTag('products') for granular control
 - ...
 
-### G. cacheLife Profiles Configured: [count]
+### H. cacheLife Profiles Configured: [count]
 - [file path]: Added cacheLife('minutes') for frequently updating content
 - [file path]: Added cacheLife('max') for long-lived content
 - [file path]: Added cacheLife('hours') for hourly updates
@@ -1678,6 +1753,7 @@ Report findings in this format:
 - Total "use cache" directives added: [count]
 - Total generateStaticParams functions added: [count]
 - Total Route Segment Config exports removed: [count]
+- Total unstable_noStore() calls removed: [count]
 - Total cache tags added: [count]
 - Total cacheLife profiles configured: [count]
 - Total unavailable API errors fixed: [count]

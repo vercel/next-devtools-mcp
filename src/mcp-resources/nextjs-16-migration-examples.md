@@ -67,6 +67,7 @@ Complete reference and code examples for migrating to Next.js 16 stable.
 5. [Async API Migration Examples](#async-api-migration-examples)
 6. [Cache Invalidation Examples](#cache-invalidation-examples)
 7. [Middleware to Proxy Examples](#middleware-to-proxy-examples)
+8. [unstable_noStore Examples](#unstable_nostore-examples)
 
 ---
 
@@ -595,6 +596,164 @@ module.exports = {
 + skipProxyUrlNormalize: true,
 }
 ```
+
+---
+
+## unstable_noStore Examples
+
+**IMPORTANT:** `unstable_noStore()` is only incompatible when Cache Components are enabled. If you're not using `experimental.cacheComponents`, you can continue using it.
+
+### Search for Usage
+
+```bash
+# Find all unstable_noStore usage
+grep -r "unstable_noStore" app/ src/
+```
+
+### Basic Removal (Keep Dynamic)
+
+```diff
+- import { unstable_noStore } from 'next/cache'
+  
+  export default async function Page() {
+-   unstable_noStore() // Opt-out of static rendering
++   // MIGRATED: Removed unstable_noStore() - dynamic by default with Cache Components
++   // This component executes on every request (dynamic behavior)
+    
+    const data = await fetch('https://api.example.com/data')
+    return <div>{data}</div>
+  }
+```
+
+### Migration with Suspense Boundary
+
+```diff
+- import { unstable_noStore } from 'next/cache'
++ import { Suspense } from 'react'
+  
+  export default async function Page() {
+-   unstable_noStore()
++   // MIGRATED: Removed unstable_noStore() and added Suspense boundary
++   // Dynamic content wrapped in Suspense for better UX
++   return (
++     <Suspense fallback={<Loading />}>
++       <DynamicContent />
++     </Suspense>
++   )
++ }
+  
++ async function DynamicContent() {
++   // No unstable_noStore() needed - dynamic by default
+    const data = await fetch('https://api.example.com/data')
+    return <div>{data}</div>
+  }
+```
+
+### Migration to Cached Content
+
+If you realize the content should actually be cached:
+
+```diff
+- import { unstable_noStore } from 'next/cache'
++ import { cacheLife } from 'next/cache'
+  
+  export default async function Page() {
+-   unstable_noStore() // Was preventing caching
++   "use cache"
++   // MIGRATED: Removed unstable_noStore() - decided to cache this content instead
++   // DECISION: Content changes hourly, cacheable to reduce server load
++   
++   // Uncomment to enable time-based revalidation:
++   // cacheLife('hours')
+    
+    const data = await fetch('https://api.example.com/data')
+    return <div>{data}</div>
+  }
+```
+
+### Complete Example: Page with Multiple Components
+
+**Before:**
+```typescript
+// app/dashboard/page.tsx
+import { unstable_noStore } from 'next/cache'
+
+export default async function Dashboard() {
+  unstable_noStore() // Make everything dynamic
+  
+  const user = await getCurrentUser()
+  const stats = await getStats()
+  const settings = await getSettings()
+  
+  return (
+    <div>
+      <Header user={user} />
+      <Stats data={stats} />
+      <Settings data={settings} />
+    </div>
+  )
+}
+```
+
+**After (Hybrid Approach):**
+```typescript
+// app/dashboard/page.tsx
+import { Suspense } from 'react'
+import { cacheLife } from 'next/cache'
+
+// MIGRATED: Removed unstable_noStore()
+// Now using hybrid approach - cache static parts, dynamic user content
+export default async function Dashboard() {
+  return (
+    <div>
+      <CachedHeader />
+      <Suspense fallback={<StatsSkeleton />}>
+        <DynamicStats />
+      </Suspense>
+      <Suspense fallback={<SettingsSkeleton />}>
+        <DynamicSettings />
+      </Suspense>
+    </div>
+  )
+}
+
+async function CachedHeader() {
+  "use cache"
+  // cacheLife('hours') // Uncomment to enable revalidation
+  
+  // Static header - same for all users
+  const settings = await getGlobalSettings()
+  return <Header settings={settings} />
+}
+
+async function DynamicStats() {
+  // Dynamic per user - no unstable_noStore needed
+  const user = await getCurrentUser()
+  const stats = await getStats(user.id)
+  return <Stats data={stats} />
+}
+
+async function DynamicSettings() {
+  // Dynamic per user - no unstable_noStore needed
+  const user = await getCurrentUser()
+  const settings = await getUserSettings(user.id)
+  return <Settings data={settings} />
+}
+```
+
+### Why This Migration Matters
+
+**Old Caching Model (Next.js 15 and earlier):**
+- Everything was static by default
+- `unstable_noStore()` opted out of caching
+- Used to make routes dynamic
+
+**New Cache Components Model (Next.js 16 with cacheComponents):**
+- Everything is dynamic by default
+- `"use cache"` opts into caching
+- `unstable_noStore()` is redundant and causes errors
+
+**Key Insight:** The paradigm is reversed. You no longer need to opt-out of caching; instead, you opt-in to caching only where it makes sense.
 
 ---
 

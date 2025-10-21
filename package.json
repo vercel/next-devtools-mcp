@@ -1,6 +1,6 @@
 {
   "name": "next-devtools-mcp",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Next.js development tools MCP server with stdio transport",
   "bin": {
     "next-devtools-mcp": "./dist/index.js"

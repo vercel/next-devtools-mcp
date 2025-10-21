@@ -647,7 +647,8 @@ Search for Route Segment Config exports (these are DISABLED with Cache Component
 - `export const dynamic = 'force-dynamic'` → Add `<Suspense>` boundary
 - `export const revalidate = 3600` → Use `cacheLife('hours')` or custom profile
 - `export const fetchCache = 'force-cache'` → Add `"use cache"`
-- `export const runtime = 'edge'` → Keep (still supported, just remove the export)
+- `export const runtime = 'edge'` → Keep (still supported)
+- `export const runtime = 'nodejs'` → Remove (this is the default, no need to specify)
 - `export const dynamicParams = true` → Use `generateStaticParams` instead
 
 **When removing exports, add migration comments:**
@@ -1057,7 +1058,8 @@ For detailed code examples and patterns for each error type, refer to the knowle
   - `export const dynamic` → Remove, add `"use cache"` or `<Suspense>` + migration comment
   - `export const revalidate` → Remove, use `cacheLife()` with appropriate profile
   - `export const fetchCache` → Remove, use `"use cache"` if needed
-  - `export const runtime` → Keep runtime value (edge/nodejs) but remove the export const
+  - `export const runtime = 'edge'` → Keep if needed (edge runtime is still supported)
+  - `export const runtime = 'nodejs'` → Remove (nodejs is the default, no need to specify)
   - `export const preferredRegion` → Keep value but remove the export const
   - `export const dynamicParams` → Remove, use `generateStaticParams` instead
   - **Always add migration comments** to document what was removed

@@ -138,7 +138,7 @@ This prompt automates the complete Cache Components enablement workflow:
 - ✅ Capture base URL and MCP endpoint for error detection
 
 **Error Detection (Phase 4 - Optional):**
-- ✅ Start Playwright browser and load every route using playwright tool
+- ✅ Start browser and load every route using browser_eval tool
 - ✅ Collect errors from browser session using Next.js MCP `get_errors` tool
 - ✅ Categorize all Cache Components errors by type
 - ✅ Build comprehensive error list before fixing
@@ -167,7 +167,7 @@ This prompt automates the complete Cache Components enablement workflow:
 **Key Features:**
 - One-time dev server start (no restarts needed)
 - Automated error detection using Next.js MCP tools
-- Browser-based testing with Playwright
+- Browser-based testing with browser automation
 - Fast Refresh applies fixes instantly
 - Comprehensive fix strategies for all error types
 
@@ -798,10 +798,10 @@ Record these details from the dev server output:
 ## PHASE 4: Route Verification & Error Detection
 ────────────────────────────────────────
 
-**CRITICAL: You MUST use playwright tool to load pages in browser**
+**CRITICAL: You MUST use browser_eval tool to load pages in browser**
 
 Next.js MCP's `get_errors` tool collects errors from the browser session.
-Without using the playwright tool to navigate pages, `get_errors` will have no
+Without using the browser_eval tool to navigate pages, `get_errors` will have no
 errors to collect.
 
 **Prerequisites:**
@@ -810,16 +810,16 @@ errors to collect.
 - ✅ MCP Endpoint is known (e.g., http://localhost:3000/_next/mcp)
 - ✅ MCP server is verified active (get_project_metadata responded)
 - ✅ List of all routes from Phase 1
-- ✅ playwright tool is available
+- ✅ browser_eval tool is available
 
 **One-Time Setup (Before testing routes):**
-1. Start Playwright browser:
+1. Start browser automation:
    ```
-   playwright({ action: "start", browser: "chrome", headless: true })
+   browser_eval({ action: "start", browser: "chrome", headless: true })
    ```
 
 **Workflow per route:**
-1. Use playwright tool with action "navigate" to load the page in browser
+1. Use browser_eval tool with action "navigate" to load the page in browser
 2. Use Next.js MCP get_errors to collect errors from that browser session
 3. Categorize and record errors
 4. Move to next route
@@ -829,7 +829,7 @@ Systematically verify each route and collect errors:
 **For Each Route:**
 
 1. **Navigate to Page in Browser (REQUIRED)**
-   **Tool:** playwright
+   **Tool:** browser_eval
    **Action:** navigate
    **URL:** `<base-url><route-path>`
 
@@ -837,7 +837,7 @@ Systematically verify each route and collect errors:
    - Base URL from Step 3: `http://localhost:3001` (port may vary if 3000 was in use)
    - Route path: `/dashboard`
    - Full URL: `http://localhost:3001/dashboard`
-   - Tool call: playwright({ action: "navigate", url: "http://localhost:3001/dashboard" })
+   - Tool call: browser_eval({ action: "navigate", url: "http://localhost:3001/dashboard" })
 
    This loads the page in the browser and triggers any rendering errors.
    Expected: Page loads successfully (or errors are captured by Next.js MCP)
@@ -929,12 +929,12 @@ Systematically verify each route and collect errors:
    ```
 
 **Automation Strategy:**
-- Start Playwright browser once at the beginning of Phase 4
-- Use the Base URL captured in Step 5 for all playwright navigation
+- Start browser automation once at the beginning of Phase 4
+- Use the Base URL captured in Step 5 for all browser_eval navigation
 - Use the MCP Endpoint captured in Step 5 for all get_errors calls
 - Iterate through ALL routes from Phase 1
 - For each route:
-  1. Navigate with playwright({ action: "navigate", url: "..." })
+  1. Navigate with browser_eval({ action: "navigate", url: "..." })
   2. Connect to Next.js MCP endpoint
   3. Call get_errors to collect from browser session
   4. Record errors
@@ -943,13 +943,13 @@ Systematically verify each route and collect errors:
 - Prioritize errors by severity (build failures > runtime errors > warnings)
 
 **Important:**
-- Start Playwright browser once with playwright({ action: "start" }) before testing routes
-- ALWAYS use playwright with action "navigate" before calling get_errors
+- Start browser automation once with browser_eval({ action: "start" }) before testing routes
+- ALWAYS use browser_eval with action "navigate" before calling get_errors
 - Always connect to the SAME Next.js MCP endpoint (`<base-url>/_next/mcp`)
 - Do NOT try to reconnect or restart the MCP server
-- If playwright navigation fails, ensure Playwright is started
+- If browser_eval navigation fails, ensure browser automation is started
 - If Next.js MCP connection fails, the dev server may have crashed (rare)
-- At the end of Phase 4, optionally close the browser with playwright({ action: "close" })
+- At the end of Phase 4, optionally close the browser with browser_eval({ action: "close" })
 
 ## PHASE 5: Automated Error Fixing & Boundary Setup
 ────────────────────────────────────────
@@ -1380,7 +1380,7 @@ When you encounter `new Date()` or `Math.random()`:
    - Dev server continues running (no restart needed)
 
 3. **Verify the fix:**
-   - Re-load the route in browser: `playwright({ action: "navigate", url: "<base-url><route-path>" })`
+   - Re-load the route in browser: `browser_eval({ action: "navigate", url: "<base-url><route-path>" })`
    - Connect to MCP Endpoint: `<base-url>/_next/mcp` (using endpoint from Phase 3)
    - Call `get_errors` again via MCP to verify fix (collects from browser session)
    - Verify error is resolved

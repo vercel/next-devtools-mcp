@@ -1,10 +1,10 @@
 import { tool } from "ai"
 import { z } from "zod"
-import { startPlaywrightMCP, stopPlaywrightMCP, getPlaywrightConnection } from "../lib/playwright-manager.js"
+import { startBrowserEvalMCP, stopBrowserEvalMCP, getBrowserEvalConnection } from "../lib/browser-eval-manager.js"
 import { callServerTool, listServerTools } from "../lib/mcp-client.js"
 
-// Playwright Tool Schema
-const playwrightInputSchema = z.object({
+// Browser Eval Tool Schema
+const browserEvalInputSchema = z.object({
   action: z
     .enum([
       "start",
@@ -20,7 +20,7 @@ const playwrightInputSchema = z.object({
       "upload_file",
       "list_tools",
     ])
-    .describe("The action to perform using Playwright"),
+    .describe("The action to perform using browser automation"),
 
   // Start action options
   browser: z
@@ -84,14 +84,14 @@ const playwrightInputSchema = z.object({
   files: z.array(z.string()).optional().describe("File paths to upload"),
 })
 
-export const playwrightTool = tool({
+export const browserEvalTool = tool({
   description: `Automate and test web applications using Playwright browser automation.
 This tool connects to playwright-mcp server and provides access to all Playwright capabilities.
 
 CRITICAL FOR PAGE VERIFICATION:
-When verifying pages in Next.js projects (especially during upgrades or testing), you MUST use Playwright to load pages
+When verifying pages in Next.js projects (especially during upgrades or testing), you MUST use browser automation to load pages
 in a real browser instead of curl or simple HTTP requests. This is because:
-- Playwright actually renders the page and executes JavaScript (curl only fetches HTML)
+- Browser automation actually renders the page and executes JavaScript (curl only fetches HTML)
 - Detects runtime errors, hydration issues, and client-side problems that curl cannot catch
 - Verifies the full user experience, not just HTTP status codes
 - Captures browser console errors and warnings via console_messages action
@@ -99,11 +99,11 @@ in a real browser instead of curl or simple HTTP requests. This is because:
 IMPORTANT FOR NEXT.JS PROJECTS:
 If working with a Next.js application, PRIORITIZE using the 'nextjs_runtime' tool instead of browser console log forwarding.
 Next.js has built-in MCP integration that provides superior error reporting, build diagnostics, and runtime information
-directly from the Next.js dev server. Only use Playwright's console_messages action as a fallback when nextjs_runtime
+directly from the Next.js dev server. Only use browser_eval's console_messages action as a fallback when nextjs_runtime
 tools are not available or when you specifically need to test client-side browser behavior that Next.js runtime cannot capture.
 
 Available actions:
-- start: Start Playwright browser (automatically installs if needed). Verbose logging is always enabled.
+- start: Start browser automation (automatically installs if needed). Verbose logging is always enabled.
 - navigate: Navigate to a URL
 - click: Click on an element
 - type: Type text into an element
@@ -114,33 +114,33 @@ Available actions:
 - close: Close the browser
 - drag: Perform drag and drop
 - upload_file: Upload files
-- list_tools: List all available Playwright tools from the server
+- list_tools: List all available browser automation tools from the server
 
 Note: The playwright-mcp server will be automatically installed if not present.`,
-  inputSchema: playwrightInputSchema,
-  execute: async (args: z.infer<typeof playwrightInputSchema>): Promise<string> => {
+  inputSchema: browserEvalInputSchema,
+  execute: async (args: z.infer<typeof browserEvalInputSchema>): Promise<string> => {
     try {
       // Handle start action
       if (args.action === "start") {
-        const connection = await startPlaywrightMCP({
+        const connection = await startBrowserEvalMCP({
           browser: args.browser || "chrome",
           headless: args.headless !== false, // Default to true
         })
         return JSON.stringify({
           success: true,
-          message: `Playwright browser started (${args.browser || "chrome"}, headless: ${args.headless !== false})`,
+          message: `Browser automation started (${args.browser || "chrome"}, headless: ${args.headless !== false})`,
           connection: "connected",
-          verbose_logging: "Verbose logging enabled - Playwright logs will appear in stderr",
+          verbose_logging: "Verbose logging enabled - Browser automation logs will appear in stderr",
         })
       }
 
       // Handle list_tools action
       if (args.action === "list_tools") {
-        const connection = getPlaywrightConnection()
+        const connection = getBrowserEvalConnection()
         if (!connection) {
           return JSON.stringify({
             success: false,
-            error: "Playwright not started. Use action='start' first.",
+            error: "Browser automation not started. Use action='start' first.",
           })
         }
 
@@ -154,19 +154,19 @@ Note: The playwright-mcp server will be automatically installed if not present.`
 
       // Handle close action
       if (args.action === "close") {
-        await stopPlaywrightMCP()
+        await stopBrowserEvalMCP()
         return JSON.stringify({
           success: true,
-          message: "Playwright browser closed",
+          message: "Browser automation closed",
         })
       }
 
       // For all other actions, we need an active connection
-      const connection = getPlaywrightConnection()
+      const connection = getBrowserEvalConnection()
       if (!connection) {
         return JSON.stringify({
           success: false,
-          error: "Playwright not started. Use action='start' first.",
+          error: "Browser automation not started. Use action='start' first.",
         })
       }
 
@@ -276,3 +276,4 @@ Note: The playwright-mcp server will be automatically installed if not present.`
     }
   },
 })
+

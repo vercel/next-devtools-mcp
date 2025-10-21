@@ -20,14 +20,14 @@ export const enableCacheComponentsTool = tool({
 Handles ALL steps for enabling and verifying Cache Components:
 - Configuration: Updates cacheComponents flag (experimental in 16.0.0, stable in canary > 16), removes incompatible flags
 - Dev Server: Starts dev server with MCP enabled (__NEXT_EXPERIMENTAL_MCP_SERVER=true)
-- Error Detection: Loads all routes via Playwright, collects errors using Next.js MCP
+- Error Detection: Loads all routes via browser automation, collects errors using Next.js MCP
 - Automated Fixing: Adds Suspense boundaries, "use cache" directives, generateStaticParams, cacheLife profiles, cache tags
 - Verification: Validates all routes work with zero errors
 
 Key Features:
 - One-time dev server start (no restarts needed)
 - Automated error detection using Next.js MCP tools
-- Browser-based testing with Playwright
+- Browser-based testing with browser automation
 - Fast Refresh applies fixes instantly
 - Comprehensive fix strategies for all error types
 - Support for "use cache", "use cache: private", Suspense boundaries
@@ -36,7 +36,7 @@ Key Features:
 Requires:
 - Next.js 16.0.0+ (stable or canary only - beta versions are NOT supported)
 - Clean working directory preferred
-- Playwright installed (auto-installed if needed)
+- Browser automation installed (auto-installed if needed)
 
 This tool embeds complete knowledge base for:
 - Cache Components mechanics
@@ -89,7 +89,7 @@ This tool embeds complete knowledge base for:
           {
             name: "Phase 4: Route Verification & Error Detection",
             tasks: [
-              "Use Playwright to load all routes in browser",
+              "Use browser_eval to load all routes in browser",
               "Collect errors using Next.js MCP get_errors tool",
               "Categorize errors by type (Suspense, async params, etc.)",
             ],
@@ -119,7 +119,7 @@ This tool embeds complete knowledge base for:
         key_features: [
           "One-time dev server start (no restarts needed)",
           "Automated error detection using Next.js MCP tools",
-          "Browser-based testing with Playwright",
+          "Browser-based testing with browser automation",
           "Fast Refresh applies fixes instantly",
           "Comprehensive fix strategies for all error types",
         ],
@@ -146,7 +146,7 @@ This tool embeds complete knowledge base for:
           step_1: "Check prerequisites: Next.js 16.0.0+ stable or canary (NOT beta), clean git status",
           step_2: "Enable cacheComponents in next.config.js",
           step_3: "Start dev server with __NEXT_EXPERIMENTAL_MCP_SERVER=true pnpm dev",
-          step_4: "Use playwright_navigate to test routes and get_errors to collect issues",
+          step_4: "Use browser_eval to test routes and get_errors to collect issues",
           step_5: "Fix errors iteratively using Fast Refresh (no restart needed)",
           step_6: "Verify all routes work with zero errors",
         },

@@ -4,7 +4,7 @@ import { connectToMCPServer, MCPConnection } from "./mcp-client.js"
 
 const execAsync = promisify(exec)
 
-let playwrightConnection: MCPConnection | null = null
+let browserEvalConnection: MCPConnection | null = null
 
 /**
  * Check if playwright-mcp is installed
@@ -23,10 +23,10 @@ async function isPlaywrightMCPInstalled(): Promise<boolean> {
  * Install playwright-mcp globally
  */
 async function installPlaywrightMCP(): Promise<void> {
-  console.error("[Playwright Manager] Installing @playwright/mcp globally...")
+  console.error("[Browser Eval Manager] Installing @playwright/mcp globally...")
   try {
     await execAsync("npm install -g @playwright/mcp@latest")
-    console.error("[Playwright Manager] Successfully installed @playwright/mcp")
+    console.error("[Browser Eval Manager] Successfully installed @playwright/mcp")
   } catch (error) {
     throw new Error(`Failed to install @playwright/mcp: ${error}`)
   }
@@ -35,32 +35,32 @@ async function installPlaywrightMCP(): Promise<void> {
 /**
  * Ensure playwright-mcp is installed and install if needed
  */
-export async function ensurePlaywrightMCP(): Promise<void> {
+export async function ensureBrowserEvalMCP(): Promise<void> {
   const installed = await isPlaywrightMCPInstalled()
   if (!installed) {
     await installPlaywrightMCP()
   } else {
-    console.error("[Playwright Manager] @playwright/mcp is already installed")
+    console.error("[Browser Eval Manager] @playwright/mcp is already installed")
   }
 }
 
 /**
  * Start playwright-mcp server and connect to it
  */
-export async function startPlaywrightMCP(options?: {
+export async function startBrowserEvalMCP(options?: {
   browser?: "chrome" | "firefox" | "webkit" | "msedge"
   headless?: boolean
 }): Promise<MCPConnection> {
   // Ensure playwright-mcp is installed
-  await ensurePlaywrightMCP()
+  await ensureBrowserEvalMCP()
 
   // If already connected, return existing connection
-  if (playwrightConnection) {
-    console.error("[Playwright Manager] Using existing connection")
-    return playwrightConnection
+  if (browserEvalConnection) {
+    console.error("[Browser Eval Manager] Using existing connection")
+    return browserEvalConnection
   }
 
-  console.error("[Playwright Manager] Starting playwright-mcp server with verbose logging...")
+  console.error("[Browser Eval Manager] Starting playwright-mcp server with verbose logging...")
 
   // Build args for playwright-mcp
   const args: string[] = ["@playwright/mcp@latest"]
@@ -85,38 +85,38 @@ export async function startPlaywrightMCP(options?: {
   // Connect to playwright-mcp using npx
   const connection = await connectToMCPServer("npx", args, { env })
 
-  playwrightConnection = connection
-  console.error("[Playwright Manager] Successfully connected to playwright-mcp (verbose mode enabled)")
-  console.error("[Playwright Manager] Playwright logs will be shown below:")
+  browserEvalConnection = connection
+  console.error("[Browser Eval Manager] Successfully connected to playwright-mcp (verbose mode enabled)")
+  console.error("[Browser Eval Manager] Browser automation logs will be shown below:")
 
   return connection
 }
 
 /**
- * Get the current playwright-mcp connection
+ * Get the current browser eval connection
  */
-export function getPlaywrightConnection(): MCPConnection | null {
-  return playwrightConnection
+export function getBrowserEvalConnection(): MCPConnection | null {
+  return browserEvalConnection
 }
 
 /**
  * Stop playwright-mcp server and cleanup
  */
-export async function stopPlaywrightMCP(): Promise<void> {
-  if (!playwrightConnection) {
+export async function stopBrowserEvalMCP(): Promise<void> {
+  if (!browserEvalConnection) {
     return
   }
 
-  console.error("[Playwright Manager] Stopping playwright-mcp server...")
+  console.error("[Browser Eval Manager] Stopping playwright-mcp server...")
 
   try {
-    await playwrightConnection.transport.close()
-    await playwrightConnection.client.close()
-    playwrightConnection = null
-    console.error("[Playwright Manager] Successfully stopped playwright-mcp")
+    await browserEvalConnection.transport.close()
+    await browserEvalConnection.client.close()
+    browserEvalConnection = null
+    console.error("[Browser Eval Manager] Successfully stopped playwright-mcp")
   } catch (error) {
-    console.error("[Playwright Manager] Error stopping playwright-mcp:", error)
-    playwrightConnection = null
+    console.error("[Browser Eval Manager] Error stopping playwright-mcp:", error)
+    browserEvalConnection = null
     throw error
   }
 }
@@ -125,11 +125,12 @@ export async function stopPlaywrightMCP(): Promise<void> {
  * Cleanup on process exit
  */
 process.on("SIGINT", async () => {
-  await stopPlaywrightMCP()
+  await stopBrowserEvalMCP()
   process.exit(0)
 })
 
 process.on("SIGTERM", async () => {
-  await stopPlaywrightMCP()
+  await stopBrowserEvalMCP()
   process.exit(0)
 })
+

@@ -250,7 +250,7 @@ Search and retrieve Next.js official documentation and knowledge base.
 </details>
 
 <details>
-<summary><code>playwright</code></summary>
+<summary><code>browser_eval</code></summary>
 
 Automate and test web applications using Playwright browser automation.
 
@@ -261,10 +261,10 @@ Automate and test web applications using Playwright browser automation.
 - Detecting runtime errors, hydration issues, and client-side problems
 - Capturing browser console errors and warnings
 
-**Important:** For Next.js projects, prioritize using the `nextjs_runtime` tool instead of browser console log forwarding. Only use Playwright's `console_messages` action as a fallback when `nextjs_runtime` tools are not available.
+**Important:** For Next.js projects, prioritize using the `nextjs_runtime` tool instead of browser console log forwarding. Only use browser_eval's `console_messages` action as a fallback when `nextjs_runtime` tools are not available.
 
 **Available actions:**
-- `start` - Start Playwright browser (automatically installs if needed)
+- `start` - Start browser automation (automatically installs if needed)
 - `navigate` - Navigate to a URL
 - `click` - Click on an element
 - `type` - Type text into an element
@@ -275,7 +275,7 @@ Automate and test web applications using Playwright browser automation.
 - `close` - Close the browser
 - `drag` - Perform drag and drop
 - `upload_file` - Upload files
-- `list_tools` - List all available Playwright tools from the server
+- `list_tools` - List all available browser automation tools from the server
 
 **Input:**
 - `action` (required) - The action to perform

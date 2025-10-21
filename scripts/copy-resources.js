@@ -17,6 +17,11 @@ const resources = [
     dest: 'dist/mcp-prompts/'
   },
   {
+    type: 'files',
+    src: 'src/mcp-resources/nextjs-16-beta-to-stable.md',
+    dest: 'dist/mcp-resources/'
+  },
+  {
     type: 'dir',
     src: 'src/mcp-resources/nextjs-16-knowledge',
     dest: 'dist/mcp-resources/nextjs-16-knowledge'

@@ -77,9 +77,6 @@ export function getUpgradeNextjs16Prompt(args?: Record<string, string>): GetProm
     ? `**Note**: Next.js 16 is currently only available on the **beta** channel (version ${version}). The codemod will install the beta version.\n\nWhen Next.js 16 stable is released, you'll need to run the beta-to-stable migration (see Phase 3, section I).`
     : `**Note**: Next.js 16 is available on the **stable** channel (version ${version}).`
 
-  // Load critical rules (always embedded)
-  const criticalRules = readFileSync(join(__dirname, "nextjs-16-critical-rules.md"), "utf-8")
-
   // Load beta-to-stable migration guide (only needed when using beta channel)
   const betaToStableGuide = isBetaChannel ? readBetaToStableGuide() : ""
 
@@ -88,7 +85,6 @@ export function getUpgradeNextjs16Prompt(args?: Record<string, string>): GetProm
 
   // Replace sentinel values
   promptTemplate = promptTemplate.replace(/{{PROJECT_PATH}}/g, projectPath)
-  promptTemplate = promptTemplate.replace(/{{CRITICAL_RULES}}/g, criticalRules)
   promptTemplate = promptTemplate.replace(/{{BETA_TO_STABLE_GUIDE}}/g, betaToStableGuide)
   promptTemplate = promptTemplate.replace(/{{UPGRADE_CHANNEL}}/g, upgradeChannel)
   promptTemplate = promptTemplate.replace(/{{CODEMOD_COMMAND}}/g, codemodCommandNote)

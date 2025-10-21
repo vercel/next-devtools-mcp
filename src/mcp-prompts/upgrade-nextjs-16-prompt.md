@@ -2,29 +2,29 @@ You are a Next.js upgrade assistant. Help upgrade this project from Next.js 15 (
 
 PROJECT: {{PROJECT_PATH}}
 
-# EMBEDDED KNOWLEDGE: Critical Migration Rules
+# REQUIRED: Load Migration Guide Resource
 
-The essential migration rules are embedded below. For detailed examples and test patterns, load these resources on-demand:
+**Before starting the upgrade, load the complete migration guide:**
 
-**Available Resources:**
-- `nextjs16://knowledge/overview` - Critical errors AI agents make, complete ToC
-- `nextjs16://knowledge/request-apis` - Detailed async params/searchParams patterns
-- `nextjs16://knowledge/cache-invalidation` - updateTag() vs revalidateTag() semantics
-- `nextjs16://knowledge/error-patterns` - Common build/runtime errors
-- `nextjs16://knowledge/test-patterns` - Real test-driven pattern library
-- `nextjs16://knowledge/reference` - Complete API reference, checklists
-
-**How to Access:**
-Resources use the URI scheme `nextjs16://knowledge/...` and are served by this MCP server:
 ```
-Read resource "nextjs16://knowledge/overview"
+Read resource "nextjs16://migration/examples"
 ```
 
-Note: The resource URIs use the `nextjs16://` scheme regardless of what you named the server in your MCP client config.
+This resource contains:
+- 🚨 Quick reference of all breaking changes
+- ✅ Complete checklist
+- 📖 All code examples with search commands
+- 🔧 Step-by-step implementation patterns
 
----
+**Additional Knowledge Resources (load as needed):**
+- `nextjs16://knowledge/overview` - Critical errors AI agents make
+- `nextjs16://knowledge/request-apis` - Detailed async API patterns
+- `nextjs16://knowledge/cache-invalidation` - Cache invalidation semantics
+- `nextjs16://knowledge/error-patterns` - Common errors and solutions
+- `nextjs16://knowledge/test-patterns` - Test-driven patterns
+- `nextjs16://knowledge/reference` - Complete API reference
 
-{{CRITICAL_RULES}}
+**Note:** Resource URIs use the `nextjs16://` scheme regardless of your MCP server name.
 
 ---
 
@@ -77,21 +77,29 @@ Check these BEFORE running the codemod:
    Use these template variables in ALL commands below for consistency
 
 2. **Node.js Version**
-   Required: Node.js 20+
+   Required: Node.js 20.9+
    Check: node --version
-   Action: Upgrade if < 20
+   Action: Upgrade if < 20.9.0
 
 3. **TypeScript Version**
-   Required: TypeScript 5.0+
+   Required: TypeScript 5.1+
    Check: package.json → devDependencies.typescript
    Note: Document if upgrade needed (codemod won't upgrade this)
-   Action: If < 5.0, plan to upgrade after codemod
+   Action: If < 5.1, plan to upgrade after codemod
 
-4. **Current Next.js Version**
+4. **Browser Support** (Informational)
+   Next.js 16 requires these minimum browser versions:
+   - Chrome 111+
+   - Edge 111+
+   - Firefox 111+
+   - Safari 16.4+
+   Note: No action needed, but verify your target audience supports these versions
+
+5. **Current Next.js Version**
    Check: package.json → dependencies.next
    Note: Document current version for rollback
 
-5. **Git Status**
+6. **Git Status**
    Check: git status
    Action: Ensure working directory is clean (no uncommitted changes)
    Why: The codemod requires a clean git state to run
@@ -198,33 +206,64 @@ After the codemod runs, check for any remaining issues it might have missed:
 
 ### Manual Check Checklist:
 
-**A. Parallel Routes (NOT handled by codemod)**
+**A. Completely Removed Features (NOT handled by codemod)**
+   Check your codebase for these removed APIs and configs.
+   
+   **📖 For detailed code examples, see: `nextjs16://migration/examples` (Removed Features Examples)**
+
+   **1. AMP Support Removed:**
+   - Search: `grep -r "useAmp\|amp:" app/ src/ pages/`
+   - Remove all AMP-related code: `useAmp` hook, `export const config = { amp: true }`
+   - No replacement available - AMP support completely removed
+
+   **2. Runtime Config Removed:**
+   - Search: `grep -r "serverRuntimeConfig\|publicRuntimeConfig" next.config.*`
+   - Remove `serverRuntimeConfig` and `publicRuntimeConfig` from next.config.js
+   - Migrate to environment variables in `.env` files
+
+   **3. PPR Flags Removed:**
+   - Search: `grep -r "experimental.ppr\|experimental_ppr" next.config.* app/ src/`
+   - Remove `experimental.ppr` flag and `experimental_ppr` route exports
+   - Use `experimental.cacheComponents: true` instead
+
+   **4. experimental.dynamicIO Renamed:**
+   - Search: `grep -r "experimental.dynamicIO" next.config.*`
+   - Rename to `experimental.cacheComponents`
+
+   **5. unstable_rootParams() Removed:**
+   - Search: `grep -r "unstable_rootParams" app/ src/`
+   - Alternative API coming in upcoming minor release
+   - Temporarily use params from props
+
+   **6. Automatic scroll-behavior: smooth Removed:**
+   - No longer automatic
+   - Add `data-scroll-behavior="smooth"` to `<html>` tag if needed
+
+   **7. devIndicators Config Options Removed:**
+   - Search: `grep -r "devIndicators" next.config.*`
+   - Remove `appIsrStatus`, `buildActivity`, `buildActivityPosition` options
+   - The dev indicator itself remains
+
+**B. Parallel Routes (NOT handled by codemod)**
    Files: Check for @ folders (except `@children`)
    Requirement: All parallel route slots must have `default.js` files
    Impact: Build fails without them
 
    **Note:** `@children` is a special implicit slot and does NOT require a `default.js` file.
+   
+   **📖 For code examples, see: `nextjs16://migration/examples` (Parallel Routes Examples)**
 
-   Fix if missing:
-   ```typescript
-   // Create: app/@modal/default.js (for @modal, @auth, etc.)
-   export default function Default() {
-     return null
-   }
-   ```
+   Quick fix: Create `app/@modal/default.js` (or `@auth`, etc.) that returns `null`
 
-**B. Image Security Config (NOT handled by codemod)**
+**C. Image Security Config (NOT handled by codemod)**
    File: next.config.js
    Check: Are you using local images with query strings?
+   
+   **📖 For code examples, see: `nextjs16://migration/examples` (Image Configuration Examples)**
 
-   If yes, add:
-   ```diff
-   + images: {
-   +   localPatterns: [{ pathname: '/img/**' }]
-   + }
-   ```
+   If yes, add `images.localPatterns` config
 
-**C. Image Default Changes (Behavior change)**
+**D. Image Default Changes (Behavior change)**
    Note: These defaults changed automatically in v16:
    - `minimumCacheTTL`: 60s -> 14400s (4 hours)
    - `qualities`: [1..100] -> [75]
@@ -234,70 +273,59 @@ After the codemod runs, check for any remaining issues it might have missed:
 
    Action: Review if these affect your app, override in config if needed
 
-**D. Lint Command Migration (NOT handled by codemod)**
+**E. Lint Command Migration (NOT handled by codemod)**
    Files: package.json scripts, CI workflows
    Check: Scripts using `next lint`
    Note: `next build` no longer runs linting automatically
+   
+   **📖 For code examples, see: `nextjs16://migration/examples` (Lint Command Migration)**
 
    Options:
    1. Use Biome: `biome check .`
    2. Use ESLint directly: `<pkg-exec> @next/codemod@canary next-lint-to-eslint-cli .`
+   
+   **Note:** `@next/eslint-plugin-next` now defaults to ESLint Flat Config format, aligning with ESLint v10
 
-**E. next.config.js Turbopack Config Updates (REQUIRED for canary users)**
+**F. next.config.js Turbopack Config Updates (REQUIRED for canary users)**
    File: next.config.js
    Check: `turbopackPersistentCachingForDev` config option
    Action: Rename to `turbopackFileSystemCacheForDev`
-
-   ```diff
-   // next.config.js
-   export default {
-   -   turbopackPersistentCachingForDev: true,
-   +   turbopackFileSystemCacheForDev: true,
-   }
-   ```
+   
+   **📖 For code examples, see: `nextjs16://migration/examples` (Config Migration Examples)**
 
    Note: This was a temporary change on canary - not everyone has this config
+   
+   **Additional Turbopack Enhancement:**
+   - Turbopack now automatically enables Babel if a babel config is found
+   - Previously exited with hard error
+   - No action needed - automatic behavior
 
-**F. --turbopack Flags (No Longer Needed)**
+**G. --turbopack Flags (No Longer Needed)**
    Files: package.json scripts
    Check: `next dev --turbopack`, `next build --turbopack`
    Action: Remove `--turbopack` flags (Turbopack is default in v16)
    Note: Use `--webpack` flag if you want webpack instead
+   
+   **📖 For code examples, see: `nextjs16://migration/examples` (Config Migration Examples)**
 
-**G. ESLint Config Removal (REQUIRED)**
+**H. ESLint Config Removal (REQUIRED)**
    File: next.config.js
    Check: `eslint` configuration object
    Action: Remove eslint config from next.config.js
-
-   ```diff
-   // next.config.js
-   export default {
-   -   eslint: {
-   -     ignoreDuringBuilds: true,
-   -     dirs: ['app', 'src'],
-   -   },
-   }
-   ```
+   
+   **📖 For code examples, see: `nextjs16://migration/examples` (Config Migration Examples)**
 
    Note: ESLint configuration should now be in .eslintrc.json or eslint.config.js
    Migration: Use `<pkg-exec> @next/codemod@canary next-lint-to-eslint-cli .` if needed
 
-**H. serverComponentsExternalPackages Deprecation (BREAKING)**
+**I. serverComponentsExternalPackages Deprecation (BREAKING)**
    File: next.config.js
    Check: `serverComponentsExternalPackages` in experimental config
    Action: Move out of experimental - this is now a top-level config option
+   
+   **📖 For code examples, see: `nextjs16://migration/examples` (Config Migration Examples)**
 
-   ```diff
-   // next.config.js
-   export default {
-   -   experimental: {
-   -     serverComponentsExternalPackages: ['package-name'],
-   -   },
-   +   serverComponentsExternalPackages: ['package-name'],
-   }
-   ```
-
-{{IF_BETA_CHANNEL}}**I. Beta to Stable Migration (REQUIRED for beta channel users)**
+{{IF_BETA_CHANNEL}}**J. Beta to Stable Migration (REQUIRED for beta channel users)**
 
    You are currently upgrading to Next.js 16 **beta** channel. When Next.js 16 **stable** is released, you will need to apply additional config migrations:
 
@@ -305,7 +333,7 @@ After the codemod runs, check for any remaining issues it might have missed:
 
    **Key migration when stable is released**: `experimental.cacheLife` must be moved to top-level `cacheLife`{{/IF_BETA_CHANNEL}}
 
-**J. Edge Cases the Codemod May Miss**
+**K. Edge Cases the Codemod May Miss**
    Review these manually:
 
    - Complex async destructuring patterns
@@ -313,6 +341,8 @@ After the codemod runs, check for any remaining issues it might have missed:
    - Route handlers with cookies()/headers() in conditionals
    - Custom metadata generation with complex logic
    - Metadata image routes (opengraph-image, twitter-image, icon, apple-icon)
+   
+   **📖 For detailed code examples, see: `nextjs16://migration/examples` (Async API Migration Examples)**
 
    **CRITICAL: Only change if function actually uses these 5 APIs:**
    1. `params` from props
@@ -331,53 +361,25 @@ After the codemod runs, check for any remaining issues it might have missed:
    - The function signature remains `{ params, id }` but `params` becomes a Promise
    - `params` is now async: `await params`
    - The `id` parameter remains a string (not a Promise)
+   
+   See migration examples resource for complete before/after code
 
-   ```typescript
-   // ❌ BEFORE
-   export default function Image({ params, id }) {
-     const slug = params.slug
-   }
-
-   // ✅ AFTER
-   export default async function Image({ params, id }) {
-     const resolvedParams = await params  // params is now a Promise
-     const slug = resolvedParams.slug
-     const imageId = id  // string
-   }
-   ```
-
-**K. ViewTransition API Renamed (NOT handled by codemod)**
+**L. ViewTransition API Renamed (NOT handled by codemod)**
    Files: Search for imports of `unstable_ViewTransition` from React
    Action: Rename to `ViewTransition` (now stable in v16)
+   
+   **📖 For code examples, see: `nextjs16://migration/examples` (ViewTransition API Migration)**
 
-   ```diff
-   - import { unstable_ViewTransition } from 'react'
-   + import { ViewTransition } from 'react'
-   ```
+   - Rename `unstable_ViewTransition` → `ViewTransition`
+   - Remove `experimental.viewTransition` flag from next.config.js
 
-**L. revalidateTag API Changes (Deprecation - NOT handled by codemod)**
+**M. revalidateTag API Changes (Deprecation - NOT handled by codemod)**
    Files: Search for `revalidateTag(` calls
    Check: All revalidateTag calls now require a profile parameter
+   
+   **📖 For code examples, see: `nextjs16://migration/examples` (Cache Invalidation Examples)**
 
-   ```bash
-   # Find all revalidateTag calls
-   grep -r "revalidateTag(" app/ src/
-   ```
-
-   Migration options:
-   ```typescript
-   // ❌ OLD (deprecated)
-   import { revalidateTag } from 'next/cache'
-   revalidateTag('posts')
-
-   // ✅ OPTION 1: Use updateTag for Server Actions with read-your-own-writes
-   import { updateTag } from 'next/cache'
-   updateTag('posts', 'max')
-
-   // ✅ OPTION 2: Use revalidateTag with profile for background invalidation
-   import { revalidateTag } from 'next/cache'
-   revalidateTag('posts', 'max')
-   ```
+   Search: `grep -r "revalidateTag(" app/ src/`
 
    **When to use which:**
    - Use `updateTag('tag', 'max')` in Server Actions when you need immediate consistency (read-your-own-writes)
@@ -385,9 +387,11 @@ After the codemod runs, check for any remaining issues it might have missed:
 
    Load `nextjs16://knowledge/cache-invalidation` for detailed API semantics and migration patterns.
 
-**L. Middleware to Proxy Migration (NOT handled by codemod)**
+**N. Middleware to Proxy Migration (NOT handled by codemod)**
    Files: middleware.ts, next.config.js
    Check: Middleware-related files and config properties
+   
+   **📖 For code examples, see: `nextjs16://migration/examples` (Middleware to Proxy Examples)**
    
    The `middleware` concept is being renamed to `proxy` in Next.js 16:
    
@@ -395,42 +399,40 @@ After the codemod runs, check for any remaining issues it might have missed:
    - Rename `middleware.ts` → `proxy.ts`
    - Rename named export `middleware` → `proxy` in the file
    
-   ```diff
-   - // middleware.ts
-   - export function middleware(request) {
-   + // proxy.ts
-   + export function proxy(request) {
-     return NextResponse.next()
-   }
-   ```
+   **Config property renames:**
+   - `experimental.middlewarePrefetch` → `experimental.proxyPrefetch`
+   - `experimental.middlewareClientMaxBodySize` → `experimental.proxyClientMaxBodySize`
+   - `experimental.externalMiddlewareRewritesResolve` → `experimental.externalProxyRewritesResolve`
+   - `skipMiddlewareUrlNormalize` → `skipProxyUrlNormalize`
    
-   **Next.js config property renames:**
-   ```diff
-   // next.config.js
-   export default {
-     experimental: {
-   -   middlewarePrefetch: 'strict',
-   +   proxyPrefetch: 'strict',
-   
-   -   middlewareClientMaxBodySize: 1024,
-   +   proxyClientMaxBodySize: 1024,
-   
-   -   externalMiddlewareRewritesResolve: true,
-   +   externalProxyRewritesResolve: true,
-     },
-   
-   - skipMiddlewareUrlNormalize: true,
-   + skipProxyUrlNormalize: true,
-   }
-   ```
-   
-   **Search for these config properties:**
-   ```bash
-   # Find middleware config usage
-   grep -r "middlewarePrefetch\|middlewareClientMaxBodySize\|externalMiddlewareRewritesResolve\|skipMiddlewareUrlNormalize" .
-   ```
+   Search: `grep -r "middlewarePrefetch\|middlewareClientMaxBodySize\|externalMiddlewareRewritesResolve\|skipMiddlewareUrlNormalize" .`
 
-**M. Other Deprecated Features (WARNINGS - Optional)**
+**O. Build and Dev Improvements (Informational - No action needed)**
+   These improvements are automatic in Next.js 16:
+   
+   - **Terminal Output Redesign:**
+     - Clearer formatting
+     - Better error messages
+     - Improved performance metrics
+   
+   - **Separate Output Directories:**
+     - `next dev` and `next build` now use separate output directories
+     - Enables concurrent execution of both commands
+   
+   - **Lockfile Mechanism:**
+     - Prevents multiple `next dev` or `next build` instances on same project
+     - Prevents conflicts from concurrent builds
+   
+   - **Modern Sass Support:**
+     - `sass-loader` bumped to v16
+     - Supports modern Sass syntax and new features
+     - Automatic - no action needed if using Sass
+   
+   - **Native TypeScript Config (Optional):**
+     - Run with `--experimental-next-config-strip-types` flag to enable native TS for `next.config.ts`
+     - Example: `next dev --experimental-next-config-strip-types`
+
+**P. Other Deprecated Features (WARNINGS - Optional)**
    - `next/legacy/image` → use `next/image`
    - `images.domains` → use `images.remotePatterns`
    - `unstable_rootParams()` → being replaced
@@ -439,29 +441,49 @@ After the codemod runs, check for any remaining issues it might have missed:
 ────────────────────────────────────────
 Only fix issues the codemod missed:
 
+**📖 For all code examples, see: `nextjs16://migration/examples`**
+
 Based on Phase 3 analysis, apply only the necessary manual fixes:
 
-**1. Add missing default.js files (if you have @ folders)**
+**1. Remove completely removed features (if found in Phase 3 section A)**
+   - Remove AMP-related code
+   - Migrate runtime configs to environment variables
+   - Remove PPR flags
+   - Rename experimental.dynamicIO to cacheComponents
+   - Remove unstable_rootParams() usage
+   - Add data-scroll-behavior attribute if needed
+   - Remove devIndicators config options
+   
+   See: `nextjs16://migration/examples` → Removed Features Examples
 
-**2. Add image security config (if using local images with query strings)**
+**2. Add missing default.js files (if you have @ folders)**
+   
+   See: `nextjs16://migration/examples` → Parallel Routes Examples
 
-**3. Update lint commands (if using next lint in scripts/CI)**
+**3. Add image security config (if using local images with query strings)**
+   
+   See: `nextjs16://migration/examples` → Image Configuration Examples
 
-**4. Fix revalidateTag calls (see section H in Phase 3)**
+**4. Update lint commands (if using next lint in scripts/CI)**
+   
+   See: `nextjs16://migration/examples` → Lint Command Migration
+
+**5. Fix revalidateTag calls (see section M in Phase 3)**
    - Update all `revalidateTag(tag)` calls to include profile parameter
    - Use `updateTag(tag, 'max')` for Server Actions (read-your-own-writes)
    - Use `revalidateTag(tag, 'max')` for Route Handlers (background invalidation)
+   
+   See: `nextjs16://migration/examples` → Cache Invalidation Examples
 
-**5. Fix edge cases the codemod missed (RARE - only if found in Phase 3)**
-   Template for async API fixes:
-   ```diff
-   - export default function Page({ params, searchParams }) {
-   -   const slug = params.slug
-   + export default async function Page(props) {
-   +   const params = await props.params
-   +   const searchParams = await props.searchParams
-   +   const slug = params.slug
-   ```
+**6. Migrate middleware to proxy (see section N in Phase 3)**
+   - Rename middleware.ts to proxy.ts
+   - Update config properties
+   
+   See: `nextjs16://migration/examples` → Middleware to Proxy Examples
+
+**7. Fix edge cases the codemod missed (RARE - only if found in Phase 3 section K)**
+   
+   See: `nextjs16://migration/examples` → Async API Migration Examples
 
 ## OUTPUT FORMAT
 ────────────────────────────────────────
@@ -480,8 +502,9 @@ Report findings in this format:
 ## Phase 1: Pre-Flight Checks
 [ ] Monorepo structure detected (if applicable, list all Next.js apps)
 [ ] Working directory: [current app directory path]
-[ ] Node.js version (20+)
-[ ] TypeScript version checked (5.0+)
+[ ] Node.js version (20.9+)
+[ ] TypeScript version checked (5.1+)
+[ ] Browser support requirements reviewed (Chrome 111+, Edge 111+, Firefox 111+, Safari 16.4+)
 [ ] Current Next.js version documented
 [ ] Git working directory is clean (no uncommitted changes)
 
@@ -508,17 +531,29 @@ Report findings in this format:
 
 ## Phase 3: Issues Requiring Manual Fixes
 Issues the codemod couldn't handle:
-[ ] Parallel routes missing default.js
-[ ] Image security config needed
-[ ] Lint commands to update
-[ ] next.config.js: turbopackPersistentCachingForDev → turbopackFileSystemCacheForDev
-[ ] next.config.js: Remove eslint config object
-[ ] next.config.js: Move serverComponentsExternalPackages out of experimental
-{{IF_BETA_CHANNEL}}[ ] next.config.js: Move cacheLife out of experimental (required when stable is released)
-{{/IF_BETA_CHANNEL}}[ ] Middleware to Proxy migration (rename middleware.ts → proxy.ts and config properties)
-[ ] revalidateTag API changes
-[ ] Edge cases in async APIs
-[ ] Deprecated features to update
+[ ] A. Removed features check:
+  [ ] AMP support removal
+  [ ] Runtime config removal (serverRuntimeConfig, publicRuntimeConfig)
+  [ ] PPR flags removal (experimental.ppr, experimental_ppr)
+  [ ] experimental.dynamicIO → cacheComponents rename
+  [ ] unstable_rootParams() removal
+  [ ] Automatic scroll-behavior: smooth removal
+  [ ] devIndicators config options removal
+[ ] B. Parallel routes missing default.js
+[ ] C. Image security config needed
+[ ] D. Image default changes reviewed
+[ ] E. Lint commands to update (ESLint flat config default noted)
+[ ] F. next.config.js: turbopackPersistentCachingForDev → turbopackFileSystemCacheForDev (Babel auto-enabled noted)
+[ ] G. Remove --turbopack flags from scripts
+[ ] H. next.config.js: Remove eslint config object
+[ ] I. next.config.js: Move serverComponentsExternalPackages out of experimental
+{{IF_BETA_CHANNEL}}[ ] J. next.config.js: Move cacheLife out of experimental (required when stable is released)
+{{/IF_BETA_CHANNEL}}[ ] K. Edge cases in async APIs
+[ ] L. ViewTransition API renamed (unstable_ViewTransition → ViewTransition, remove experimental.viewTransition flag)
+[ ] M. revalidateTag API changes
+[ ] N. Middleware to Proxy migration (rename middleware.ts → proxy.ts and config properties)
+[ ] O. Build and dev improvements reviewed (informational)
+[ ] P. Deprecated features to update
 
 ## Files Requiring Manual Changes
 - path/to/file1.ts (reason - not handled by codemod)

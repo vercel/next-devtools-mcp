@@ -32,6 +32,11 @@ import {
   readBetaToStableGuide,
   isBetaToStableUri,
 } from "./mcp-resources/nextjs-16-beta-to-stable.js"
+import {
+  getMigrationExamplesResource,
+  readMigrationExamples,
+  isMigrationExamplesUri,
+} from "./mcp-resources/nextjs-16-migration-examples.js"
 
 async function main() {
   // Create MCP server instance
@@ -136,7 +141,13 @@ async function main() {
     const nextjs16Resources = getNextjs16KnowledgeResources()
     const fundamentalsResources = getNextjsFundamentalsResources()
     const betaToStableResource = getBetaToStableResource()
-    const resources = [...nextjs16Resources, ...fundamentalsResources, betaToStableResource]
+    const migrationExamplesResource = getMigrationExamplesResource()
+    const resources = [
+      ...nextjs16Resources,
+      ...fundamentalsResources,
+      betaToStableResource,
+      migrationExamplesResource,
+    ]
 
     return { resources }
   })
@@ -154,6 +165,8 @@ async function main() {
         content = readFundamentalsSection(uri)
       } else if (isBetaToStableUri(uri)) {
         content = readBetaToStableGuide()
+      } else if (isMigrationExamplesUri(uri)) {
+        content = readMigrationExamples()
       } else {
         throw new Error(`Unknown resource URI: ${uri}`)
       }

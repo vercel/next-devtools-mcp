@@ -26,8 +26,8 @@ export async function register() {
   // 'use cache' INVALID here - not request-scoped
 }
 
-// ❌ MIDDLEWARE: Uses Response headers, NOT 'use cache'
-export function middleware(request: NextRequest) {
+// ❌ PROXY/MIDDLEWARE: Uses Response headers, NOT 'use cache'
+export function proxy(request: NextRequest) {
   // 'use cache' INVALID here - request rewriting layer
 }
 ```
@@ -36,7 +36,9 @@ export function middleware(request: NextRequest) {
 - **Server Components**: Part of React component tree → prerenderable → `'use cache'` works
 - **Route Handlers**: HTTP request handlers → request-time only → use `revalidateTag()`
 - **Instrumentation**: Server startup hooks → one-time setup → use global state
-- **Middleware**: Request transformation layer → pre-routing → use Response headers
+- **Proxy/Middleware**: Request transformation layer → pre-routing → use Response headers
+
+**Note**: In Next.js 16, `middleware.ts` is being renamed to `proxy.ts` and the `middleware` export is being renamed to `proxy`. The old names still work but are deprecated.
 
 **Key Insight**: `'use cache'` is React-specific. It requires:
 1. Component tree context (JSX rendering)
@@ -44,7 +46,7 @@ export function middleware(request: NextRequest) {
 3. Serializable prop keys (deterministic cache)
 4. Suspense integration (dynamic holes)
 
-Route handlers/instrumentation/middleware don't have these - use different APIs.
+Route handlers/instrumentation/proxy don't have these - use different APIs.
 
 ---
 

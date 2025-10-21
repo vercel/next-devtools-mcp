@@ -382,8 +382,8 @@ After the codemod runs, check for any remaining issues it might have missed:
    Search: `grep -r "revalidateTag(" app/ src/`
 
    **When to use which:**
-   - Use `updateTag('tag', 'max')` in Server Actions when you need immediate consistency (read-your-own-writes)
-   - Use `revalidateTag('tag', 'max')` in Route Handlers or when background invalidation is acceptable
+   - Use `updateTag('tag')` in Server Actions when you need immediate consistency (read-your-own-writes, no profile parameter)
+   - Use `revalidateTag('tag', 'max')` in Route Handlers or when background invalidation is acceptable (requires profile parameter)
 
    Load `nextjs16://knowledge/cache-invalidation` for detailed API semantics and migration patterns.
 
@@ -470,8 +470,8 @@ Based on Phase 3 analysis, apply only the necessary manual fixes:
 
 **5. Fix revalidateTag calls (see section M in Phase 3)**
    - Update all `revalidateTag(tag)` calls to include profile parameter
-   - Use `updateTag(tag, 'max')` for Server Actions (read-your-own-writes)
-   - Use `revalidateTag(tag, 'max')` for Route Handlers (background invalidation)
+   - Use `updateTag(tag)` for Server Actions (read-your-own-writes, no profile parameter)
+   - Use `revalidateTag(tag, 'max')` for Route Handlers (background invalidation, requires profile parameter)
    
    See: `nextjs16://migration/examples` → Cache Invalidation Examples
 

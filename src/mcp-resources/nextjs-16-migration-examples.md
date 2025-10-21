@@ -24,8 +24,8 @@ Complete reference and code examples for migrating to Next.js 16 stable.
 - Pattern: `cookies().get()` → `(await cookies()).get()`
 
 **3. revalidateTag API** - Now requires profile parameter
-- `updateTag(tag, profile)` for Server Actions (read-your-own-writes)
-- `revalidateTag(tag, profile)` for Route Handlers (background invalidation)
+- `updateTag(tag)` for Server Actions (read-your-own-writes, no profile parameter)
+- `revalidateTag(tag, profile)` for Route Handlers (background invalidation, requires profile)
 
 ### Completely Removed
 
@@ -511,9 +511,9 @@ import { updateTag } from 'next/cache'
 
 export async function createPost(data: FormData) {
   'use server'
-  
+
   await db.posts.create(data)
-  updateTag('posts', 'max')  // Immediate consistency
+  updateTag('posts')  // Immediate consistency (read-your-own-writes)
 }
 
 // ✅ OPTION 2: Use revalidateTag with profile (background invalidation)
@@ -530,8 +530,8 @@ export async function POST(request: Request) {
 
 | API | Use Case | Behavior |
 |-----|----------|----------|
-| `updateTag('tag', 'max')` | Server Actions needing immediate reads | Read-your-own-writes semantics |
-| `revalidateTag('tag', 'max')` | Route Handlers or background updates | Background invalidation |
+| `updateTag('tag')` | Server Actions needing immediate reads | Read-your-own-writes semantics, no profile parameter |
+| `revalidateTag('tag', 'max')` | Route Handlers or background updates | Background invalidation with profile |
 
 **cacheLife Profiles:**
 ```typescript

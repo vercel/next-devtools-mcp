@@ -6,7 +6,7 @@
 - Server components (pages, layouts)
 - Route handlers (`app/route.ts`)
 - Instrumentation (`instrumentation.ts`)
-- Middleware (`middleware.ts`)
+- Proxy (`proxy.ts`, formerly `middleware.ts`)
 - Server Actions (in client/server components)
 
 **However, they execute in different contexts** - this is the KEY distinction:
@@ -53,10 +53,10 @@
 │ └─────────────────────────────────────────────────────────┘  │
 │                                                               │
 │ ┌─────────────────────────────────────────────────────────┐  │
-│ │ EDGE MIDDLEWARE LAYER                                   │  │
+│ │ EDGE PROXY LAYER                                        │  │
 │ │ (Pre-request processing at edge/origin)                 │  │
 │ │                                                          │  │
-│ │ - Middleware (optional, runs before route handlers)     │  │
+│ │ - Proxy (optional, runs before route handlers)          │  │
 │ │ - Cannot use: 'use cache' (request rewriting layer)     │  │
 │ │ - Uses: Response modification, redirects                │  │
 │ │ - Participates in: Request routing/transformation       │  │
@@ -113,7 +113,7 @@ export async function register() {
 | Route Handler | Server | HTTP request-time | `revalidateTag()` | ❌ No |
 | Server Action | Server | RPC call from client | `updateTag()` | ❌ No |
 | Instrumentation | Server | Startup hook | Global state | ❌ No |
-| Middleware | Edge/Server | Request transform | Response headers | ❌ No |
+| Proxy/Middleware | Edge/Server | Request transform | Response headers | ❌ No |
 
 **Key Takeaway**: Being in the same "server bundle" doesn't mean they use the same caching model. The bundler layer is just where code lives; the execution context determines which caching APIs are available.
 

@@ -385,8 +385,52 @@ After the codemod runs, check for any remaining issues it might have missed:
 
    Load `nextjs16://knowledge/cache-invalidation` for detailed API semantics and migration patterns.
 
-**L. Deprecated Features (WARNINGS - Optional)**
-   - `middleware.ts` → consider renaming to `proxy.ts`
+**L. Middleware to Proxy Migration (NOT handled by codemod)**
+   Files: middleware.ts, next.config.js
+   Check: Middleware-related files and config properties
+   
+   The `middleware` concept is being renamed to `proxy` in Next.js 16:
+   
+   **File renames:**
+   - Rename `middleware.ts` → `proxy.ts`
+   - Rename named export `middleware` → `proxy` in the file
+   
+   ```diff
+   - // middleware.ts
+   - export function middleware(request) {
+   + // proxy.ts
+   + export function proxy(request) {
+     return NextResponse.next()
+   }
+   ```
+   
+   **Next.js config property renames:**
+   ```diff
+   // next.config.js
+   export default {
+     experimental: {
+   -   middlewarePrefetch: 'strict',
+   +   proxyPrefetch: 'strict',
+   
+   -   middlewareClientMaxBodySize: 1024,
+   +   proxyClientMaxBodySize: 1024,
+   
+   -   externalMiddlewareRewritesResolve: true,
+   +   externalProxyRewritesResolve: true,
+     },
+   
+   - skipMiddlewareUrlNormalize: true,
+   + skipProxyUrlNormalize: true,
+   }
+   ```
+   
+   **Search for these config properties:**
+   ```bash
+   # Find middleware config usage
+   grep -r "middlewarePrefetch\|middlewareClientMaxBodySize\|externalMiddlewareRewritesResolve\|skipMiddlewareUrlNormalize" .
+   ```
+
+**M. Other Deprecated Features (WARNINGS - Optional)**
    - `next/legacy/image` → use `next/image`
    - `images.domains` → use `images.remotePatterns`
    - `unstable_rootParams()` → being replaced
@@ -471,7 +515,8 @@ Issues the codemod couldn't handle:
 [ ] next.config.js: Remove eslint config object
 [ ] next.config.js: Move serverComponentsExternalPackages out of experimental
 {{IF_BETA_CHANNEL}}[ ] next.config.js: Move cacheLife out of experimental (required when stable is released)
-{{/IF_BETA_CHANNEL}}[ ] revalidateTag API changes
+{{/IF_BETA_CHANNEL}}[ ] Middleware to Proxy migration (rename middleware.ts → proxy.ts and config properties)
+[ ] revalidateTag API changes
 [ ] Edge cases in async APIs
 [ ] Deprecated features to update
 

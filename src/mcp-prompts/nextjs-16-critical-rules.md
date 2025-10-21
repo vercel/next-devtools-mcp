@@ -212,14 +212,26 @@ export default {
 }
 ```
 
-### Middleware Deprecation
+### Middleware → Proxy Migration
 ```typescript
 // ⚠️ DEPRECATED (still works, warning only)
 // middleware.ts
+export function middleware(request) {
+  return NextResponse.next()
+}
 
 // ✅ RECOMMENDED
 // proxy.ts
+export function proxy(request) {
+  return NextResponse.next()
+}
 ```
+
+**Config property renames:**
+- `experimental.middlewarePrefetch` → `experimental.proxyPrefetch`
+- `experimental.middlewareClientMaxBodySize` → `experimental.proxyClientMaxBodySize`
+- `experimental.externalMiddlewareRewritesResolve` → `experimental.externalProxyRewritesResolve`
+- `skipMiddlewareUrlNormalize` → `skipProxyUrlNormalize`
 
 ## 📁 Parallel Routes Requirement
 

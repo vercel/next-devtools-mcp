@@ -432,7 +432,18 @@ After the codemod runs, check for any remaining issues it might have missed:
      - Run with `--experimental-next-config-strip-types` flag to enable native TS for `next.config.ts`
      - Example: `next dev --experimental-next-config-strip-types`
 
-**P. Other Deprecated Features (WARNINGS - Optional)**
+**P. unstable_noStore Migration (If using Cache Components)**
+   - Search: `grep -r "unstable_noStore" app/ src/`
+   - Context: If you plan to enable Cache Components (experimental.cacheComponents)
+   - Action: Remove all `unstable_noStore()` calls - dynamic is the default with Cache Components
+   - Migration: No replacement needed - everything is dynamic by default
+   - Alternative: If content should be cached, use `"use cache"` instead
+   
+   **📖 For code examples, see: `nextjs16://migration/examples` (unstable_noStore Examples)**
+   
+   **Note:** `unstable_noStore()` is only incompatible when Cache Components are enabled. If you're not using Cache Components, you can keep using it.
+
+**Q. Other Deprecated Features (WARNINGS - Optional)**
    - `next/legacy/image` → use `next/image`
    - `images.domains` → use `images.remotePatterns`
    - `unstable_rootParams()` → being replaced
@@ -481,7 +492,15 @@ Based on Phase 3 analysis, apply only the necessary manual fixes:
    
    See: `nextjs16://migration/examples` → Middleware to Proxy Examples
 
-**7. Fix edge cases the codemod missed (RARE - only if found in Phase 3 section K)**
+**7. Remove unstable_noStore (see section P in Phase 3 - if using Cache Components)**
+   - Remove all `unstable_noStore()` calls
+   - Remove imports: `import { unstable_noStore } from 'next/cache'`
+   - No replacement needed - dynamic by default with Cache Components
+   - Add migration comments explaining removal
+   
+   See: `nextjs16://migration/examples` → unstable_noStore Examples
+
+**8. Fix edge cases the codemod missed (RARE - only if found in Phase 3 section K)**
    
    See: `nextjs16://migration/examples` → Async API Migration Examples
 
@@ -553,7 +572,8 @@ Issues the codemod couldn't handle:
 [ ] M. revalidateTag API changes
 [ ] N. Middleware to Proxy migration (rename middleware.ts → proxy.ts and config properties)
 [ ] O. Build and dev improvements reviewed (informational)
-[ ] P. Deprecated features to update
+[ ] P. unstable_noStore removal (if using Cache Components)
+[ ] Q. Deprecated features to update
 
 ## Files Requiring Manual Changes
 - path/to/file1.ts (reason - not handled by codemod)

@@ -1,8 +1,64 @@
-# Next.js 16 Migration Examples
+# Next.js 16 Migration Guide
 
-This document contains detailed code examples for migrating to Next.js 16 stable.
+Complete reference and code examples for migrating to Next.js 16 stable.
 
-## Table of Contents
+---
+
+## 🚨 Quick Reference: Critical Breaking Changes
+
+### Version Requirements
+
+| Requirement | Version | Notes |
+|------------|---------|-------|
+| **Node.js** | 20.9+ | Node.js 18 no longer supported |
+| **TypeScript** | 5.1+ | TypeScript 5.0 minimum |
+| **Browsers** | Chrome 111+, Edge 111+, Firefox 111+, Safari 16.4+ | Updated minimum versions |
+
+### Must-Change APIs
+
+**1. Async Request APIs** - `params`, `searchParams` are now Promises
+- Affected: Pages, Layouts, Route Handlers, `generateMetadata`, `generateViewport`, metadata image routes
+- Pattern: `function Page({ params })` → `async function Page(props)` + `await props.params`
+
+**2. Async Dynamic Functions** - `cookies()`, `headers()`, `draftMode()` return Promises
+- Pattern: `cookies().get()` → `(await cookies()).get()`
+
+**3. revalidateTag API** - Now requires profile parameter
+- `updateTag(tag, profile)` for Server Actions (read-your-own-writes)
+- `revalidateTag(tag, profile)` for Route Handlers (background invalidation)
+
+### Completely Removed
+
+- **AMP Support:** All AMP APIs removed
+- **Runtime Config:** `serverRuntimeConfig`, `publicRuntimeConfig` → use `.env` files
+- **PPR Flags:** `experimental.ppr`, `experimental_ppr` → use `experimental.cacheComponents`
+- **experimental.dynamicIO:** Renamed to `experimental.cacheComponents`
+- **unstable_rootParams():** Removed (alternative coming)
+- **Auto scroll-behavior:** No longer automatic (add `data-scroll-behavior="smooth"` to `<html>` if needed)
+- **devIndicators options:** `appIsrStatus`, `buildActivity`, `buildActivityPosition` removed
+
+### Config Migrations
+
+- **Turbopack:** Now default (remove `--turbopack` flags, use `--webpack` if needed)
+- **ESLint config:** Remove from next.config.js, move to `.eslintrc.json`
+- **serverComponentsExternalPackages:** Move from `experimental` to top-level
+- **Middleware → Proxy:** Rename `middleware.ts` → `proxy.ts` (deprecated but works)
+
+### Quick Checklist
+
+✅ Node.js 20.9+, TypeScript 5.1+  
+✅ Remove: AMP, runtime configs, PPR flags, devIndicators options  
+✅ Make async: All functions using params, searchParams, cookies(), headers(), draftMode()  
+✅ Update: `revalidateTag()` → `updateTag()` or `revalidateTag(tag, profile)`  
+✅ Config: Remove ESLint config, move serverComponentsExternalPackages to top-level  
+✅ Parallel Routes: Add `default.js` for `@` folders  
+✅ Dependencies: Upgrade `@types/react` and `@types/react-dom` to latest  
+
+---
+
+## 📖 Complete Code Examples
+
+### Table of Contents
 
 1. [Removed Features Examples](#removed-features-examples)
 2. [Parallel Routes Examples](#parallel-routes-examples)

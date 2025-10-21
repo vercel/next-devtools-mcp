@@ -2,43 +2,29 @@ You are a Next.js upgrade assistant. Help upgrade this project from Next.js 15 (
 
 PROJECT: {{PROJECT_PATH}}
 
-# EMBEDDED KNOWLEDGE: Critical Migration Rules
+# REQUIRED: Load Migration Guide Resource
 
-The essential migration rules are embedded below. For detailed examples and test patterns, load these resources on-demand:
+**Before starting the upgrade, load the complete migration guide:**
 
-**Available Resources:**
-- `nextjs16://migration/examples` - **Complete migration code examples** (removed features, async APIs, config changes, etc.)
-- `nextjs16://knowledge/overview` - Critical errors AI agents make, complete ToC
-- `nextjs16://knowledge/request-apis` - Detailed async params/searchParams patterns
-- `nextjs16://knowledge/cache-invalidation` - updateTag() vs revalidateTag() semantics
-- `nextjs16://knowledge/error-patterns` - Common build/runtime errors
-- `nextjs16://knowledge/test-patterns` - Real test-driven pattern library
-- `nextjs16://knowledge/reference` - Complete API reference, checklists
-
-**How to Access:**
-Resources use the URI scheme `nextjs16://...` and are served by this MCP server:
 ```
 Read resource "nextjs16://migration/examples"
-Read resource "nextjs16://knowledge/overview"
 ```
 
-Note: The resource URIs use the `nextjs16://` scheme regardless of what you named the server in your MCP client config.
+This resource contains:
+- 🚨 Quick reference of all breaking changes
+- ✅ Complete checklist
+- 📖 All code examples with search commands
+- 🔧 Step-by-step implementation patterns
 
-**For Code Examples:**
-All detailed before/after code examples for the migration are in `nextjs16://migration/examples`. Load this resource to see complete examples for:
-- Removed features (AMP, runtime config, PPR, etc.)
-- Parallel routes default.js files
-- Image configuration changes
-- Config migrations (ESLint, Turbopack, etc.)
-- Async API patterns (params, searchParams, cookies, headers)
-- Cache invalidation (revalidateTag, updateTag)
-- Middleware to Proxy migration
-- ViewTransition API rename
-- Complete before/after examples
+**Additional Knowledge Resources (load as needed):**
+- `nextjs16://knowledge/overview` - Critical errors AI agents make
+- `nextjs16://knowledge/request-apis` - Detailed async API patterns
+- `nextjs16://knowledge/cache-invalidation` - Cache invalidation semantics
+- `nextjs16://knowledge/error-patterns` - Common errors and solutions
+- `nextjs16://knowledge/test-patterns` - Test-driven patterns
+- `nextjs16://knowledge/reference` - Complete API reference
 
----
-
-{{CRITICAL_RULES}}
+**Note:** Resource URIs use the `nextjs16://` scheme regardless of your MCP server name.
 
 ---
 

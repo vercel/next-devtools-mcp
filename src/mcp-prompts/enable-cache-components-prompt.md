@@ -429,62 +429,29 @@ __NEXT_EXPERIMENTAL_MCP_SERVER=true <pkg-manager> dev
 sleep 10
 ```
 
-### Step 3: Verify Server is Running and Capture URL
+### Step 3: Verify Server is Running
 
-Check the server output for:
-- ✅ "Ready started server on [URL]" or "Local: http://localhost:[PORT]"
+Wait for the server output to show:
+- ✅ "Ready started server..." or "Local: ..."
 - ✅ No fatal errors
-- ✅ Port number (usually 3000, might be 3001 if 3000 is in use)
 - ✅ MCP server started message (if available)
 
-**IMPORTANT: Memorize the URL and Port**
-
-From the dev server output, capture:
-- Base URL: e.g., `http://localhost:3000` or `http://localhost:3001`
-- Port number: e.g., `3000` or `3001`
-
-**You will need these for:**
-- Step 4: Connecting to MCP server at `<url>:<port>/_next/mcp`
-- Phase 4: Making HTTP requests to routes at `<url>:<port>/[route-path]`
-
-**If port 3000 is already in use:**
-- Next.js will automatically use next available port (3001, 3002, etc.)
-- This is NORMAL - pkg-mgr dev handles this automatically
-- Note the actual port being used in the dev server output
-- Use that port for all subsequent steps
+The dev server will automatically use an available port and display the URL.
 
 ### Step 4: Verify MCP Server is Active
 
 **Connect to Next.js MCP Server:**
 
-The Next.js MCP server is available at: **`<url>:<port>/_next/mcp`**
+The MCP server is available at `{dev-server-url}/_next/mcp`
 
-Using the URL and port from Step 4:
-- If dev server is at `http://localhost:3000`
-- Then MCP server is at `http://localhost:3000/_next/mcp`
+Example: If dev server shows `http://localhost:3000`, connect to `http://localhost:3000/_next/mcp`
 
-Try to connect to the Next.js MCP server and check if it's responding:
-
-```
-Connect to MCP server at <url>:<port>/_next/mcp
-Call the get_project_metadata tool
-```
-
-**Example:**
-If your dev server started on port 3001 (because 3000 was in use):
-- Dev server: `http://localhost:3001`
-- MCP endpoint: `http://localhost:3001/_next/mcp`
-- Connect to this endpoint and call `get_project_metadata`
+Try calling `get_project_metadata`:
 
 **Expected Result:**
-- ✅ Successfully connects to `<url>:<port>/_next/mcp`
-- ✅ Tool responds successfully with project metadata:
-  - Project name and version
-  - Next.js version
-  - Configuration (including cacheComponents status)
-  - Installed dependencies
-- This confirms the MCP server is alive and ready for error detection
-- You should see cacheComponents enabled in the config if Phase 2 was successful
+- ✅ Successfully connects to MCP endpoint
+- ✅ Returns project metadata (name, version, config, dependencies)
+- ✅ Shows cacheComponents enabled (confirms Phase 2 succeeded)
 
 **If the tool is not available or connection fails:**
 
@@ -509,23 +476,15 @@ If still failing after retry:
 - `get_project_metadata` is the simplest tool to verify MCP is alive
 - Better to verify now than discover MCP is broken during route verification
 
-### Step 5: Record Server Details
+### Step 5: Ready for Route Verification
 
-**Critical Information for Phase 4 and 5:**
-
-Record these details from the dev server output:
-- **Base URL**: [e.g., http://localhost:3000 or http://localhost:3001]
-- **MCP Endpoint**: [e.g., http://localhost:3000/_next/mcp]
-- **All route paths**: [list from Phase 1, e.g., /, /about, /blog, /blog/[slug]]
-
-**Usage:**
-- Base URL for HTTP requests: `<base-url>/about`
-- MCP Endpoint for error detection: Connect to `<mcp-endpoint>` and call `get_errors`
+**Phase 3 Complete:**
+- ✅ Dev server running (will show URL in output)
+- ✅ MCP server active and verified
+- ✅ Ready to test routes in Phase 4
 
 **Server State:**
-- ✅ Server is running in background
-- ✅ MCP server is active and verified
-- ⚠️  Do NOT stop or restart the server until Phase 6 is complete (pkg-mgr dev handles port assignment automatically)
+- ⚠️ Do NOT stop or restart the server until Phase 6 is complete
 
 ## PHASE 4: Route Verification & Error Detection
 ────────────────────────────────────────
@@ -538,8 +497,7 @@ errors to collect.
 
 **Prerequisites:**
 - ✅ Dev server is running from Phase 3 (do NOT restart it)
-- ✅ Base URL is captured from Step 3 (e.g., http://localhost:3000)
-- ✅ MCP Endpoint is known (e.g., http://localhost:3000/_next/mcp)
+- ✅ Dev server URL shown in terminal output (e.g., http://localhost:3000)
 - ✅ MCP server is verified active (get_project_metadata responded)
 - ✅ List of all routes from Phase 1
 - ✅ browser_eval tool is available
@@ -561,30 +519,18 @@ Systematically verify each route and collect errors:
 **For Each Route:**
 
 1. **Navigate to Page in Browser (REQUIRED)**
-   **Tool:** browser_eval
-   **Action:** navigate
-   **URL:** `<base-url><route-path>`
-
-   **Example:**
-   - Base URL from Step 3: `http://localhost:3001` (port may vary if 3000 was in use)
-   - Route path: `/dashboard`
-   - Full URL: `http://localhost:3001/dashboard`
-   - Tool call: browser_eval({ action: "navigate", url: "http://localhost:3001/dashboard" })
+   Use browser_eval with action "navigate" to load the page.
+   
+   Example: `browser_eval({ action: "navigate", url: "http://localhost:3000/dashboard" })`
 
    This loads the page in the browser and triggers any rendering errors.
-   Expected: Page loads successfully (or errors are captured by Next.js MCP)
 
 2. **Collect Errors from Browser Session (using Next.js MCP)**
-   **Connect to MCP Endpoint:** `<base-url>/_next/mcp`
-   **Tool:** `get_errors` from Next.js MCP server
+   Connect to Next.js MCP endpoint (at `{dev-server-url}/_next/mcp`) and call `get_errors`.
+   
+   Example: Connect to `http://localhost:3000/_next/mcp` and call `get_errors`
 
-   **Example:**
-   - MCP Endpoint: `http://localhost:3001/_next/mcp`
-   - Connect to this endpoint
-   - Call `get_errors` tool with no arguments
-
-   The `get_errors` tool reads errors from the browser session you
-   just created in step 1.
+   The `get_errors` tool reads errors from the browser session you just created in step 1.
 
    Record:
    - Error messages
@@ -662,12 +608,11 @@ Systematically verify each route and collect errors:
 
 **Automation Strategy:**
 - Start browser automation once at the beginning of Phase 4
-- Use the Base URL captured in Step 5 for all browser_eval navigation
-- Use the MCP Endpoint captured in Step 5 for all get_errors calls
+- Use the dev server URL from terminal output for navigation
 - Iterate through ALL routes from Phase 1
 - For each route:
   1. Navigate with browser_eval({ action: "navigate", url: "..." })
-  2. Connect to Next.js MCP endpoint
+  2. Connect to Next.js MCP endpoint (at `{dev-server-url}/_next/mcp`)
   3. Call get_errors to collect from browser session
   4. Record errors
   5. Move to next route
@@ -677,7 +622,7 @@ Systematically verify each route and collect errors:
 **Important:**
 - Start browser automation once with browser_eval({ action: "start" }) before testing routes
 - ALWAYS use browser_eval with action "navigate" before calling get_errors
-- Always connect to the SAME Next.js MCP endpoint (`<base-url>/_next/mcp`)
+- Always connect to the SAME Next.js MCP endpoint
 - Do NOT try to reconnect or restart the MCP server
 - If browser_eval navigation fails, ensure browser automation is started
 - If Next.js MCP connection fails, the dev server may have crashed (rare)
@@ -1333,12 +1278,10 @@ Report findings in this format:
 [x] Route Segment Config documented
 [x] Config syntax validated
 
-## Phase 3: Dev Server
-[x] Checked for existing servers/stale locks
+## Phase 3: Dev Server (Optional)
 [x] MCP server enabled: __NEXT_EXPERIMENTAL_MCP_SERVER=true
 [x] Dev server started successfully (ONCE, ran throughout Phase 4-5)
-[x] Base URL captured: [e.g., http://localhost:3001]
-[x] MCP Endpoint: [e.g., http://localhost:3001/_next/mcp]
+[x] Dev server URL shown in terminal: [e.g., http://localhost:3000]
 [x] MCP server verified active (get_project_metadata responded)
 [x] No restart attempts during verification/fixing
 
@@ -1606,6 +1549,5 @@ If you prefer to see errors in real-time or have a very large project:
 **Critical Rules for Alternative Workflow:**
 - **NEVER restart the dev server** - Start once, let Fast Refresh handle changes
 - Use get_errors MCP tool to catch issues early
-- If you see lock/port errors, server is already running - DO NOT start again
 
 **The goal:** Zero errors and all routes working with Cache Components enabled

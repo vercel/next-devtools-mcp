@@ -39,6 +39,21 @@ Add the following config to your MCP client:
 ### MCP Client Configuration
 
 <details>
+<summary>Amp</summary>
+
+**Using Amp CLI:**
+
+```bash
+amp mcp add next-devtools -- npx next-devtools-mcp@latest
+```
+
+**Or configure manually:**
+
+Follow [Amp's MCP documentation](https://ampcode.com/manual#mcp) and apply the standard configuration shown above.
+
+</details>
+
+<details>
 <summary>Claude Code</summary>
 
 Use the Claude Code CLI to add the Next.js DevTools MCP server:
@@ -48,6 +63,32 @@ claude mcp add next-devtools npx next-devtools-mcp@latest
 ```
 
 Alternatively, manually configure Claude by editing your MCP settings file and adding the configuration shown above.
+
+</details>
+
+<details>
+<summary>Codex</summary>
+
+**Using Codex CLI:**
+
+```bash
+codex mcp add next-devtools -- npx next-devtools-mcp@latest
+```
+
+**Or configure manually:**
+
+Follow the MCP setup guide with the standard configuration format:
+- Command: `npx`
+- Arguments: `-y, next-devtools-mcp@latest`
+
+**Windows 11 Special Configuration:**
+
+Update `.codex/config.toml` with environment variables and increased startup timeout:
+
+```toml
+env = { SystemRoot="C:\\Windows", PROGRAMFILES="C:\\Program Files" }
+startup_timeout_ms = 20_000
+```
 
 </details>
 
@@ -88,28 +129,29 @@ Follow the MCP setup guide with these parameters:
 </details>
 
 <details>
-<summary>Codex</summary>
+<summary>VS Code / Copilot</summary>
 
-**Using Codex CLI:**
+**Using VS Code CLI:**
 
 ```bash
-codex mcp add next-devtools -- npx next-devtools-mcp@latest
+code --add-mcp '{"name":"next-devtools","command":"npx","args":["-y","next-devtools-mcp@latest"]}'
 ```
 
 **Or configure manually:**
 
-Follow the MCP setup guide with the standard configuration format:
+Follow the official VS Code MCP server setup guide and add the Next.js DevTools server through VS Code settings.
+
+</details>
+
+<details>
+<summary>Warp</summary>
+
+**Using Warp UI:**
+
+Navigate to `Settings | AI | Manage MCP Servers` and select `+ Add` to register a new MCP server with the following configuration:
+- Name: `next-devtools`
 - Command: `npx`
 - Arguments: `-y, next-devtools-mcp@latest`
-
-**Windows 11 Special Configuration:**
-
-Update `.codex/config.toml` with environment variables and increased startup timeout:
-
-```toml
-env = { SystemRoot="C:\\Windows", PROGRAMFILES="C:\\Program Files" }
-startup_timeout_ms = 20_000
-```
 
 </details>
 

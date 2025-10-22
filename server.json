@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "io.github.vercel/next-devtools-mcp",
+  "description": "Next.js development tools MCP server with stdio transport",
+  "repository": {
+    "url": "https://github.com/vercel/next-devtools-mcp",
+    "source": "github"
+  },
+  "version": "0.2.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "next-devtools-mcp",
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": []
+    }
+  ]
+}

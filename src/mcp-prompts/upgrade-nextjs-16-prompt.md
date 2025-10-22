@@ -97,6 +97,17 @@ Check these BEFORE running the codemod:
 
 5. **Current Next.js Version**
    Check: package.json → dependencies.next
+   
+   ```bash
+   # Check current version
+   grep '"next":' package.json
+   ```
+   
+   **If on beta channel:**
+   - Current: `"next": "16.0.0-beta.X"` or `"next": "beta"`
+   - Action: Will upgrade to latest stable
+   - Note: Beta users should upgrade to stable now that it's released
+   
    Note: Document current version for rollback
 
 6. **Git Status**
@@ -139,12 +150,20 @@ Run the official codemod to handle most changes automatically:
 - ❌ TypeScript version upgrade (do this manually if needed)
 
 **After codemod completes:**
-1. Review the git diff to see what changed
-2. If TypeScript < 5.0, upgrade it now:
+1. **If you were on beta:** Load the beta-to-stable migration resource for additional config changes:
+   ```
+   Read resource "nextjs16://migration/beta-to-stable"
+   ```
+   Key changes: `experimental.cacheLife` → `cacheLife` (move to root level)
+
+2. Review the git diff to see what changed
+
+3. If TypeScript < 5.0, upgrade it now:
    ```bash
    <pkg-manager> add -D typescript@latest
    ```
-3. **Verify the upgrade by running a build:**
+
+4. **Verify the upgrade by running a build:**
    ```bash
    <pkg-manager> run build
    # If this succeeds, the automated upgrade is complete
@@ -513,7 +532,8 @@ Report findings in this format:
 
 ## Summary
 - Current Version: [version]
-- Target Version: 16 ({{UPGRADE_CHANNEL}} channel)
+- On Beta: [Yes/No] - If yes, will upgrade to stable
+- Target Version: 16 (stable channel)
 - Package Manager: [npm/pnpm/yarn/bun]
 - Monorepo: [Yes/No]
 - If Monorepo, Apps to Upgrade: [list of app directories]
@@ -528,10 +548,13 @@ Report findings in this format:
 [ ] Git working directory is clean (no uncommitted changes)
 
 ## Phase 2: Codemod Execution
-- [ ] Ran codemod: `<pkg-exec> @next/codemod@canary upgrade {{UPGRADE_CHANNEL}}`
+- [ ] Checked current version: On beta? [Yes/No]
+- [ ] If on beta: Noted to review beta-to-stable guide after upgrade
+- [ ] If already on stable: Skipped codemod (no reinstall needed)
+- [ ] If NOT on stable: Ran codemod: `<pkg-exec> @next/codemod@canary upgrade {{UPGRADE_CHANNEL}}`
 - [ ] Selected "yes" for all codemod prompts
-- [ ] Codemod upgraded Next.js, React, and React DOM to {{UPGRADE_CHANNEL}}
-- [ ] Codemod upgraded React type definitions to {{UPGRADE_CHANNEL}}
+- [ ] Codemod upgraded Next.js, React, and React DOM to stable
+- [ ] Codemod upgraded React type definitions to stable
 - [ ] Codemod applied automatic fixes
 {{IF_REQUIRES_CANARY}}
 - [ ] (Optional) Upgraded to canary: `<pkg-manager> add next@canary`

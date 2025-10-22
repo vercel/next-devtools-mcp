@@ -12,6 +12,8 @@
 - **Browser Testing**: Integrate with Playwright for browser automation and testing
 - **Next.js Agent**: Access internal state, diagnostics, and errors from running Next.js dev servers via MCP
 
+> **Learn more:** See the [Next.js MCP documentation](https://nextjs.org/docs/app/guides/mcp) for details on how MCP servers work with Next.js and AI coding agents.
+
 ## Requirements
 
 - [Node.js](https://nodejs.org/) v20.19 or a newer [latest maintenance LTS](https://github.com/nodejs/Release#release-schedule) version

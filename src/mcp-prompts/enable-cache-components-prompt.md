@@ -254,7 +254,15 @@ Before enabling Cache Components:
 4. **Route Structure Analysis**
    Scan: app directory structure
    Identify: All routes (page.tsx/page.js files)
-   Note: List all routes for Phase 3 verification
+   
+   ```bash
+   # Count total routes
+   find app -name "page.tsx" -o -name "page.js" | wc -l
+   ```
+   
+   **Recommended:** Use build-first verification (Phase 5) for all projects - it's always reliable and doesn't require additional tools.
+   
+   Note: List all routes for reference
 
 5. **Existing Route Segment Config Check**
    Search for all Route Segment Config exports using:
@@ -400,236 +408,17 @@ Verify by reading the config file:
 - ✅ Valid syntax, correct file format
 
 **What's Next:**
-With configuration updated, Phase 3 will start the dev server and Phase 4 will detect any runtime errors that need fixing.
+- **Recommended:** Proceed to Phase 3 (build-first approach)
+  - Phase 3 removes breaking changes, then runs build to see all errors
+  - Fix all errors from build output
+  - Then proceed to Phase 4 for final verification
 
-## PHASE 3: Start Dev Server with MCP (Optional)
+## PHASE 3: Build-First Error Fixing & Boundary Setup (RECOMMENDED)
 ────────────────────────────────────────
 
-**IMPORTANT: This phase is optional.** You can skip directly to Phase 5 (build-first approach) if you prefer to identify all errors upfront from the build output.
+**This is the recommended workflow for ALL projects.**
 
-**If using Phase 3/Phase 4 workflow:** Only start the dev server ONCE. Do NOT restart it during this process.
-
-### Step 1: Start Dev Server (ONE TIME ONLY)
-
-```bash
-# Start dev server in background with MCP enabled
-__NEXT_EXPERIMENTAL_MCP_SERVER=true <pkg-manager> dev
-```
-
-**This command:**
-- Runs in the background
-- Should only be executed ONCE
-- Will continue running throughout Phase 4 and Phase 5
-- Should NOT be restarted unless it crashes
-
-### Step 2: Wait for Server to Start
-
-```bash
-# Wait 10-15 seconds for server to initialize
-sleep 10
-```
-
-### Step 3: Verify Server is Running
-
-Wait for the server output to show:
-- ✅ "Ready started server..." or "Local: ..."
-- ✅ No fatal errors
-- ✅ MCP server started message (if available)
-
-The dev server will automatically use an available port and display the URL.
-
-### Step 4: Verify MCP Server is Active
-
-**Connect to Next.js MCP Server:**
-
-The MCP server is available at `{dev-server-url}/_next/mcp`
-
-Example: If dev server shows `http://localhost:3000`, connect to `http://localhost:3000/_next/mcp`
-
-Try calling `get_project_metadata`:
-
-**Expected Result:**
-- ✅ Successfully connects to MCP endpoint
-- ✅ Returns project metadata (name, version, config, dependencies)
-- ✅ Shows cacheComponents enabled (confirms Phase 2 succeeded)
-
-**If the tool is not available or connection fails:**
-
-First attempt troubleshooting (DO NOT restart the server):
-1. Wait another 10 seconds - MCP server may still be initializing
-2. Retry calling `get_project_metadata`
-3. Check dev server output for:
-   - "MCP server started" or similar message
-   - Any MCP-related errors
-4. Verify __NEXT_EXPERIMENTAL_MCP_SERVER=true was set in the environment
-
-If still failing after retry:
-- Check if dev server is actually running (port should be occupied)
-- Look for error messages in dev server output
-- Verify the Next.js version supports MCP (16.0.0+)
-- **LAST RESORT ONLY:** If dev server crashed, then you can restart it
-- **DO NOT restart if server is running** - troubleshoot the MCP connection first
-
-**Why this check matters:**
-- Phase 4 relies heavily on the `get_errors` tool from Next.js MCP server
-- Without MCP, you won't be able to detect Cache Components errors
-- `get_project_metadata` is the simplest tool to verify MCP is alive
-- Better to verify now than discover MCP is broken during route verification
-
-### Step 5: Ready for Route Verification
-
-**Phase 3 Complete:**
-- ✅ Dev server running (will show URL in output)
-- ✅ MCP server active and verified
-- ✅ Ready to test routes in Phase 4
-
-**Server State:**
-- ⚠️ Do NOT stop or restart the server until Phase 6 is complete
-
-## PHASE 4: Route Verification & Error Detection
-────────────────────────────────────────
-
-**CRITICAL: You MUST use browser_eval tool to load pages in browser**
-
-Next.js MCP's `get_errors` tool collects errors from the browser session.
-Without using the browser_eval tool to navigate pages, `get_errors` will have no
-errors to collect.
-
-**Prerequisites:**
-- ✅ Dev server is running from Phase 3 (do NOT restart it)
-- ✅ Dev server URL shown in terminal output (e.g., http://localhost:3000)
-- ✅ MCP server is verified active (get_project_metadata responded)
-- ✅ List of all routes from Phase 1
-- ✅ browser_eval tool is available
-
-**One-Time Setup (Before testing routes):**
-1. Start browser automation:
-   ```
-   browser_eval({ action: "start", browser: "chrome", headless: true })
-   ```
-
-**Workflow per route:**
-1. Use browser_eval tool with action "navigate" to load the page in browser
-2. Use Next.js MCP get_errors to collect errors from that browser session
-3. Categorize and record errors
-4. Move to next route
-
-Systematically verify each route and collect errors:
-
-**For Each Route:**
-
-1. **Navigate to Page in Browser (REQUIRED)**
-   Use browser_eval with action "navigate" to load the page.
-   
-   Example: `browser_eval({ action: "navigate", url: "http://localhost:3000/dashboard" })`
-
-   This loads the page in the browser and triggers any rendering errors.
-
-2. **Collect Errors from Browser Session (using Next.js MCP)**
-   Connect to Next.js MCP endpoint (at `{dev-server-url}/_next/mcp`) and call `get_errors`.
-   
-   Example: Connect to `http://localhost:3000/_next/mcp` and call `get_errors`
-
-   The `get_errors` tool reads errors from the browser session you just created in step 1.
-
-   Record:
-   - Error messages
-   - Stack traces
-   - Affected route/component
-   - Error type (build, runtime, render, etc.)
-
-3. **Categorize Errors**
-   Common Cache Components errors:
-
-   a) **Blocking Route Error (Most Common)**
-      Error message: "Route \"/path\": A component accessed data, headers, params, searchParams, or a short-lived cache without a Suspense boundary nor a \\\"use cache\\\" above it."
-
-      Cause: Async IO outside Suspense boundary or "use cache"
-      Async IO includes:
-      - `await fetch()` - network requests
-      - `await db.query()` - database calls
-      - `await params` - route params
-      - `await searchParams` - query params
-      - `await cookies()` - request cookies
-      - `await headers()` - request headers
-      - `await somePromise` - any long-running promise
-
-      Fix Options:
-      1. Add parent Suspense boundary (preferred for truly dynamic content)
-      2. Add `"use cache"` directive to component (for cacheable content)
-      3. Use `loading.tsx` file convention (simplest for page-level)
-
-   b) **Dynamic Value in Static Shell Error**
-      Error message: "Dynamic value detected during prerender"
-
-      Cause: Using sync dynamic APIs without marking as dynamic:
-      - `Math.random()`
-      - `new Date()`
-      - Other time/randomness APIs
-
-      Fix Options:
-      1. Add `await connection()` before the dynamic API usage
-      2. Add `"use cache"` to prerender these values
-
-   c) **Route Params Without generateStaticParams**
-      Error: Blocking route error when using `"use cache"` with dynamic params
-
-      Cause: Using `await params` inside `"use cache"` without static params list
-
-      Fix: Add `generateStaticParams` to provide known params at build time
-
-   d) **Unavailable APIs in "use cache"**
-      Error: "Cannot use [API] inside a cached function"
-
-      APIs not available in `"use cache"`:
-      - `cookies()` (use `"use cache: private"` for prefetch-time access)
-      - `headers()` (use `"use cache: private"` for prefetch-time access)
-      - `searchParams` (use `"use cache: private"` for prefetch-time access)
-
-      Fix: Either remove from cache scope or use `"use cache: private"`
-
-   e) **Route Segment Config Conflicts**
-      Error: "Route Segment Config is not supported with Cache Components"
-
-      Cause: Using `export const dynamic`, `export const revalidate`, etc.
-
-      Fix: Remove Route Segment Config, use `"use cache"` + `cacheLife` instead
-
-4. **Error Collection Format**
-   For each error found, record:
-   ```
-   Route: [route-path]
-   Error Type: [category from step 3]
-   Message: [full error message]
-   Stack: [stack trace if available]
-   File: [affected file path]
-   Line: [line number if available]
-   ```
-
-**Automation Strategy:**
-- Start browser automation once at the beginning of Phase 4
-- Use the dev server URL from terminal output for navigation
-- Iterate through ALL routes from Phase 1
-- For each route:
-  1. Navigate with browser_eval({ action: "navigate", url: "..." })
-  2. Connect to Next.js MCP endpoint (at `{dev-server-url}/_next/mcp`)
-  3. Call get_errors to collect from browser session
-  4. Record errors
-  5. Move to next route
-- Build comprehensive error list before fixing
-- Prioritize errors by severity (build failures > runtime errors > warnings)
-
-**Important:**
-- Start browser automation once with browser_eval({ action: "start" }) before testing routes
-- ALWAYS use browser_eval with action "navigate" before calling get_errors
-- Always connect to the SAME Next.js MCP endpoint
-- Do NOT try to reconnect or restart the MCP server
-- If browser_eval navigation fails, ensure browser automation is started
-- If Next.js MCP connection fails, the dev server may have crashed (rare)
-- At the end of Phase 4, optionally close the browser with browser_eval({ action: "close" })
-
-## PHASE 5: Automated Error Fixing & Boundary Setup
-────────────────────────────────────────
+Build verification is always reliable and doesn't require dev server or browser tools upfront.
 
 **Prerequisites:**
 - ✅ Configuration enabled in Phase 2
@@ -782,31 +571,18 @@ After fixing all obvious errors, re-run the build to verify:
 - ⚠️ **Some routes still fail with clear errors** → Return to Sub-step A, fix those errors
 - ❌ **Some routes fail with unclear errors** → Proceed to Sub-step C
 
-**Sub-step C: Use Dev Server for Unclear Errors**
+**Sub-step C: Final Build Verification**
 
-If there are errors that are unclear from build output, start the dev server:
-
-```bash
-# Start dev server with MCP enabled
-__NEXT_EXPERIMENTAL_MCP_SERVER=true <pkg-manager> dev
-```
-
-For each unclear error:
-1. Navigate to the failing route using browser_eval
-2. Check console errors and component behavior in real-time
-3. Use Next.js MCP `get_errors` tool to see detailed error information
-4. Make fixes with Fast Refresh for instant feedback
-5. Verify the route loads correctly
-
-**Sub-step D: Final Build Verification**
-
-After fixing unclear errors with dev server, run the build again:
+After fixing all obvious errors, run the build one more time:
 
 ```bash
 <pkg-manager> run build -- --debug-prerender
 ```
 
-**Repeat until build passes with 0 errors.**
+**Expected outcomes:**
+- ✅ **All routes pass (0 errors)** → Success! Proceed to Phase 4 - Option A (final verification)
+- ⚠️ **Some routes still fail with clear errors** → Return to Sub-step A, fix those errors
+- ❌ **Some routes fail with unclear errors** → Proceed to Phase 4 - Option B (browser investigation)
 
 **Workflow Summary:**
 ```
@@ -814,24 +590,22 @@ Step 1: Remove obvious breaking changes (exports, unstable_noStore)
   ↓
 Step 2: Build to capture all errors
   ↓
-Step 3A: Fix ALL obvious errors from build output
+Step 3A: Fix ALL obvious errors from build output (NO dev server)
   ↓
 Step 3B: Re-run build to verify fixes
   ↓
-  ├─ All pass? → Success! Go to final verification
+Step 3C: Final build verification
+  ↓
+  ├─ All pass (0 errors)? → Success! Go to Phase 4 - Option A
   ├─ Clear errors remain? → Back to Step 3A
-  └─ Unclear errors remain? → Step 3C
-        ↓
-Step 3C: Use dev server + MCP for unclear errors only
-  ↓
-Step 3D: Re-run build to verify
-  ↓
-Final: All routes build successfully (0 errors)
+  └─ Unclear errors remain? → Go to Phase 4 - Option B
 ```
+
+**Key Point:** Phase 3 uses only build verification. Dev server is NOT started in Phase 3.
 
 **What This Phase Accomplishes:**
 
-This phase handles ALL code changes needed for Cache Components:
+This phase (Phase 3) handles ALL code changes needed for Cache Components:
 - ✅ Remove Route Segment Config exports (Step 1)
 - ✅ Remove unstable_noStore() calls (Step 1)
 - ✅ Add Suspense boundaries for dynamic content (Step 3)
@@ -1141,13 +915,12 @@ Then:
 - Dev server verification is optional but helpful for testing dynamic behavior
 - Every fix should include comments explaining the decision
 
-## PHASE 6: Final Verification
+## PHASE 4: Final Verification & Optional Browser Testing
 ────────────────────────────────────────
 
 **Prerequisites:**
-- ✅ All fixes applied in Phase 5
-- ✅ Dev server is still running
-- ✅ All routes verified with get_errors
+- ✅ Phase 3 completed with fixes applied
+- ✅ Build verification from Phase 3
 
 **⚠️ MANDATORY: Load verification resource**
 
@@ -1158,50 +931,69 @@ ReadMcpResourceTool(server="next-devtools", uri="nextjs16://knowledge/build-beha
 
 This provides build verification strategies and troubleshooting guidance.
 
-Run comprehensive checks:
+### Option A: Phase 3 Build Passed (Most Common)
 
-1. **All Routes Final Test**
-   With dev server still running:
-   - Request all routes one final time
-   - Verify all return successfully (200 OK)
-   - Call get_errors one last time via MCP
-   - Expected: Empty error list
+**If Phase 3 Step 3C build passed with 0 errors:**
 
-2. **Stop Dev Server**
-   Now that development verification is complete:
+2. **Optional Dev Mode Test**
    ```bash
-   # Stop the background dev server process
-   # (You can now safely stop it)
+   <pkg-manager> dev
    ```
+   - Test a few key routes in dev mode
+   - Verify cached content behavior
+   - Confirm Fast Refresh works
 
-3. **Build Test with Debug Prerender**
+**You're done! ✅**
+
+### Option B: Phase 3 Had Unclear Errors (Rare)
+
+**If Phase 3 Step 3C had unclear errors that couldn't be fixed from build output:**
+
+1. **Start Dev Server with MCP**
    ```bash
-   # First, attempt with debug-prerender flag if available
+   # Start dev server with MCP enabled
+   __NEXT_EXPERIMENTAL_MCP_SERVER=true <pkg-manager> dev
+   ```
+   
+   Wait for server to show ready message with URL.
+
+2. **Verify MCP Server Active**
+   - Connect to `{dev-server-url}/_next/mcp`
+   - Call `get_project_metadata` to verify
+
+3. **Use Browser to Investigate Unclear Errors** (requires Playwright)
+   
+   For each unclear error:
+   
+   a. **Start browser automation:**
+      ```
+      browser_eval({ action: "start", browser: "chrome", headless: true })
+      ```
+   
+   b. **Navigate to failing route:**
+      ```
+      browser_eval({ action: "navigate", url: "{dev-server-url}/{route-path}" })
+      ```
+   
+   c. **Collect detailed errors:**
+      - Connect to Next.js MCP endpoint
+      - Call `get_errors` to collect from browser session
+   
+   d. **Fix the error:**
+      - Make code changes
+      - Fast Refresh applies automatically
+      - Re-navigate to verify
+   
+   e. **Repeat** for all unclear errors
+
+4. **Final Build Verification**
+   ```bash
    <pkg-manager> run build -- --debug-prerender
    ```
+   
+   Expected: Build passes with 0 errors.
 
-   If `--debug-prerender` is not supported:
-   ```bash
-   # Fallback to standard build
-   <pkg-manager> run build
-   ```
-
-   Expected:
-   - Build succeeds without errors
-   - Build output shows cache status for each route
-   - With `--debug-prerender`: Detailed prerender diagnostics and cache analysis
-   - Check for any build-time errors that didn't appear in dev
-   - All routes prerendered or marked as dynamic correctly
-
-4. **Dev Mode Test**
-   ```bash
-   __NEXT_EXPERIMENTAL_MCP_SERVER=true <pkg-manager> next dev
-   # Test a few key routes in dev mode
-   ```
-   Expected:
-   - Server starts successfully
-   - Key routes work correctly
-   - Cached content behavior can be observed
+**You're done! ✅**
 
 ## Important Caching Behavior Notes
 ────────────────────────────────────────
@@ -1267,6 +1059,7 @@ Report findings in this format:
 [x] Package manager detected: [manager]
 [x] Existing config checked
 [x] Routes identified: [count] routes
+[x] Verification strategy: Build-first (recommended for all projects)
 [x] Route Segment Config usage documented
 [x] unstable_noStore() usage documented
 
@@ -1278,38 +1071,16 @@ Report findings in this format:
 [x] Route Segment Config documented
 [x] Config syntax validated
 
-## Phase 3: Dev Server (Optional)
-[x] MCP server enabled: __NEXT_EXPERIMENTAL_MCP_SERVER=true
-[x] Dev server started successfully (ONCE, ran throughout Phase 4-5)
-[x] Dev server URL shown in terminal: [e.g., http://localhost:3000]
-[x] MCP server verified active (get_project_metadata responded)
-[x] No restart attempts during verification/fixing
-
-## Phase 4: Route Verification Results
-
-### Routes Tested: [count]
-[List all routes with their status]
-
-### Errors Found: [count]
-[For each error:]
-- Route: [route]
-- Type: [error type]
-- Message: [error message]
-- File: [file path]
-- Status: [Fixed/Pending]
-
-## Phase 5: Error Fixing & Code Changes
+## Phase 3: Build-First Error Fixing & Code Changes
 
 ### Step 1: Obvious Breaking Changes Removed
 [x] Route Segment Config exports removed: [count]
   - [file path]: Removed export const dynamic = 'force-static'
   - [file path]: Removed export const revalidate = 3600
-  - [file path]: Removed export const fetchCache = 'force-cache'
   - ...
 
 [x] unstable_noStore() calls removed: [count]
   - [file path]: Removed unstable_noStore() call and import
-  - [file path]: Removed unstable_noStore() from component
   - ...
 
 ### Step 2: Initial Build Results
@@ -1332,31 +1103,28 @@ Report findings in this format:
 
 **Errors Fixed:**
 - [file path]: [error type] - [fix applied]
-- [file path]: [error type] - [fix applied]
 - ...
 
 ### Step 3B: Build Verification After Obvious Fixes
 [x] Re-ran build: `<pkg-manager> run build -- --debug-prerender`
 [x] Result: [X] routes passing, [Y] routes failing
-  - If 0 failing: ✅ Success! (Skip to Step 3D)
-  - If clear errors remain: Loop back to Step 3A
-  - If unclear errors remain: Proceed to Step 3C
 
-### Step 3C: Unclear Errors Fixed (Using Dev Server + MCP)
-[x] Started dev server with MCP enabled
-[x] Used browser_eval to navigate to failing routes
-[x] Used Next.js MCP get_errors to investigate
-[x] Fixed unclear errors with Fast Refresh
-[x] Total unclear errors fixed: [count]
-
-**Unclear Errors Fixed:**
-- [route path]: [unclear error] - [investigation method] - [fix applied]
-- [route path]: [unclear error] - [investigation method] - [fix applied]
-- ...
-
-### Step 3D: Final Build Verification
+### Step 3C: Final Build Verification
 [x] Re-ran build: `<pkg-manager> run build -- --debug-prerender`
-[x] Result: ✅ 0 errors, all routes passing
+[x] Result: [X] routes passing, [Y] routes failing
+  - If 0 failing: ✅ Success! Proceed to Phase 4 - Option A
+  - If clear errors remain: Looped back to Step 3A
+  - If unclear errors remain: Proceeded to Phase 4 - Option B
+
+## Phase 4: Final Verification
+[x] Phase 3 build passed with 0 errors (most common - Option A)
+[x] Optional dev mode testing completed
+
+**If Option B was needed (unclear errors):**
+[x] Started dev server with MCP
+[x] Used browser_eval to investigate unclear errors  
+[x] Fixed unclear errors with Fast Refresh
+[x] Final build verification: ✅ 0 errors
 
 ### Summary of Fixes by Type
 
@@ -1412,12 +1180,6 @@ Report findings in this format:
   - Cannot fix (need package updates): [count]
 - Total build iterations: [count]
 
-## Phase 6: Final Verification
-[x] All routes return 200 OK (with dev server running)
-[x] No errors in get_errors final check
-[x] Dev server stopped after verification
-[x] Build succeeds
-[x] Dev mode tested with key routes
 
 ## Migration Notes
 [Any special notes about the migration, especially if migrating from PPR]
@@ -1431,23 +1193,27 @@ This enablement process made the following comprehensive changes:
 - ✅ Preserved compatible flags
 - ✅ Documented Route Segment Config
 
-### Boundary & Cache Setup (Phase 5):
+### Boundary & Cache Setup (Phase 3):
 - ✅ Added Suspense boundaries for dynamic content
 - ✅ Added "use cache" directives for cacheable content
 - ✅ Added "use cache: private" for prefetchable private content
 - ✅ Created loading.tsx files where appropriate
 - ✅ Added generateStaticParams for dynamic routes
 
-### API Migrations (Phase 5):
+### API Migrations (Phase 3):
 - ✅ Moved cookies()/headers() calls outside cache scope
 - ✅ Handled dynamic values (connection(), "use cache" with cacheLife, or Suspense as appropriate)
 - ✅ Migrated Route Segment Config to "use cache" + cacheLife
 - ✅ Removed all export const dynamic/revalidate/fetchCache
 
-### Cache Optimization (Phase 5):
+### Cache Optimization (Phase 3):
 - ✅ Added cacheTag() calls for granular revalidation
 - ✅ Configured cacheLife profiles for revalidation control
 - ✅ Set up cache invalidation strategies
+
+### Final Verification (Phase 4):
+- ✅ Build passed with 0 errors
+- ✅ Option B used if needed: Dev server + browser for unclear errors
 
 ## Next Steps
 - Monitor application behavior in development
@@ -1500,54 +1266,49 @@ Begin Cache Components enablement:
 
 ## Recommended Workflow (Build-First Approach)
 
+**Use this workflow for ALL projects.**
+
+Build verification is always reliable and doesn't require any additional tools like Playwright.
+
+**Workflow:**
+
 1. **Phase 1:** Pre-flight checks
+   
 2. **Phase 2:** Enable Cache Components in config
-3. **Phase 5 - Step 1:** Remove critical breaking changes FIRST
-   - Remove all Route Segment Config exports (dynamic, revalidate, fetchCache)
-   - Remove all unstable_noStore() calls
-   - These will definitely error, so remove before building
-4. **Phase 5 - Step 2:** Run build with --debug-prerender
-   - `<pkg-manager> run build -- --debug-prerender`
-   - Capture ALL error messages from build output
-   - Document failing routes and error types
-5. **Phase 5 - Step 3A:** Fix ALL obvious errors from build output
-   - Review error messages, fix all errors with clear solutions
-   - Don't start dev server yet
-6. **Phase 5 - Step 3B:** Verify fixes with build
-   - Re-run build to verify all obvious errors are fixed
-   - If clear errors remain, go back to Step 3A
-   - If all pass, go to final verification
-   - If unclear errors remain, proceed to Step 3C
-7. **Phase 5 - Step 3C:** (Only if needed) Use dev server for unclear errors
-   - Start dev server with MCP enabled
-   - Navigate to failing routes, investigate with browser
-   - Fix unclear errors using Fast Refresh
-8. **Phase 5 - Step 3D:** Final build verification
-   - Re-run build to ensure all errors fixed
-9. **Phase 6:** Final verification and cleanup
+
+3. **Phase 3:** Build-first error fixing
+   - Step 1: Remove breaking changes (exports, unstable_noStore)
+   - Step 2: Build with --debug-prerender to see all errors
+   - Step 3A: Fix all obvious errors from build output
+   - Step 3B: Verify fixes with build
+   - Step 3C: Final build verification
+   
+4. **Phase 4:** Final verification
+   - **Option A:** If Phase 3 passed (0 errors) - just verify with optional dev test
+   - **Option B:** If Phase 3 had unclear errors - use dev server + browser to investigate, then final build
 
 **Why This Workflow Works Best:**
 
-✅ **Step 1 removes guaranteed breaking changes** - Clean slate before first build
-✅ **Step 2 shows ALL errors at once** - Complete picture of what needs fixing
-✅ **Step 3A fixes obvious errors first** - Batch fix from build output
-✅ **Step 3B verifies with build** - Ensure fixes work before moving on
-✅ **Step 3C uses dev server only for unclear cases** - Not needed for most errors
-✅ **Faster overall** - Fewer iteration cycles, clearer error messages, no unnecessary dev server
+✅ **No dependencies** - Works without Playwright or other tools
+✅ **Always reliable** - Build verification catches all errors
+✅ **Efficient for any project size** - Works for small and large projects
+✅ **Shows ALL errors at once** - Complete picture from build output
+✅ **Fixes in batches** - More efficient than one-by-one
+✅ **Clear error messages** - Build output is explicit
+✅ **Faster overall** - Fewer iteration cycles
 
-## Alternative Workflow (Dev Server First)
+## Summary: There is NO alternative workflow
 
-If you prefer to see errors in real-time or have a very large project:
+**The workflow is now linear and simple:**
 
-1. Phase 1: Pre-flight checks
-2. Phase 2: Enable config
-3. Phase 3: Start dev server with MCP (**ONCE, DO NOT RESTART**)
-4. Phase 4: Verify routes and collect errors (optional)
-5. Phase 5: Fix with Fast Refresh
-6. Phase 6: Final verification
+1. **Phase 1:** Pre-flight checks
+2. **Phase 2:** Enable Cache Components in config  
+3. **Phase 3:** Build-first error fixing (remove breaking changes → build → fix → verify)
+4. **Phase 4:** Final verification
+   - Option A: Build passed (most common) - optional dev test
+   - Option B: Unclear errors remain - dev server + browser investigation
 
-**Critical Rules for Alternative Workflow:**
-- **NEVER restart the dev server** - Start once, let Fast Refresh handle changes
-- Use get_errors MCP tool to catch issues early
-
-**The goal:** Zero errors and all routes working with Cache Components enabled
+**Key points:**
+- Everyone uses Phase 3 (build-first with build verification)
+- Phase 4 has two paths based on Phase 3 outcome
+- No separate phases for browser vs final verification - merged into Phase 4

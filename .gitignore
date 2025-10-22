@@ -10,3 +10,5 @@ dist/
 test/e2e/.env
 # private content
 _*.md
+.mcpregistry*
+

@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/vercel-next-devtools-mcp-badge.png)](https://mseep.ai/app/vercel-next-devtools-mcp)
+
 # Next.js DevTools MCP
 
 [![npm next-devtools-mcp package](https://img.shields.io/npm/v/next-devtools-mcp.svg)](https://npmjs.org/package/next-devtools-mcp)

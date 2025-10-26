@@ -2,6 +2,11 @@
   "name": "next-devtools-mcp",
   "version": "0.2.1",
   "description": "Next.js development tools MCP server with stdio transport",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vercel/next-devtools-mcp.git"
+  },
   "bin": {
     "next-devtools-mcp": "./dist/index.js"
   },

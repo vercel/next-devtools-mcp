@@ -8,31 +8,32 @@
     "url": "https://github.com/vercel/next-devtools-mcp.git"
   },
   "bin": {
-    "next-devtools-mcp": "./dist/index.js"
+    "next-devtools-mcp": "./dist/stdio.js"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/stdio.js",
   "exports": {
     "./package.json": "./package.json",
-    ".": "./dist/index.js"
+    ".": "./dist/stdio.js"
   },
   "files": [
     "dist"
   ],
   "mcpName": "io.github.vercel/next-devtools-mcp",
   "scripts": {
-    "dev": "tsc --watch",
+    "dev": "xmcp dev",
     "copy-resources": "node scripts/copy-resources.js",
-    "build": "tsc && npm run copy-resources",
+    "build": "xmcp build && npm run copy-resources",
     "prepublishOnly": "pnpm run clean && pnpm run build",
     "clean": "rm -rf dist",
-    "test": "vitest run",
+    "start": "node dist/stdio.js",
+    "test": "vitest run --exclude '**/upgrade.test.ts'",
+    "eval": "vitest run test/e2e/upgrade.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.20.0",
-    "ai": "^5.0.45",
-    "zod": "^4.1.9"
+    "xmcp": "^0.3.5",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.15",

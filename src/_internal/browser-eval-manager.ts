@@ -1,6 +1,6 @@
 import { exec } from "child_process"
 import { promisify } from "util"
-import { connectToMCPServer, MCPConnection } from "./mcp-client.js"
+import { connectToMCPServer, MCPConnection } from "./mcp-client"
 
 const execAsync = promisify(exec)
 

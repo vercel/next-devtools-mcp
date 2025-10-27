@@ -37,8 +37,8 @@ async function findNextJsServers(): Promise<NextJsServerInfo[]> {
 
     for (const line of lines) {
       // Enhanced detection patterns for Next.js servers
-      const isNextJsProcess = 
-        line.includes("next dev") || 
+      const isNextJsProcess =
+        line.includes("next dev") ||
         line.includes("next-server") ||
         line.includes("next/dist/bin/next") ||
         (line.includes("node") && line.includes("next") && line.includes("dev"))
@@ -49,11 +49,11 @@ async function findNextJsServers(): Promise<NextJsServerInfo[]> {
         const command = parts.slice(10).join(" ")
 
         // Try multiple methods to detect port
-        const portMatch = 
-          command.match(/--port[=\s]+(\d+)/) || 
+        const portMatch =
+          command.match(/--port[=\s]+(\d+)/) ||
           command.match(/-p[=\s]+(\d+)/) ||
           command.match(/:(\d+)/)
-        
+
         let port = 3000 // Default Next.js port
 
         if (portMatch) {
@@ -105,7 +105,7 @@ async function makeNextJsMCPRequest(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Accept": "application/json, text/event-stream",
+        Accept: "application/json, text/event-stream",
       },
       body: JSON.stringify(jsonRpcRequest),
     })
@@ -114,9 +114,9 @@ async function makeNextJsMCPRequest(
       if (response.status === 404) {
         throw new Error(
           `MCP endpoint not found. Next.js MCP support requires Next.js 16+. ` +
-          `If you're on an older version, upgrade using the 'upgrade-nextjs-16' MCP prompt. ` +
-          `If you're already on Next.js 16+: MCP is enabled by default - make sure the dev server is running. ` +
-          `For Next.js < 16: enable MCP with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true in next.config.js`
+            `If you're on an older version, upgrade using the 'upgrade-nextjs-16' MCP prompt. ` +
+            `If you're already on Next.js 16+: MCP is enabled by default - make sure the dev server is running. ` +
+            `For Next.js < 16: enable MCP with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true in next.config.js`
         )
       }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -141,9 +141,9 @@ async function makeNextJsMCPRequest(
     if (error instanceof TypeError && error.message.includes("fetch failed")) {
       throw new Error(
         `Cannot connect to Next.js dev server on port ${port}. ` +
-        `Make sure the dev server is running. For Next.js < 16: ` +
-        `enable MCP with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true. ` +
-        `For Next.js >= 16: MCP is enabled by default. If you're on Next.js 15 or earlier, upgrade using the 'upgrade-nextjs-16' MCP prompt.`
+          `Make sure the dev server is running. For Next.js < 16: ` +
+          `enable MCP with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true. ` +
+          `For Next.js >= 16: MCP is enabled by default. If you're on Next.js 15 or earlier, upgrade using the 'upgrade-nextjs-16' MCP prompt.`
       )
     }
 
@@ -223,7 +223,7 @@ async function verifyMCPEndpoint(port: number): Promise<boolean> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Accept": "application/json, text/event-stream",
+        Accept: "application/json, text/event-stream",
       },
       body: JSON.stringify({
         jsonrpc: "2.0",
@@ -241,16 +241,18 @@ async function verifyMCPEndpoint(port: number): Promise<boolean> {
   }
 }
 
-export async function getAllAvailableServers(verifyMCP: boolean = true): Promise<NextJsServerInfo[]> {
+export async function getAllAvailableServers(
+  verifyMCP: boolean = true
+): Promise<NextJsServerInfo[]> {
   const servers = await findNextJsServers()
-  
+
   if (!verifyMCP) {
     return servers
   }
 
   // Filter servers that actually have MCP enabled
   const verifiedServers: NextJsServerInfo[] = []
-  
+
   await Promise.all(
     servers.map(async (server) => {
       const hasMCP = await verifyMCPEndpoint(server.port)

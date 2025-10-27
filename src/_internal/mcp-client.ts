@@ -74,7 +74,7 @@ export async function callServerTool(
   connection: MCPConnection,
   toolName: string,
   args: Record<string, unknown>
-): Promise<any> {
+): Promise<unknown> {
   try {
     const result = await connection.client.callTool({
       name: toolName,

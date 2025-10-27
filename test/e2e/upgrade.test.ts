@@ -6,7 +6,7 @@ import { execSync } from 'child_process'
 import { fileURLToPath } from 'url'
 import { query } from '@anthropic-ai/claude-agent-sdk'
 import { config } from 'dotenv'
-import { getUpgradeNextjs16Prompt } from '../../dist/mcp-prompts/upgrade-nextjs-16.js'
+import upgradeNextjs16Prompt from '../../src/prompts/upgrade-nextjs-16'
 
 config({ path: join(dirname(fileURLToPath(import.meta.url)), '.env') })
 
@@ -51,8 +51,7 @@ describe('Next.js 14 → 16 Upgrade via MCP', () => {
     console.log('✅ Fixture project is valid!\n')
 
     console.log('Loading upgrade prompt from MCP server...')
-    const promptResult = getUpgradeNextjs16Prompt({ project_path: tmpProjectDir })
-    const upgradePrompt = promptResult.messages[0].content.text
+    const upgradePrompt = upgradeNextjs16Prompt({ project_path: tmpProjectDir })
 
     console.log('Running Claude Agent with upgrade instructions...')
 

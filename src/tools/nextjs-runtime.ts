@@ -1,13 +1,13 @@
-import { tool } from "ai"
+import { type InferSchema } from "xmcp"
 import { z } from "zod"
 import {
   discoverNextJsServer,
   listNextJsTools,
   callNextJsTool,
   getAllAvailableServers,
-} from "../lib/nextjs-runtime-manager.js"
+} from "../_internal/nextjs-runtime-manager"
 
-const nextjsRuntimeInputSchema = z.object({
+export const schema = {
   action: z
     .enum(["discover_servers", "list_tools", "call_tool"])
     .describe(
@@ -45,9 +45,10 @@ const nextjsRuntimeInputSchema = z.object({
     .describe(
       "For 'discover_servers' action: Include Next.js servers even if MCP endpoint verification fails. Defaults to false (only show verified MCP-enabled servers)."
     ),
-})
+}
 
-export const nextjsRuntimeTool = tool({
+export const metadata = {
+  name: "nextjs_runtime",
   description: `Interact with a running Next.js development server's MCP endpoint to query runtime information, diagnostics, and internals.
 
 WHEN TO USE THIS TOOL - Use proactively in these scenarios:
@@ -101,117 +102,117 @@ If the MCP endpoint is not available:
 1. Check if you're running Next.js 16+ (if not, use the 'upgrade-nextjs-16' prompt)
 2. For Next.js < 16: Ensure the dev server is started with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true
 3. For Next.js >= 16: MCP should be enabled by default - check if the dev server is running`,
-  inputSchema: nextjsRuntimeInputSchema,
-  execute: async (args: z.infer<typeof nextjsRuntimeInputSchema>): Promise<string> => {
-    try {
-      switch (args.action) {
-        case "discover_servers": {
-          const verifyMCP = !args.includeUnverified
-          const servers = await getAllAvailableServers(verifyMCP)
+}
 
-          if (servers.length === 0) {
-            return JSON.stringify({
-              success: false,
-              message: verifyMCP
-                ? "No running Next.js dev servers with MCP enabled found"
-                : "No running Next.js dev servers found",
-              hint: "For Next.js < 16: Start with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true. For Next.js >= 16: MCP is enabled by default.",
-              count: 0,
-            })
-          }
+export default async function nextjsRuntime(args: InferSchema<typeof schema>): Promise<string> {
+  try {
+    switch (args.action) {
+      case "discover_servers": {
+        const verifyMCP = !args.includeUnverified
+        const servers = await getAllAvailableServers(verifyMCP)
 
+        if (servers.length === 0) {
           return JSON.stringify({
-            success: true,
-            count: servers.length,
-            servers: servers.map((s) => ({
-              port: s.port,
-              pid: s.pid,
-              command: s.command,
-              url: `http://localhost:${s.port}`,
-              mcpEndpoint: `http://localhost:${s.port}/_next/mcp`,
-            })),
+            success: false,
             message: verifyMCP
-              ? `Found ${servers.length} Next.js server${
-                  servers.length === 1 ? "" : "s"
-                } running with MCP support`
-              : `Found ${servers.length} Next.js server${
-                  servers.length === 1 ? "" : "s"
-                } running (MCP verification skipped)`,
-            summary: servers.map((s) => `Server on port ${s.port} (PID: ${s.pid})`).join("\n"),
+              ? "No running Next.js dev servers with MCP enabled found"
+              : "No running Next.js dev servers found",
+            hint: "For Next.js < 16: Start with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true. For Next.js >= 16: MCP is enabled by default.",
+            count: 0,
           })
         }
 
-        case "list_tools": {
-          if (!args.port) {
-            const discovered = await discoverNextJsServer()
-            if (!discovered) {
-              return JSON.stringify({
-                success: false,
-                error:
-                  "No port specified and auto-discovery failed. Use action='discover_servers' first or provide a port.",
-              })
-            }
-            args.port = discovered.port
-          }
+        return JSON.stringify({
+          success: true,
+          count: servers.length,
+          servers: servers.map((s) => ({
+            port: s.port,
+            pid: s.pid,
+            command: s.command,
+            url: `http://localhost:${s.port}`,
+            mcpEndpoint: `http://localhost:${s.port}/_next/mcp`,
+          })),
+          message: verifyMCP
+            ? `Found ${servers.length} Next.js server${
+                servers.length === 1 ? "" : "s"
+              } running with MCP support`
+            : `Found ${servers.length} Next.js server${
+                servers.length === 1 ? "" : "s"
+              } running (MCP verification skipped)`,
+          summary: servers.map((s) => `Server on port ${s.port} (PID: ${s.pid})`).join("\n"),
+        })
+      }
 
-          const tools = await listNextJsTools(args.port)
-
-          return JSON.stringify({
-            success: true,
-            port: args.port,
-            tools: tools.map((t) => ({
-              name: t.name,
-              description: t.description,
-              inputSchema: t.inputSchema,
-            })),
-            message: `Found ${tools.length} tool(s) available on Next.js server at port ${args.port}`,
-          })
-        }
-
-        case "call_tool": {
-          if (!args.port) {
-            const discovered = await discoverNextJsServer()
-            if (!discovered) {
-              return JSON.stringify({
-                success: false,
-                error:
-                  "No port specified and auto-discovery failed. Use action='discover_servers' first or provide a port.",
-              })
-            }
-            args.port = discovered.port
-          }
-
-          if (!args.toolName) {
+      case "list_tools": {
+        if (!args.port) {
+          const discovered = await discoverNextJsServer()
+          if (!discovered) {
             return JSON.stringify({
               success: false,
               error:
-                "toolName is required for 'call_tool' action. Use action='list_tools' to discover available tool names.",
+                "No port specified and auto-discovery failed. Use action='discover_servers' first or provide a port.",
             })
           }
+          args.port = discovered.port
+        }
 
-          const result = await callNextJsTool(args.port, args.toolName, args.args || {})
+        const tools = await listNextJsTools(args.port)
 
+        return JSON.stringify({
+          success: true,
+          port: args.port,
+          tools: tools.map((t) => ({
+            name: t.name,
+            description: t.description,
+            inputSchema: t.inputSchema,
+          })),
+          message: `Found ${tools.length} tool(s) available on Next.js server at port ${args.port}`,
+        })
+      }
+
+      case "call_tool": {
+        if (!args.port) {
+          const discovered = await discoverNextJsServer()
+          if (!discovered) {
+            return JSON.stringify({
+              success: false,
+              error:
+                "No port specified and auto-discovery failed. Use action='discover_servers' first or provide a port.",
+            })
+          }
+          args.port = discovered.port
+        }
+
+        if (!args.toolName) {
           return JSON.stringify({
-            success: true,
-            port: args.port,
-            toolName: args.toolName,
-            result,
+            success: false,
+            error:
+              "toolName is required for 'call_tool' action. Use action='list_tools' to discover available tool names.",
           })
         }
 
-        default:
-          return JSON.stringify({
-            success: false,
-            error: `Unknown action: ${args.action}`,
-          })
+        const result = await callNextJsTool(args.port, args.toolName, args.args || {})
+
+        return JSON.stringify({
+          success: true,
+          port: args.port,
+          toolName: args.toolName,
+          result,
+        })
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return JSON.stringify({
-        success: false,
-        error: errorMessage,
-        action: args.action,
-      })
+
+      default:
+        return JSON.stringify({
+          success: false,
+          error: `Unknown action: ${args.action}`,
+        })
     }
-  },
-})
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return JSON.stringify({
+      success: false,
+      error: errorMessage,
+      action: args.action,
+    })
+  }
+}

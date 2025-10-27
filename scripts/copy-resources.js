@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Copy resources script
- * Copies all MCP resource files and directories from src to dist
+ * Scans all .md files in src/ and copies them to a flat dist/resources/ directory
+ * Ensures all .md filenames are unique
  *
  * Usage: node scripts/copy-resources.js
  */
@@ -9,122 +10,81 @@
 const fs = require('fs')
 const path = require('path')
 
-// Define resources to copy
-const resources = [
-  {
-    type: 'files',
-    src: 'src/mcp-prompts/*.md',
-    dest: 'dist/mcp-prompts/'
-  },
-  {
-    type: 'files',
-    src: 'src/mcp-resources/nextjs-16-beta-to-stable.md',
-    dest: 'dist/mcp-resources/'
-  },
-  {
-    type: 'files',
-    src: 'src/mcp-resources/nextjs-16-migration-examples.md',
-    dest: 'dist/mcp-resources/'
-  },
-  {
-    type: 'dir',
-    src: 'src/mcp-resources/nextjs-16-knowledge',
-    dest: 'dist/mcp-resources/nextjs-16-knowledge'
-  },
-  {
-    type: 'dir',
-    src: 'src/mcp-resources/nextjs-fundamentals-knowledge',
-    dest: 'dist/mcp-resources/nextjs-fundamentals-knowledge'
-  }
-]
+const SRC_DIR = 'src'
+const DEST_DIR = 'dist/resources'
 
 /**
- * Copy a file
+ * Recursively find all .md files in a directory
  */
-function copyFile(src, dest) {
-  const destDir = path.dirname(dest)
-  if (!fs.existsSync(destDir)) {
-    fs.mkdirSync(destDir, { recursive: true })
-  }
-  fs.copyFileSync(src, dest)
-  console.log(`  ✓ ${path.relative(process.cwd(), dest)}`)
-}
-
-/**
- * Copy files matching a glob pattern
- */
-function copyFiles(pattern, destDir) {
-  const srcDir = path.dirname(pattern)
-  const filename = path.basename(pattern)
-
-  if (!fs.existsSync(srcDir)) {
-    console.warn(`  ⚠ Source directory not found: ${srcDir}`)
-    return
-  }
-
-  const files = fs.readdirSync(srcDir).filter(file => {
-    if (filename === '*.md') return file.endsWith('.md')
-    return file === filename
-  })
-
-  if (files.length === 0) {
-    console.warn(`  ⚠ No files matching ${pattern}`)
-    return
-  }
-
-  if (!fs.existsSync(destDir)) {
-    fs.mkdirSync(destDir, { recursive: true })
-  }
+function findMarkdownFiles(dir, fileList = []) {
+  const files = fs.readdirSync(dir)
 
   files.forEach(file => {
-    const src = path.join(srcDir, file)
-    const dest = path.join(destDir, file)
-    copyFile(src, dest)
+    const filePath = path.join(dir, file)
+    const stat = fs.statSync(filePath)
+
+    if (stat.isDirectory()) {
+      findMarkdownFiles(filePath, fileList)
+    } else if (file.endsWith('.md')) {
+      fileList.push(filePath)
+    }
   })
+
+  return fileList
 }
 
 /**
- * Copy a directory recursively
+ * Check for duplicate filenames
  */
-function copyDir(src, dest) {
-  if (!fs.existsSync(src)) {
-    console.warn(`  ⚠ Source directory not found: ${src}`)
-    return
-  }
+function checkDuplicates(files) {
+  const filenames = new Map()
+  const duplicates = []
 
-  if (!fs.existsSync(dest)) {
-    fs.mkdirSync(dest, { recursive: true })
-  }
-
-  const items = fs.readdirSync(src)
-
-  items.forEach(item => {
-    const srcPath = path.join(src, item)
-    const destPath = path.join(dest, item)
-    const stat = fs.statSync(srcPath)
-
-    if (stat.isDirectory()) {
-      copyDir(srcPath, destPath)
+  files.forEach(filePath => {
+    const filename = path.basename(filePath)
+    if (filenames.has(filename)) {
+      duplicates.push({
+        filename,
+        paths: [filenames.get(filename), filePath]
+      })
     } else {
-      copyFile(srcPath, destPath)
+      filenames.set(filename, filePath)
     }
   })
+
+  return duplicates
 }
 
 /**
  * Main function
  */
 function main() {
-  console.log('📦 Copying MCP resources...\n')
+  console.log('📦 Scanning for markdown files in src/...\n')
 
-  resources.forEach(resource => {
-    if (resource.type === 'files') {
-      console.log(`Copying markdown files: ${resource.src}`)
-      copyFiles(resource.src, resource.dest)
-    } else if (resource.type === 'dir') {
-      console.log(`Copying directory: ${resource.src}`)
-      copyDir(resource.src, resource.dest)
-    }
+  const markdownFiles = findMarkdownFiles(SRC_DIR)
+  console.log(`Found ${markdownFiles.length} markdown files\n`)
+
+  const duplicates = checkDuplicates(markdownFiles)
+  if (duplicates.length > 0) {
+    console.error('❌ Error: Duplicate markdown filenames found:\n')
+    duplicates.forEach(({ filename, paths }) => {
+      console.error(`  ${filename}:`)
+      paths.forEach(p => console.error(`    - ${p}`))
+    })
+    console.error('\nAll .md files must have unique names.')
+    process.exit(1)
+  }
+
+  if (!fs.existsSync(DEST_DIR)) {
+    fs.mkdirSync(DEST_DIR, { recursive: true })
+  }
+
+  console.log(`Copying to ${DEST_DIR}...\n`)
+  markdownFiles.forEach(srcPath => {
+    const filename = path.basename(srcPath)
+    const destPath = path.join(DEST_DIR, filename)
+    fs.copyFileSync(srcPath, destPath)
+    console.log(`  ✓ ${filename}`)
   })
 
   console.log('\n✅ Resources copied successfully!')

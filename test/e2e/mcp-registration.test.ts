@@ -1,8 +1,11 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, vi } from 'vitest'
 import { spawn } from 'child_process'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { execSync } from 'child_process'
+
+// E2E tests need longer timeouts
+vi.setConfig({ testTimeout: 600000, hookTimeout: 60000 })
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

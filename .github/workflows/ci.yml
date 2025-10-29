@@ -1,4 +1,4 @@
-name: Type Check
+name: CI
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  typecheck:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -29,3 +29,7 @@ jobs:
 
       - name: Run type check
         run: pnpm run typecheck
+
+      - name: Run tests
+        run: pnpm test
+

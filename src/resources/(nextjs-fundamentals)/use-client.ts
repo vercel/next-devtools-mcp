@@ -8,5 +8,5 @@ export const metadata: ResourceMetadata = {
 }
 
 export default function handler() {
-  return readResourceFile("01-use-client.md")
+  return readResourceFile("(nextjs-fundamentals)/01-use-client.md")
 }

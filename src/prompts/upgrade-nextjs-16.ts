@@ -40,7 +40,7 @@ export default function getUpgradeNextjs16Prompt(args: InferSchema<typeof schema
 
   const codemodCommandNote = `**Note**: Next.js 16 stable (version ${version}) is now available.`
 
-  let promptTemplate = readResourceFile("upgrade-nextjs-16-prompt.md")
+  let promptTemplate = readResourceFile("prompts/upgrade-nextjs-16-prompt.md")
 
   // TODO: load next.js16 knowledge base resources
   promptTemplate = promptTemplate.replace(/{{PROJECT_PATH}}/g, projectPath)

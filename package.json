@@ -26,8 +26,8 @@
     "prepublishOnly": "pnpm run clean && pnpm run build",
     "clean": "rm -rf dist",
     "start": "node dist/stdio.js",
-    "test": "vitest run test/prompts",
-    "test:e2e": "vitest run --exclude '**/upgrade.test.ts'",
+    "test": "vitest run --exclude 'test/e2e/**'",
+    "test:e2e": "vitest run test/e2e",
     "eval": "vitest run test/e2e/upgrade.test.ts",
     "typecheck": "tsc --noEmit"
   },

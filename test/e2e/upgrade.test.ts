@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { mkdtempSync, cpSync, readFileSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
 import { join, dirname } from 'path'
@@ -9,6 +9,9 @@ import { config } from 'dotenv'
 import upgradeNextjs16Prompt from '../../src/prompts/upgrade-nextjs-16'
 
 config({ path: join(dirname(fileURLToPath(import.meta.url)), '.env') })
+
+// E2E tests need longer timeouts
+vi.setConfig({ testTimeout: 600000, hookTimeout: 60000 })
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

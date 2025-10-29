@@ -182,7 +182,7 @@ Start
 {{/IF_BETA_CHANNEL}}End
 `
 
-      const result = processConditionalBlocks(template, true, false)
+      const result = processConditionalBlocks(template, true)
 
       expect(result).toContain('Beta content here')
       expect(result).not.toContain('{{IF_BETA_CHANNEL}}')
@@ -196,41 +196,11 @@ Start
 {{/IF_BETA_CHANNEL}}End
 `
 
-      const result = processConditionalBlocks(template, false, false)
+      const result = processConditionalBlocks(template, false)
 
       expect(result).not.toContain('Beta content here')
       expect(result).not.toContain('{{IF_BETA_CHANNEL}}')
       expect(result).not.toContain('{{/IF_BETA_CHANNEL}}')
-      expect(result).toContain('Start')
-      expect(result).toContain('End')
-    })
-
-    it('should show IF_REQUIRES_CANARY content when requiresCanary is true', () => {
-      const template = `
-Start
-{{IF_REQUIRES_CANARY}}Canary content here
-{{/IF_REQUIRES_CANARY}}End
-`
-
-      const result = processConditionalBlocks(template, false, true)
-
-      expect(result).toContain('Canary content here')
-      expect(result).not.toContain('{{IF_REQUIRES_CANARY}}')
-      expect(result).not.toContain('{{/IF_REQUIRES_CANARY}}')
-    })
-
-    it('should hide IF_REQUIRES_CANARY content when requiresCanary is false', () => {
-      const template = `
-Start
-{{IF_REQUIRES_CANARY}}Canary content here
-{{/IF_REQUIRES_CANARY}}End
-`
-
-      const result = processConditionalBlocks(template, false, false)
-
-      expect(result).not.toContain('Canary content here')
-      expect(result).not.toContain('{{IF_REQUIRES_CANARY}}')
-      expect(result).not.toContain('{{/IF_REQUIRES_CANARY}}')
       expect(result).toContain('Start')
       expect(result).toContain('End')
     })
@@ -244,30 +214,12 @@ Start
 {{/IF_BETA_CHANNEL}}End
 `
 
-      const result = processConditionalBlocks(template, true, false)
+      const result = processConditionalBlocks(template, true)
 
       expect(result).toContain('Beta 1')
       expect(result).toContain('Beta 2')
       expect(result).toContain('Middle')
       expect(result).not.toContain('{{IF_BETA_CHANNEL}}')
-    })
-
-    it('should handle both types of conditional blocks', () => {
-      const template = `
-Start
-{{IF_BETA_CHANNEL}}Beta content
-{{/IF_BETA_CHANNEL}}Middle
-{{IF_REQUIRES_CANARY}}Canary content
-{{/IF_REQUIRES_CANARY}}End
-`
-
-      const result = processConditionalBlocks(template, true, true)
-
-      expect(result).toContain('Beta content')
-      expect(result).toContain('Canary content')
-      expect(result).toContain('Middle')
-      expect(result).not.toContain('{{IF_BETA_CHANNEL}}')
-      expect(result).not.toContain('{{IF_REQUIRES_CANARY}}')
     })
 
     it('should handle multiline content within blocks', () => {
@@ -278,7 +230,7 @@ Line 2
 Line 3{{/IF_BETA_CHANNEL}}End
 `
 
-      const result = processConditionalBlocks(template, true, false)
+      const result = processConditionalBlocks(template, true)
 
       expect(result).toContain('Line 1')
       expect(result).toContain('Line 2')
@@ -289,11 +241,11 @@ Line 3{{/IF_BETA_CHANNEL}}End
     it('should handle inline conditional blocks', () => {
       const template = 'Start {{IF_BETA_CHANNEL}}[ ] Beta task{{/IF_BETA_CHANNEL}}[ ] Normal task'
 
-      const resultWithBeta = processConditionalBlocks(template, true, false)
+      const resultWithBeta = processConditionalBlocks(template, true)
       expect(resultWithBeta).toContain('[ ] Beta task')
       expect(resultWithBeta).toContain('[ ] Normal task')
 
-      const resultWithoutBeta = processConditionalBlocks(template, false, false)
+      const resultWithoutBeta = processConditionalBlocks(template, false)
       expect(resultWithoutBeta).not.toContain('[ ] Beta task')
       expect(resultWithoutBeta).toContain('[ ] Normal task')
     })
@@ -301,7 +253,7 @@ Line 3{{/IF_BETA_CHANNEL}}End
     it('should handle empty conditional blocks', () => {
       const template = 'Start {{IF_BETA_CHANNEL}}{{/IF_BETA_CHANNEL}}End'
 
-      const result = processConditionalBlocks(template, true, false)
+      const result = processConditionalBlocks(template, true)
 
       expect(result).toBe('Start End')
     })
@@ -314,7 +266,7 @@ Before
 Regular content
 `
 
-      const result = processConditionalBlocks(template, false, false)
+      const result = processConditionalBlocks(template, false)
 
       expect(result).toContain('Before')
       expect(result).toContain('After')

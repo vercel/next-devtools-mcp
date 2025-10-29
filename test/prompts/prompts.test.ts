@@ -29,5 +29,18 @@ describe('Prompts Token Size', () => {
 
     expect(estimatedTokens).toBeLessThan(10000)
   })
+
+  it('upgrade-nextjs-16 should not contain unprocessed template markers', () => {
+    const result = getUpgradeNextjs16Prompt({ project_path: undefined })
+
+    // Verify all conditional blocks are processed (no leftover markers)
+    expect(result).not.toContain('{{IF_BETA_CHANNEL}}')
+    expect(result).not.toContain('{{/IF_BETA_CHANNEL}}')
+    
+    // Verify basic template variables are replaced
+    expect(result).not.toContain('{{PROJECT_PATH}}')
+    expect(result).not.toContain('{{UPGRADE_CHANNEL}}')
+    expect(result).not.toContain('{{CODEMOD_COMMAND}}')
+  })
 })
 

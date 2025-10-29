@@ -39,17 +39,12 @@ export function detectProjectChannel(projectPath: string): ChannelDetectionResul
 
 /**
  * Processes conditional template blocks based on channel detection
- * Supports {{IF_BETA_CHANNEL}} and {{IF_REQUIRES_CANARY}} blocks
+ * Supports {{IF_BETA_CHANNEL}} blocks
  * @param template - Template string with conditional blocks
  * @param isBeta - Whether the project is on beta channel
- * @param requiresCanary - Whether canary is required
  * @returns Processed template with conditional blocks resolved
  */
-export function processConditionalBlocks(
-  template: string,
-  isBeta: boolean,
-  requiresCanary: boolean
-): string {
+export function processConditionalBlocks(template: string, isBeta: boolean): string {
   let result = template
 
   // Process IF_BETA_CHANNEL blocks
@@ -60,16 +55,6 @@ export function processConditionalBlocks(
   } else {
     // Remove entire block including content
     result = result.replace(/\{\{IF_BETA_CHANNEL\}\}.*?\{\{\/IF_BETA_CHANNEL\}\}/gs, "")
-  }
-
-  // Process IF_REQUIRES_CANARY blocks
-  if (requiresCanary) {
-    // Keep content, remove markers
-    result = result.replace(/\{\{IF_REQUIRES_CANARY\}\}/g, "")
-    result = result.replace(/\{\{\/IF_REQUIRES_CANARY\}\}/g, "")
-  } else {
-    // Remove entire block including content
-    result = result.replace(/\{\{IF_REQUIRES_CANARY\}\}.*?\{\{\/IF_REQUIRES_CANARY\}\}/gs, "")
   }
 
   return result

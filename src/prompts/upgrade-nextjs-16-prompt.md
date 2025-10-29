@@ -328,8 +328,17 @@ After the codemod runs, check for any remaining issues it might have missed:
    File: next.config.js
    Check: `serverComponentsExternalPackages` in experimental config
    Action: Move out of experimental - this is now a top-level config option
-   
+
    **📖 For code examples, see: `nextjs16://migration/examples` (Config Migration Examples)**
+
+   {{IF_BETA_CHANNEL}}**J. Beta to Stable Migration (REQUIRED for beta channel users)**
+
+   You are currently upgrading to Next.js 16 **beta** channel. When Next.js 16 **stable** is released, you will need to apply additional config migrations:
+
+   {{BETA_TO_STABLE_GUIDE}}
+
+   **Key migration when stable is released**: `experimental.cacheLife` must be moved to top-level `cacheLife`{{/IF_BETA_CHANNEL}}
+   
 
 **K. Edge Cases the Codemod May Miss**
    Review these manually:
@@ -535,10 +544,6 @@ Report findings in this format:
 - [ ] Codemod upgraded Next.js, React, and React DOM to stable
 - [ ] Codemod upgraded React type definitions to stable
 - [ ] Codemod applied automatic fixes
-{{IF_REQUIRES_CANARY}}
-- [ ] (Optional) Upgraded to canary: `<pkg-manager> add next@canary`
-- [ ] (Optional) Upgraded eslint-config-next: `<pkg-manager> add -D eslint-config-next@canary`
-{{/IF_REQUIRES_CANARY}}
 - [ ] TypeScript upgraded if needed: `<pkg-manager> add -D typescript@latest`
 - [ ] Reviewed git diff for codemod changes
 - [ ] **Verified build: `<pkg-manager> run build` (if this passes, upgrade is complete!)**

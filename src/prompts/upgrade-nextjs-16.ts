@@ -52,8 +52,7 @@ export default function getUpgradeNextjs16Prompt(args: InferSchema<typeof schema
   promptTemplate = promptTemplate.replace(/{{CODEMOD_COMMAND}}/g, codemodCommandNote)
 
   // Process conditional blocks based on project channel
-  // requiresCanary is false since stable is now available
-  promptTemplate = processConditionalBlocks(promptTemplate, isBeta, false)
+  promptTemplate = processConditionalBlocks(promptTemplate, isBeta)
 
   return promptTemplate
 }

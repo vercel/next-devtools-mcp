@@ -2,6 +2,10 @@ import { type InferSchema, type PromptMetadata } from "xmcp"
 import { z } from "zod"
 import { readResourceFile } from "../_internal/resource-path"
 import { execSync } from "child_process"
+import {
+  detectProjectChannel,
+  processConditionalBlocks,
+} from "../_internal/nextjs-channel-detector"
 
 export const schema = {
   project_path: z
@@ -37,12 +41,19 @@ export default function getUpgradeNextjs16Prompt(args: InferSchema<typeof schema
   const upgradeChannel = "latest"
   const codemodCommandNote = `**Note**: Next.js 16 stable (version ${version}) is now available.`
 
+  // Detect if project is on beta/canary
+  const { isBeta } = detectProjectChannel(projectPath)
+
   let promptTemplate = readResourceFile("prompts/upgrade-nextjs-16-prompt.md")
 
-  // TODO: load next.js16 knowledge base resources
+  // Replace basic template variables
   promptTemplate = promptTemplate.replace(/{{PROJECT_PATH}}/g, projectPath)
   promptTemplate = promptTemplate.replace(/{{UPGRADE_CHANNEL}}/g, upgradeChannel)
   promptTemplate = promptTemplate.replace(/{{CODEMOD_COMMAND}}/g, codemodCommandNote)
+
+  // Process conditional blocks based on project channel
+  // requiresCanary is false since stable is now available
+  promptTemplate = processConditionalBlocks(promptTemplate, isBeta, false)
 
   return promptTemplate
 }

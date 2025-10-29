@@ -35,9 +35,6 @@ export default function getUpgradeNextjs16Prompt(args: InferSchema<typeof schema
 
   const { version } = checkNextjs16Availability()
   const upgradeChannel = "latest"
-
-  const REQUIRES_CANARY_FOR_CACHE_COMPONENTS = true
-
   const codemodCommandNote = `**Note**: Next.js 16 stable (version ${version}) is now available.`
 
   let promptTemplate = readResourceFile("prompts/upgrade-nextjs-16-prompt.md")
@@ -46,21 +43,6 @@ export default function getUpgradeNextjs16Prompt(args: InferSchema<typeof schema
   promptTemplate = promptTemplate.replace(/{{PROJECT_PATH}}/g, projectPath)
   promptTemplate = promptTemplate.replace(/{{UPGRADE_CHANNEL}}/g, upgradeChannel)
   promptTemplate = promptTemplate.replace(/{{CODEMOD_COMMAND}}/g, codemodCommandNote)
-
-  if (REQUIRES_CANARY_FOR_CACHE_COMPONENTS) {
-    promptTemplate = promptTemplate.replace(/{{IF_REQUIRES_CANARY}}\n?/g, "")
-    promptTemplate = promptTemplate.replace(/\n?{{\/IF_REQUIRES_CANARY}}/g, "")
-  } else {
-    promptTemplate = promptTemplate.replace(
-      /{{IF_REQUIRES_CANARY}}[\s\S]*?{{\/IF_REQUIRES_CANARY}}\n?/g,
-      ""
-    )
-  }
-
-  promptTemplate = promptTemplate.replace(
-    /{{IF_BETA_CHANNEL}}[\s\S]*?{{\/IF_BETA_CHANNEL}}\n?/g,
-    ""
-  )
 
   return promptTemplate
 }

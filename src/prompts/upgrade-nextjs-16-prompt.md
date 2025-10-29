@@ -206,19 +206,6 @@ Run the official codemod to handle most changes automatically:
 
 **Wait for codemod to complete and verify both build and browser tests before proceeding to Phase 3**
 
-{{IF_REQUIRES_CANARY}}
-**⚠️ TEMPORARY: Upgrade to Canary (Optional for Advanced Caching)**
-
-If your project already uses `'use cache'` directives from Next.js 15 canary, you may want to continue with canary:
-
-```bash
-<pkg-manager> add next@canary
-<pkg-manager> add -D eslint-config-next@canary
-```
-
-Otherwise, the stable version is recommended for most projects.
-{{/IF_REQUIRES_CANARY}}
-
 ## PHASE 3: Analyze Remaining Issues
 ────────────────────────────────────────
 After the codemod runs, check for any remaining issues it might have missed:
@@ -343,14 +330,6 @@ After the codemod runs, check for any remaining issues it might have missed:
    Action: Move out of experimental - this is now a top-level config option
    
    **📖 For code examples, see: `nextjs16://migration/examples` (Config Migration Examples)**
-
-{{IF_BETA_CHANNEL}}**J. Beta to Stable Migration (REQUIRED for beta channel users)**
-
-   You are currently upgrading to Next.js 16 **beta** channel. When Next.js 16 **stable** is released, you will need to apply additional config migrations:
-
-   {{BETA_TO_STABLE_GUIDE}}
-
-   **Key migration when stable is released**: `experimental.cacheLife` must be moved to top-level `cacheLife`{{/IF_BETA_CHANNEL}}
 
 **K. Edge Cases the Codemod May Miss**
    Review these manually:

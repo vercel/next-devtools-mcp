@@ -1,164 +1,120 @@
 import { z } from "zod"
 import { type InferSchema } from "xmcp"
-import { loadNumberedMarkdownFilesWithNames } from "../_internal/resource-loader"
 
 export const schema = {
-  query: z
-    .string()
-    .min(1, "Query parameter is required and must be a non-empty string")
-    .describe("Search query to find relevant Next.js documentation sections"),
-  category: z
-    .enum(["all", "getting-started", "guides", "api-reference", "architecture", "community"])
+  query: z.string().describe("Search query to find relevant Next.js documentation"),
+  routerType: z
+    .enum(["all", "app", "pages"])
     .optional()
-    .describe("Filter documentation by category (optional)"),
+    .default("all")
+    .describe("Filter by router type: 'app' (App Router) or 'pages' (Pages Router)"),
 }
 
 export const metadata = {
   name: "nextjs_docs",
-  description: `Search and retrieve Next.js official documentation.
-First searches MCP resources (Next.js 16 knowledge base) for latest information, then falls back to official Next.js documentation if nothing is found.
-Provides access to comprehensive Next.js guides, API references, and best practices.`,
+  description: "Search Next.js official documentation",
 }
 
-let cachedDocs: { url: string; title: string; category: string }[] | null = null
+const ALGOLIA_APP_ID = ""
+const ALGOLIA_API_KEY = ""
 
-async function getNextJsDocs(): Promise<{ url: string; title: string; category: string }[]> {
-  if (cachedDocs) {
-    return cachedDocs
+const algoliaHitSchema = z.object({
+  title: z.string(),
+  content: z.string(),
+  path: z.string(),
+  section: z.string().optional(),
+  anchor: z.string().optional(),
+  isApp: z.boolean().optional(),
+  isPages: z.boolean().optional(),
+})
+
+const algoliaResponseSchema = z.object({
+  results: z.array(
+    z.object({
+      hits: z.array(algoliaHitSchema),
+    })
+  ),
+})
+
+type AlgoliaHit = z.infer<typeof algoliaHitSchema>
+
+async function searchAlgolia(query: string, filters?: string): Promise<AlgoliaHit[]> {
+  const response = await fetch("https://NNTAHQI9C5-dsn.algolia.net/1/indexes/*/queries", {
+    method: "POST",
+    headers: {
+      "X-Algolia-API-Key": ALGOLIA_API_KEY,
+      "X-Algolia-Application-Id": ALGOLIA_APP_ID,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      requests: [
+        {
+          indexName: "nextjs_docs_stable",
+          query,
+          params: filters ? `hitsPerPage=10&filters=${filters}` : "hitsPerPage=10",
+        },
+      ],
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Algolia search failed: ${response.statusText}`)
   }
 
-  const response = await fetch("https://nextjs.org/docs/llms.txt")
-  const text = await response.text()
+  const json = await response.json()
+  const data = algoliaResponseSchema.parse(json)
+  return data.results[0]?.hits ?? []
+}
 
-  const linkRegex = /- \[(.*?)\]\((https:\/\/nextjs\.org\/docs\/.*?)\)/g
-  const docs: { url: string; title: string; category: string }[] = []
-
-  let match
-  while ((match = linkRegex.exec(text)) !== null) {
-    const title = match[1]
-    const url = match[2]
-
-    if (!title || !url) {
-      continue
-    }
-
-    let category = "other"
-    if (url.includes("/getting-started/")) {
-      category = "getting-started"
-    } else if (url.includes("/guides/")) {
-      category = "guides"
-    } else if (url.includes("/api-reference/")) {
-      category = "api-reference"
-    } else if (url.includes("/architecture/")) {
-      category = "architecture"
-    } else if (url.includes("/community/")) {
-      category = "community"
-    }
-
-    docs.push({ url, title, category })
+function formatSearchResults(hits: AlgoliaHit[], query: string): string {
+  if (hits.length === 0) {
+    return `No documentation found for "${query}".`
   }
 
-  cachedDocs = docs
-  return docs
+  let result = `Found ${hits.length} result(s) for "${query}":\n\n`
+
+  for (const hit of hits) {
+    result += `## ${hit.title}\n`
+
+    if (hit.section && hit.section !== hit.title) {
+      result += `**Section:** ${hit.section}\n`
+    }
+
+    result += `**URL:** https://nextjs.org${hit.path}${hit.anchor ? `#${hit.anchor}` : ""}\n`
+
+    const routerBadge = hit.isApp ? "[App Router]" : hit.isPages ? "[Pages Router]" : ""
+    if (routerBadge) {
+      result += `**Router:** ${routerBadge}\n`
+    }
+
+    if (hit.content) {
+      result += `\n${hit.content}\n`
+    }
+
+    result += "\n---\n\n"
+  }
+
+  return result
 }
 
 export default async function nextjsDocs({
   query,
-  category = "all",
+  routerType = "all",
 }: InferSchema<typeof schema>): Promise<string> {
-  const queryLower = query.toLowerCase()
-  const mdFiles = loadNumberedMarkdownFilesWithNames()
+  try {
+    let filters: string | undefined
 
-  const matches: Array<{ filename: string; content: string; score: number }> = []
-
-  for (const { filename, content } of mdFiles) {
-    let score = 0
-
-    if (filename.toLowerCase().includes(queryLower)) {
-      score += 10
+    if (routerType === "app") {
+      filters = "isApp:true"
+    } else if (routerType === "pages") {
+      filters = "isPages:true"
     }
 
-    if (content.substring(0, 500).toLowerCase().includes(queryLower)) {
-      score += 5
-    }
+    const hits = await searchAlgolia(query, filters)
 
-    const keywords = [
-      "cache",
-      "prefetch",
-      "public",
-      "private",
-      "revalidate",
-      "invalidation",
-      "async",
-      "params",
-      "searchParams",
-      "cookies",
-      "headers",
-      "connection",
-      "build",
-      "prerender",
-      "metadata",
-      "error",
-      "test",
-      "cacheLife",
-      "cacheTag",
-      "updateTag",
-    ]
-
-    for (const keyword of keywords) {
-      if (queryLower.includes(keyword) && content.toLowerCase().includes(keyword)) {
-        score += 3
-      }
-    }
-
-    if (score > 0) {
-      matches.push({ filename, content, score })
-    }
+    return formatSearchResults(hits, query)
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    return `Error searching Next.js documentation: ${errorMessage}`
   }
-
-  const topMatches = matches.sort((a, b) => b.score - a.score).slice(0, 3)
-
-  if (topMatches.length > 0) {
-    let result = `Found ${topMatches.length} relevant section(s) in Next.js 16 knowledge base:\n\n`
-
-    for (const match of topMatches) {
-      const title = match.filename.replace(/^\d+-/, "").replace(".md", "").replace(/-/g, " ")
-      result += `## ${title}\n\n`
-
-      const truncatedContent =
-        match.content.length > 3000
-          ? match.content.substring(0, 3000) + "\n\n...(truncated)"
-          : match.content
-      result += `${truncatedContent}\n\n`
-      result += `---\n\n`
-    }
-
-    return result
-  }
-
-  const docs = await getNextJsDocs()
-
-  let filtered = docs
-  if (category !== "all") {
-    filtered = docs.filter((doc) => doc.category === category)
-  }
-
-  const results = filtered
-    .filter(
-      (doc) =>
-        doc.title?.toLowerCase().includes(queryLower) || doc.url?.toLowerCase().includes(queryLower)
-    )
-    .slice(0, 10)
-
-  if (results.length === 0) {
-    return `No documentation found for "${query}"${
-      category !== "all" ? ` in category "${category}"` : ""
-    } in both MCP resources and official Next.js documentation.`
-  }
-
-  return `No matches in MCP resources. Found ${
-    results.length
-  } documentation page(s) from official Next.js docs:\n\n${results
-    .map((doc) => `- [${doc.title}](${doc.url})`)
-    .join("\n")}`
 }

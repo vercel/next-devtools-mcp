@@ -8,5 +8,5 @@ export const metadata: ResourceMetadata = {
 }
 
 export default function handler() {
-  return readResourceFile("nextjs-16-migration-examples.md")
+  return readResourceFile("(nextjs16)/migration/nextjs-16-migration-examples.md")
 }

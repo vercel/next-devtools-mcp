@@ -10,44 +10,44 @@ PROJECT: {{PROJECT_PATH}}
 
 The following resources are available from the Next.js MCP server. Load them on-demand to reduce token usage:
 
-- `nextjs16://knowledge/overview` - Critical errors AI agents make, quick reference (START HERE)
-- `nextjs16://knowledge/core-mechanics` - Fundamental paradigm shift, cacheComponents
-- `nextjs16://knowledge/public-caches` - Public cache mechanics using 'use cache'
-- `nextjs16://knowledge/private-caches` - Private cache mechanics using 'use cache: private'
-- `nextjs16://knowledge/runtime-prefetching` - Prefetch configuration and stale time rules
-- `nextjs16://knowledge/request-apis` - Async params, searchParams, cookies(), headers()
-- `nextjs16://knowledge/cache-invalidation` - updateTag(), revalidateTag() patterns
-- `nextjs16://knowledge/advanced-patterns` - cacheLife(), cacheTag(), draft mode
-- `nextjs16://knowledge/build-behavior` - What gets prerendered, static shells
-- `nextjs16://knowledge/error-patterns` - Common errors and solutions
-- `nextjs16://knowledge/test-patterns` - Real test-driven patterns from 125+ fixtures
-- `nextjs16://knowledge/reference` - Mental models, API reference, checklists
+- `cache-components://overview` - Critical errors AI agents make, quick reference (START HERE)
+- `cache-components://core-mechanics` - Fundamental paradigm shift, cacheComponents
+- `cache-components://public-caches` - Public cache mechanics using 'use cache'
+- `cache-components://private-caches` - Private cache mechanics using 'use cache: private'
+- `cache-components://runtime-prefetching` - Prefetch configuration and stale time rules
+- `cache-components://request-apis` - Async params, searchParams, cookies(), headers()
+- `cache-components://cache-invalidation` - updateTag(), revalidateTag() patterns
+- `cache-components://advanced-patterns` - cacheLife(), cacheTag(), draft mode
+- `cache-components://build-behavior` - What gets prerendered, static shells
+- `cache-components://error-patterns` - Common errors and solutions
+- `cache-components://test-patterns` - Real test-driven patterns from 125+ fixtures
+- `cache-components://reference` - Mental models, API reference, checklists
 
 **How to Access Resources (MANDATORY - ALWAYS LOAD):**
 
-Resources use the URI scheme `nextjs16://knowledge/...` and are served by this MCP server.
+Resources use the URI scheme `cache-components://...` and are served by this MCP server.
 
 **CRITICAL: You MUST load resources at each phase phase - this is not optional.**
 
 To load a resource, use the ReadMcpResourceTool with:
 - server: `"next-devtools"` (or whatever your server is configured as)
-- uri: `"nextjs16://knowledge/[resource-name]"` from the list above
+- uri: `"cache-components://[resource-name]"` from the list above
 
 **MANDATORY Resource Loading Schedule:**
 
 You MUST load these resources at the specified phases:
 
-- **BEFORE Phase 1-2:** ALWAYS load `nextjs16://knowledge/overview` first
+- **BEFORE Phase 1-2:** ALWAYS load `cache-components://overview` first
   - Provides critical context and error patterns AI agents make
   - Must be loaded before any configuration changes
 
 - **During Phase 5 (Error Fixing):** ALWAYS load error-specific resources as needed
-  - When fixing blocking route errors → Load `nextjs16://knowledge/error-patterns`
-  - When configuring caching → Load `nextjs16://knowledge/advanced-patterns`
-  - When using dynamic params → Load `nextjs16://knowledge/core-mechanics`
+  - When fixing blocking route errors → Load `cache-components://error-patterns`
+  - When configuring caching → Load `cache-components://advanced-patterns`
+  - When using dynamic params → Load `cache-components://core-mechanics`
   - Do NOT guess or use generic patterns - load the specific resource
 
-- **During Phase 6 (Verification):** ALWAYS load `nextjs16://knowledge/build-behavior`
+- **During Phase 6 (Verification):** ALWAYS load `cache-components://build-behavior`
   - Provides build verification strategies and troubleshooting
 
 **Why This Matters:**
@@ -213,7 +213,7 @@ Then navigate to **"Cache Components Examples"** → **"Decision Guide: Static v
 
 BEFORE doing anything, you MUST load:
 ```
-ReadMcpResourceTool(server="next-devtools", uri="nextjs16://knowledge/overview")
+ReadMcpResourceTool(server="next-devtools", uri="cache-components://overview")
 ```
 
 This provides critical context about Cache Components and common mistakes.
@@ -428,8 +428,8 @@ Build verification is always reliable and doesn't require dev server or browser 
 
 You MUST load these resources to understand errors and fix them correctly:
 ```
-ReadMcpResourceTool(server="next-devtools", uri="nextjs16://knowledge/error-patterns")
-ReadMcpResourceTool(server="next-devtools", uri="nextjs16://knowledge/advanced-patterns")
+ReadMcpResourceTool(server="next-devtools", uri="cache-components://error-patterns")
+ReadMcpResourceTool(server="next-devtools", uri="cache-components://advanced-patterns")
 ```
 
 Do NOT guess or apply generic patterns. Use the exact code examples and strategies from these resources.
@@ -926,7 +926,7 @@ Then:
 
 You MUST load:
 ```
-ReadMcpResourceTool(server="next-devtools", uri="nextjs16://knowledge/build-behavior")
+ReadMcpResourceTool(server="next-devtools", uri="cache-components://build-behavior")
 ```
 
 This provides build verification strategies and troubleshooting guidance.

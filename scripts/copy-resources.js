@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Copy resources script
- * Scans all .md files in src/ and copies them to a flat dist/resources/ directory
- * Ensures all .md filenames are unique
+ * Preserves directory structure from src/resources/ to dist/resources/
+ * Copies .md files from src/prompts/ to dist/resources/prompts/
  *
  * Usage: node scripts/copy-resources.js
  */
@@ -10,81 +10,72 @@
 const fs = require('fs')
 const path = require('path')
 
-const SRC_DIR = 'src'
+const SRC_RESOURCES_DIR = 'src/resources'
+const SRC_PROMPTS_DIR = 'src/prompts'
 const DEST_DIR = 'dist/resources'
 
 /**
- * Recursively find all .md files in a directory
+ * Recursively copy .md files while preserving directory structure
  */
-function findMarkdownFiles(dir, fileList = []) {
-  const files = fs.readdirSync(dir)
+function copyMarkdownFiles(srcDir, destDir, relativePath = '') {
+  if (!fs.existsSync(srcDir)) {
+    return []
+  }
+
+  const files = fs.readdirSync(srcDir)
+  const copiedFiles = []
 
   files.forEach(file => {
-    const filePath = path.join(dir, file)
-    const stat = fs.statSync(filePath)
+    const srcPath = path.join(srcDir, file)
+    const stat = fs.statSync(srcPath)
 
     if (stat.isDirectory()) {
-      findMarkdownFiles(filePath, fileList)
+      // Recursively copy subdirectories
+      const newRelativePath = path.join(relativePath, file)
+      const copied = copyMarkdownFiles(srcPath, destDir, newRelativePath)
+      copiedFiles.push(...copied)
     } else if (file.endsWith('.md')) {
-      fileList.push(filePath)
+      // Copy .md file preserving structure
+      const destPath = path.join(destDir, relativePath, file)
+      const destDirPath = path.dirname(destPath)
+      
+      if (!fs.existsSync(destDirPath)) {
+        fs.mkdirSync(destDirPath, { recursive: true })
+      }
+      
+      fs.copyFileSync(srcPath, destPath)
+      const relativeDestPath = path.relative(destDir, destPath)
+      copiedFiles.push(relativeDestPath)
     }
   })
 
-  return fileList
-}
-
-/**
- * Check for duplicate filenames
- */
-function checkDuplicates(files) {
-  const filenames = new Map()
-  const duplicates = []
-
-  files.forEach(filePath => {
-    const filename = path.basename(filePath)
-    if (filenames.has(filename)) {
-      duplicates.push({
-        filename,
-        paths: [filenames.get(filename), filePath]
-      })
-    } else {
-      filenames.set(filename, filePath)
-    }
-  })
-
-  return duplicates
+  return copiedFiles
 }
 
 /**
  * Main function
  */
 function main() {
-  console.log('📦 Scanning for markdown files in src/...\n')
+  console.log('📦 Copying markdown files with preserved structure...\n')
 
-  const markdownFiles = findMarkdownFiles(SRC_DIR)
-  console.log(`Found ${markdownFiles.length} markdown files\n`)
-
-  const duplicates = checkDuplicates(markdownFiles)
-  if (duplicates.length > 0) {
-    console.error('❌ Error: Duplicate markdown filenames found:\n')
-    duplicates.forEach(({ filename, paths }) => {
-      console.error(`  ${filename}:`)
-      paths.forEach(p => console.error(`    - ${p}`))
-    })
-    console.error('\nAll .md files must have unique names.')
-    process.exit(1)
-  }
-
+  // Ensure destination directory exists
   if (!fs.existsSync(DEST_DIR)) {
     fs.mkdirSync(DEST_DIR, { recursive: true })
   }
 
-  console.log(`Copying to ${DEST_DIR}...\n`)
-  markdownFiles.forEach(srcPath => {
-    const filename = path.basename(srcPath)
-    const destPath = path.join(DEST_DIR, filename)
-    fs.copyFileSync(srcPath, destPath)
-    console.log(`  ✓ ${filename}`)
+  // Copy resources with preserved structure
+  console.log('Copying from src/resources/...')
+  const resourceFiles = copyMarkdownFiles(SRC_RESOURCES_DIR, DEST_DIR)
+  
+  // Copy prompt .md files to prompts/ subdirectory
+  console.log('Copying from src/prompts/...')
+  const promptFiles = copyMarkdownFiles(SRC_PROMPTS_DIR, DEST_DIR, 'prompts')
+
+  const allFiles = [...resourceFiles, ...promptFiles]
+  
+  console.log(`\nCopied ${allFiles.length} files:\n`)
+  allFiles.forEach(file => {
+    console.log(`  ✓ ${file}`)
   })
 
   console.log('\n✅ Resources copied successfully!')

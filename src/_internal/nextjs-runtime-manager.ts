@@ -34,7 +34,6 @@ async function findNextJsServers(): Promise<NextJsServerInfo[]> {
     for (const proc of nodeProcesses) {
       const command = proc.cmd || ""
 
-      // Enhanced detection patterns for Next.js servers
       const isNextJsProcess =
         command.includes("next dev") ||
         command.includes("next-server") ||
@@ -45,31 +44,17 @@ async function findNextJsServers(): Promise<NextJsServerInfo[]> {
         const portMatch =
           command.match(/--port[=\s]+(\d+)/) ||
           command.match(/-p[=\s]+(\d+)/) ||
+          command.match(/--port\s+["'](\d+)["']/) ||
+          command.match(/["']--port["']\s+["']?(\d+)["']?/) ||
+          command.match(/["'](\d+)["']\s*$/) ||
           command.match(/:(\d+)/)
 
-        let port = 3000
-
         if (portMatch) {
-          port = parseInt(portMatch[1], 10)
-        } else {
-          const commonPorts = [3000, 3001, 3002, 3003]
-          for (const testPort of commonPorts) {
-            try {
-              const portProcs = await find("port", testPort)
-              const matchingProc = portProcs.find((p) => p.pid === proc.pid)
-              if (matchingProc) {
-                port = testPort
-                break
-              }
-            } catch {
-              // Port not in use or error checking, continue
-            }
+          const port = parseInt(portMatch[1], 10)
+          if (!seenPorts.has(port)) {
+            seenPorts.add(port)
+            servers.push({ port, pid: proc.pid, command })
           }
-        }
-
-        if (!seenPorts.has(port)) {
-          seenPorts.add(port)
-          servers.push({ port, pid: proc.pid, command })
         }
       }
     }

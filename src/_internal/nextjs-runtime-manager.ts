@@ -154,20 +154,11 @@ async function makeNextJsMCPRequest(
   }
 }
 
-export async function discoverNextJsServer(
-  preferredPort?: number
-): Promise<NextJsServerInfo | null> {
+export async function discoverNextJsServer(): Promise<NextJsServerInfo | null> {
   const servers = await findNextJsServers()
 
   if (servers.length === 0) {
     return null
-  }
-
-  if (preferredPort) {
-    const server = servers.find((s) => s.port === preferredPort)
-    if (server) {
-      return server
-    }
   }
 
   if (servers.length === 1) {

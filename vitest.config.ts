@@ -6,10 +6,10 @@ export default defineConfig({
     // E2E tests: Override in test file with vi.setConfig()
     testTimeout: 30000,
     hookTimeout: 10000,
-    
+
     // Only run test files that match these patterns
     include: ['test/**/*.test.ts'],
-    
+
     // Exclude e2e from default test runs (use npm run test:e2e)
     exclude: [
       'node_modules',
@@ -17,6 +17,8 @@ export default defineConfig({
       '.idea',
       '.git',
       '.cache',
+      'test/fixtures/**/node_modules/**',
+      '**/node_modules/**',
     ],
   },
 })

@@ -14,3 +14,8 @@ test/e2e/.env
 _*.md
 .mcpregistry*
 
+# Test fixtures
+test/fixtures/**/pnpm-lock.yaml
+test/fixtures/**/node_modules/
+test/fixtures/**/.next/
+

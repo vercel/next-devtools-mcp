@@ -1,164 +1,132 @@
 import { z } from "zod"
 import { type InferSchema } from "xmcp"
-import { loadNumberedMarkdownFilesWithNames } from "../_internal/resource-loader"
 
 export const schema = {
+  action: z
+    .enum(["search", "get"])
+    .describe(
+      "Action to perform: 'search' to find docs by keyword, 'get' to fetch full markdown content"
+    ),
   query: z
     .string()
-    .min(1, "Query parameter is required and must be a non-empty string")
-    .describe("Search query to find relevant Next.js documentation sections"),
-  category: z
-    .enum(["all", "getting-started", "guides", "api-reference", "architecture", "community"])
     .optional()
-    .describe("Filter documentation by category (optional)"),
+    .describe(
+      "Required for 'search' action. Keyword search query (e.g., 'metadata', 'generateStaticParams', 'middleware'). Use specific terms, not natural language questions."
+    ),
+  path: z
+    .string()
+    .optional()
+    .describe(
+      "Required for 'get' action. Doc path from search results (e.g., '/docs/app/api-reference/functions/refresh')"
+    ),
+  anchor: z
+    .string()
+    .optional()
+    .describe(
+      "Optional for 'get' action. Anchor/section from search results (e.g., 'usage'). Included in response metadata to indicate relevant section."
+    ),
+  routerType: z
+    .enum(["all", "app", "pages"])
+    .default("all")
+    .describe(
+      "For 'search' action only. Filter by Next.js router type: 'app' (App Router only), 'pages' (Pages Router only), or 'all' (both)"
+    ),
 }
 
 export const metadata = {
   name: "nextjs_docs",
   description: `Search and retrieve Next.js official documentation.
-First searches MCP resources (Next.js 16 knowledge base) for latest information, then falls back to official Next.js documentation if nothing is found.
-Provides access to comprehensive Next.js guides, API references, and best practices.`,
-}
-
-let cachedDocs: { url: string; title: string; category: string }[] | null = null
-
-async function getNextJsDocs(): Promise<{ url: string; title: string; category: string }[]> {
-  if (cachedDocs) {
-    return cachedDocs
-  }
-
-  const response = await fetch("https://nextjs.org/docs/llms.txt")
-  const text = await response.text()
-
-  const linkRegex = /- \[(.*?)\]\((https:\/\/nextjs\.org\/docs\/.*?)\)/g
-  const docs: { url: string; title: string; category: string }[] = []
-
-  let match
-  while ((match = linkRegex.exec(text)) !== null) {
-    const title = match[1]
-    const url = match[2]
-
-    if (!title || !url) {
-      continue
-    }
-
-    let category = "other"
-    if (url.includes("/getting-started/")) {
-      category = "getting-started"
-    } else if (url.includes("/guides/")) {
-      category = "guides"
-    } else if (url.includes("/api-reference/")) {
-      category = "api-reference"
-    } else if (url.includes("/architecture/")) {
-      category = "architecture"
-    } else if (url.includes("/community/")) {
-      category = "community"
-    }
-
-    docs.push({ url, title, category })
-  }
-
-  cachedDocs = docs
-  return docs
+Two-step process: 1) Use action='search' with a keyword query to find relevant docs and get their paths. 2) Use action='get' with a specific path to fetch the full markdown content.
+Use specific API names, concepts, or feature names as search terms.`,
 }
 
 export default async function nextjsDocs({
+  action,
   query,
-  category = "all",
+  path,
+  anchor,
+  routerType = "all",
 }: InferSchema<typeof schema>): Promise<string> {
-  const queryLower = query.toLowerCase()
-  const mdFiles = loadNumberedMarkdownFilesWithNames()
-
-  const matches: Array<{ filename: string; content: string; score: number }> = []
-
-  for (const { filename, content } of mdFiles) {
-    let score = 0
-
-    if (filename.toLowerCase().includes(queryLower)) {
-      score += 10
+  if (action === "search") {
+    if (!query) {
+      throw new Error("query parameter is required for search action")
     }
 
-    if (content.substring(0, 500).toLowerCase().includes(queryLower)) {
-      score += 5
+    // Construct filters based on router type
+    let filters = "isPages:true OR isApp:true"
+    if (routerType === "app") {
+      filters = "isApp:true"
+    } else if (routerType === "pages") {
+      filters = "isPages:true"
     }
 
-    const keywords = [
-      "cache",
-      "prefetch",
-      "public",
-      "private",
-      "revalidate",
-      "invalidation",
-      "async",
-      "params",
-      "searchParams",
-      "cookies",
-      "headers",
-      "connection",
-      "build",
-      "prerender",
-      "metadata",
-      "error",
-      "test",
-      "cacheLife",
-      "cacheTag",
-      "updateTag",
-    ]
+    // Call Next.js search API
+    const response = await fetch("https://nextjs.org/api/search", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        indexName: "nextjs_docs_stable",
+        query,
+        filters,
+      }),
+    })
 
-    for (const keyword of keywords) {
-      if (queryLower.includes(keyword) && content.toLowerCase().includes(keyword)) {
-        score += 3
-      }
+    if (!response.ok) {
+      throw new Error(`Next.js docs API error: ${response.status} ${response.statusText}`)
     }
 
-    if (score > 0) {
-      matches.push({ filename, content, score })
+    const { hits = [] } = await response.json()
+
+    if (hits.length === 0) {
+      return JSON.stringify({
+        query,
+        routerType,
+        results: [],
+        message: "No documentation found.",
+      })
     }
+
+    // Extract only essential fields to reduce payload
+    const results = hits.map((hit: any) => ({
+      title: hit.title,
+      path: hit.path,
+      content: hit.content,
+      section: hit.section,
+      anchor: hit.anchor,
+      routerType: hit.isApp ? "app" : hit.isPages ? "pages" : "unknown",
+    }))
+
+    return JSON.stringify({
+      query,
+      routerType,
+      results,
+    })
+  } else if (action === "get") {
+    if (!path) {
+      throw new Error("path parameter is required for get action")
+    }
+
+    const url = `https://nextjs.org${path}`
+    const response = await fetch(url, {
+      headers: {
+        Accept: "text/markdown",
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch documentation: ${response.status} ${response.statusText}`)
+    }
+
+    const markdown = await response.text()
+    return JSON.stringify({
+      path,
+      anchor: anchor || null,
+      url: anchor ? `https://nextjs.org${path}#${anchor}` : `https://nextjs.org${path}`,
+      content: markdown,
+    })
+  } else {
+    throw new Error(`Invalid action: ${action}`)
   }
-
-  const topMatches = matches.sort((a, b) => b.score - a.score).slice(0, 3)
-
-  if (topMatches.length > 0) {
-    let result = `Found ${topMatches.length} relevant section(s) in Next.js 16 knowledge base:\n\n`
-
-    for (const match of topMatches) {
-      const title = match.filename.replace(/^\d+-/, "").replace(".md", "").replace(/-/g, " ")
-      result += `## ${title}\n\n`
-
-      const truncatedContent =
-        match.content.length > 3000
-          ? match.content.substring(0, 3000) + "\n\n...(truncated)"
-          : match.content
-      result += `${truncatedContent}\n\n`
-      result += `---\n\n`
-    }
-
-    return result
-  }
-
-  const docs = await getNextJsDocs()
-
-  let filtered = docs
-  if (category !== "all") {
-    filtered = docs.filter((doc) => doc.category === category)
-  }
-
-  const results = filtered
-    .filter(
-      (doc) =>
-        doc.title?.toLowerCase().includes(queryLower) || doc.url?.toLowerCase().includes(queryLower)
-    )
-    .slice(0, 10)
-
-  if (results.length === 0) {
-    return `No documentation found for "${query}"${
-      category !== "all" ? ` in category "${category}"` : ""
-    } in both MCP resources and official Next.js documentation.`
-  }
-
-  return `No matches in MCP resources. Found ${
-    results.length
-  } documentation page(s) from official Next.js docs:\n\n${results
-    .map((doc) => `- [${doc.title}](${doc.url})`)
-    .join("\n")}`
 }

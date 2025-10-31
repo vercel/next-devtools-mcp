@@ -79,9 +79,8 @@ REQUIREMENTS:
 - Next.js 16 or later (MCP support was added in v16)
 - If you're on Next.js 15 or earlier, use the 'upgrade-nextjs-16' MCP prompt to upgrade first
 
-Next.js exposes an MCP (Model Context Protocol) endpoint at /_next/mcp when started with:
-- For Next.js < 16: experimental.mcpServer: true in next.config.js, OR __NEXT_EXPERIMENTAL_MCP_SERVER=true environment variable
-- For Next.js >= 16: MCP is enabled by default (no configuration needed)
+Next.js 16+ exposes an MCP (Model Context Protocol) endpoint at /_next/mcp automatically when the dev server starts.
+No configuration needed - MCP is enabled by default in Next.js 16 and later.
 
 This tool allows you to:
 1. Discover running Next.js dev servers and their ports
@@ -99,9 +98,9 @@ IMPORTANT: When calling tools:
 - Check the tool's inputSchema from 'list_tools' to see what arguments are required
 
 If the MCP endpoint is not available:
-1. Check if you're running Next.js 16+ (if not, use the 'upgrade-nextjs-16' prompt)
-2. For Next.js < 16: Ensure the dev server is started with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true
-3. For Next.js >= 16: MCP should be enabled by default - check if the dev server is running`,
+1. Ensure you're running Next.js 16 or later (use the 'upgrade-nextjs-16' prompt to upgrade)
+2. Verify the dev server is running (npm run dev)
+3. Check that the dev server started successfully without errors`,
 }
 
 export default async function nextjsRuntime(args: InferSchema<typeof schema>): Promise<string> {
@@ -117,7 +116,7 @@ export default async function nextjsRuntime(args: InferSchema<typeof schema>): P
             message: verifyMCP
               ? "No running Next.js dev servers with MCP enabled found"
               : "No running Next.js dev servers found",
-            hint: "For Next.js < 16: Start with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true. For Next.js >= 16: MCP is enabled by default.",
+            hint: "Make sure you're running Next.js 16+ (MCP is enabled by default). Start the dev server with 'npm run dev'. If on Next.js 15 or earlier, upgrade using the 'upgrade-nextjs-16' prompt.",
             count: 0,
           })
         }

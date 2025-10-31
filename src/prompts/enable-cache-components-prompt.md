@@ -133,7 +133,7 @@ This prompt automates the complete Cache Components enablement workflow:
 - ✅ Document existing Route Segment Config for migration
 
 **Dev Server & MCP Setup (Phase 3):**
-- ✅ Start dev server once with MCP enabled (`__NEXT_EXPERIMENTAL_MCP_SERVER=true`)
+- ✅ Start dev server (MCP is enabled by default in Next.js 16+)
 - ✅ Verify MCP server is active and responding
 - ✅ Capture base URL and MCP endpoint for error detection
 
@@ -900,8 +900,8 @@ After completing Step 3 and fixing all errors, verify with a final build:
 
 If you want to verify routes interactively:
 ```bash
-# Start dev server
-__NEXT_EXPERIMENTAL_MCP_SERVER=true <pkg-manager> dev
+# Start dev server (MCP is enabled by default in Next.js 16+)
+<pkg-manager> dev
 ```
 
 Then:
@@ -949,12 +949,12 @@ This provides build verification strategies and troubleshooting guidance.
 
 **If Phase 3 Step 3C had unclear errors that couldn't be fixed from build output:**
 
-1. **Start Dev Server with MCP**
+1. **Start Dev Server**
    ```bash
-   # Start dev server with MCP enabled
-   __NEXT_EXPERIMENTAL_MCP_SERVER=true <pkg-manager> dev
+   # Start dev server (MCP is enabled by default in Next.js 16+)
+   <pkg-manager> dev
    ```
-   
+
    Wait for server to show ready message with URL.
 
 2. **Verify MCP Server Active**

@@ -1,4 +1,5 @@
 import find from "find-process"
+import { CONFIG } from "../config"
 
 interface NextJsServerInfo {
   port: number
@@ -188,7 +189,7 @@ async function verifyMCPEndpoint(port: number): Promise<boolean> {
   try {
     const url = `http://localhost:${port}/_next/mcp`
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 1000) // 1 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), CONFIG.nextjs_runtime.mcp_endpoint_timeout_ms)
 
     const response = await fetch(url, {
       method: "POST",

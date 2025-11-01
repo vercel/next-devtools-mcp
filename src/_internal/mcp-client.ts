@@ -1,5 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
+import { CONFIG } from "../config"
 
 export interface MCPConnection {
   client: Client
@@ -20,8 +21,8 @@ export async function connectToMCPServer(
   // Create the client
   const client = new Client(
     {
-      name: "next-devtools-mcp-client",
-      version: "0.1.0",
+      name: CONFIG.mcp_client.client_info.name,
+      version: CONFIG.mcp_client.client_info.version,
     },
     {
       capabilities: {},
@@ -41,7 +42,7 @@ export async function connectToMCPServer(
   const stderrStream = transport.stderr
   if (stderrStream) {
     stderrStream.on("data", (data) => {
-      console.error(`[MCP Server stderr]: ${data}`)
+      console.error(`${CONFIG.mcp_client.stderr_logging_prefix}: ${data}`)
     })
   }
 

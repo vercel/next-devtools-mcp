@@ -1,6 +1,7 @@
 import { exec } from "child_process"
 import { promisify } from "util"
 import { connectToMCPServer, MCPConnection } from "./mcp-client"
+import { CONFIG } from "../config"
 
 const execAsync = promisify(exec)
 
@@ -65,21 +66,20 @@ export async function startBrowserEvalMCP(options?: {
   // Build args for playwright-mcp
   const args: string[] = ["@playwright/mcp@latest"]
 
-  if (options?.browser) {
-    args.push("--browser", options.browser)
-  }
+  const browser = options?.browser ?? CONFIG.browser.default_browser
+  args.push("--browser", browser)
 
   // --headless is a flag (no value needed)
   // Pass the flag only if headless is true
-  if (options?.headless === true) {
+  const headless = options?.headless ?? CONFIG.browser.default_headless
+  if (headless) {
     args.push("--headless")
   }
 
   // Always enable verbose logging via environment variables
   const env = {
     ...process.env,
-    DEBUG: "pw:api,pw:browser*",
-    VERBOSE: "1",
+    ...CONFIG.browser.verbose_logging_env,
   }
 
   // Connect to playwright-mcp using npx

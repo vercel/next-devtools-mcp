@@ -6,6 +6,7 @@ import {
   getBrowserEvalConnection,
 } from "../_internal/browser-eval-manager"
 import { callServerTool, listServerTools } from "../_internal/mcp-client"
+import { CONFIG } from "../config"
 
 export const schema = {
   action: z
@@ -119,15 +120,16 @@ Note: The playwright-mcp server will be automatically installed if not present.`
 export default async function browserEval(args: InferSchema<typeof schema>): Promise<string> {
   try {
     if (args.action === "start") {
+      const browser = args.browser ?? CONFIG.browser.default_browser
+      const headless = args.headless ?? CONFIG.browser.default_headless
+
       const connection = await startBrowserEvalMCP({
-        browser: args.browser || "chrome",
-        headless: args.headless !== false,
+        browser,
+        headless,
       })
       return JSON.stringify({
         success: true,
-        message: `Browser automation started (${args.browser || "chrome"}, headless: ${
-          args.headless !== false
-        })`,
+        message: `Browser automation started (${browser}, headless: ${headless})`,
         connection: "connected",
         verbose_logging: "Verbose logging enabled - Browser automation logs will appear in stderr",
       })

@@ -57,23 +57,9 @@ async function findNextJsServers(): Promise<NextJsServerInfo[]> {
       }
       
       const command = proc.cmd || ""
-      let port: number | null = null
-
-      // Try to extract port from command line first
-      const portMatch =
-        command.match(/--port[=\s]+(\d+)/) ||
-        command.match(/-p[=\s]+(\d+)/) ||
-        command.match(/--port\s+["'](\d+)["']/) ||
-        command.match(/["']--port["']\s+["']?(\d+)["']?/) ||
-        command.match(/["'](\d+)["']\s*$/) ||
-        command.match(/:(\d+)/)
-
-      if (portMatch) {
-        port = parseInt(portMatch[1], 10)
-      } else {
-        // Port not in command line - query system for listening port
-        port = await getListeningPort(proc.pid)
-      }
+      
+      // Always query system for listening port from the process
+      const port = await getListeningPort(proc.pid)
 
       if (port && !seenPorts.has(port)) {
         seenPorts.add(port)

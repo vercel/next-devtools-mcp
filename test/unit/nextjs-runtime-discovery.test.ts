@@ -169,7 +169,7 @@ describe("nextjs-runtime-discovery", () => {
       const allServers = await getAllAvailableServers(false)
       console.log(
         "[Test] All discovered servers:",
-        allServers.map((s) => ({ port: s.port, pid: s.pid }))
+        allServers.map((s) => ({ port: s.port, pid: s.pid, cmd: s.command }))
       )
 
       const server = await discoverNextJsServer()
@@ -186,6 +186,9 @@ describe("nextjs-runtime-discovery", () => {
           pid: server?.pid,
           command: server?.command?.substring(0, 100),
         })
+        console.log(
+          `[Test] Port verification: discovered port ${server?.port} matches expected port ${TEST_PORT}: ${server?.port === TEST_PORT}`
+        )
       } else {
         console.log("[Test] Multiple servers detected, this is expected to return null")
         expect(server).toBeNull()
@@ -202,7 +205,7 @@ describe("nextjs-runtime-discovery", () => {
       const allServers = await getAllAvailableServers(false)
       console.log(
         "[Test] All discovered servers:",
-        allServers.map((s) => ({ port: s.port, pid: s.pid }))
+        allServers.map((s) => ({ port: s.port, pid: s.pid, cmd: s.command }))
       )
 
       const server = await discoverNextJsServer()
@@ -213,6 +216,18 @@ describe("nextjs-runtime-discovery", () => {
       } else {
         console.log("[Test] Only one server running, skipping this test case")
         expect(allServers.length).toBeLessThanOrEqual(1)
+        if (allServers.length === 1 && server) {
+          const portMatch = server.port === TEST_PORT
+          console.log(
+            `[Test] Port verification for single server: discovered port ${server.port} matches expected port ${TEST_PORT}: ${portMatch}`
+          )
+          // If there's only one server, verify port matches even in this test
+          if (portMatch === false) {
+            console.warn(
+              `[Test] WARNING: Port mismatch! Expected ${TEST_PORT}, but discovered ${server.port}`
+            )
+          }
+        }
       }
     },
     TEST_TIMEOUT

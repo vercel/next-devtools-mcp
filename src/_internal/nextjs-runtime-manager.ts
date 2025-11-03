@@ -1,4 +1,5 @@
 import find from "find-process"
+import { pidToPorts } from "pid-port"
 
 interface NextJsServerInfo {
   port: number
@@ -25,37 +26,44 @@ interface NextJsMCPResponse {
   id: number | string
 }
 
+/**
+ * Get the listening port for a process by PID
+ * Uses pid-port library to directly query the system without enumerating ports
+ * @param pid - Process ID to check
+ * @returns The first listening port found, or null if none
+ */
+async function getListeningPort(pid: number): Promise<number | null> {
+  try {
+    const ports = await pidToPorts(pid)
+    // Return the first port if any exist
+    return ports.size > 0 ? Array.from(ports)[0] : null
+  } catch {
+    return null
+  }
+}
+
 async function findNextJsServers(): Promise<NextJsServerInfo[]> {
   try {
-    const nodeProcesses = await find("name", "node", true)
+    // Find next-server processes (the actual server processes)
+    const nextServerProcesses = await find("name", "next-server", true).catch(() => [] as Awaited<ReturnType<typeof find>>)
+    
     const servers: NextJsServerInfo[] = []
     const seenPorts = new Set<number>()
 
-    for (const proc of nodeProcesses) {
+    for (const proc of nextServerProcesses) {
+      // proc.name === "next-server" is definitive - no need to check command
+      if (proc.name !== "next-server") {
+        continue
+      }
+      
       const command = proc.cmd || ""
+      
+      // Always query system for listening port from the process
+      const port = await getListeningPort(proc.pid)
 
-      const isNextJsProcess =
-        command.includes("next dev") ||
-        command.includes("next-server") ||
-        command.includes("next/dist/bin/next") ||
-        (command.includes("next") && command.includes("dev"))
-
-      if (isNextJsProcess) {
-        const portMatch =
-          command.match(/--port[=\s]+(\d+)/) ||
-          command.match(/-p[=\s]+(\d+)/) ||
-          command.match(/--port\s+["'](\d+)["']/) ||
-          command.match(/["']--port["']\s+["']?(\d+)["']?/) ||
-          command.match(/["'](\d+)["']\s*$/) ||
-          command.match(/:(\d+)/)
-
-        if (portMatch) {
-          const port = parseInt(portMatch[1], 10)
-          if (!seenPorts.has(port)) {
-            seenPorts.add(port)
-            servers.push({ port, pid: proc.pid, command })
-          }
-        }
+      if (port && !seenPorts.has(port)) {
+        seenPorts.add(port)
+        servers.push({ port, pid: proc.pid, command })
       }
     }
 

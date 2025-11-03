@@ -418,7 +418,6 @@ export default async function Image({ params, id }) {
 }
 
 export async function generateImageMetadata({ params }) {
-  const resolvedParams = await params  // params is now a Promise
   return [
     { id: 'default', size: { width: 1200, height: 630 } },
     { id: 'large', size: { width: 1800, height: 945 } }

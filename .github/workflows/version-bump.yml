@@ -41,8 +41,8 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "vercel-release-bot"
+          git config --global user.email "infra+release@vercel.com"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

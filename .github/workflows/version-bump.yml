@@ -71,13 +71,3 @@ jobs:
           git tag -a "v${{ steps.version_bump.outputs.new_version }}" -m "Release v${{ steps.version_bump.outputs.new_version }}"
           git push origin ${{ github.ref_name }}
           git push origin "v${{ steps.version_bump.outputs.new_version }}"
-
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          VERCEL_RELEASE_BOT_TOKEN: ${{ secrets.VERCEL_RELEASE_BOT_TOKEN }}
-        with:
-          tag_name: v${{ steps.version_bump.outputs.new_version }}
-          release_name: Release v${{ steps.version_bump.outputs.new_version }}
-          draft: false
-          prerelease: false

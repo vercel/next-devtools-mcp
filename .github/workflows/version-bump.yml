@@ -27,7 +27,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.VERCEL_RELEASE_BOT_TOKEN }}
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -75,7 +75,7 @@ jobs:
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERCEL_RELEASE_BOT_TOKEN: ${{ secrets.VERCEL_RELEASE_BOT_TOKEN }}
         with:
           tag_name: v${{ steps.version_bump.outputs.new_version }}
           release_name: Release v${{ steps.version_bump.outputs.new_version }}

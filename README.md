@@ -204,7 +204,15 @@ npm run dev
 
 Next.js 16+ has MCP enabled by default at `http://localhost:3000/_next/mcp` (or whichever port your dev server uses). The `next-devtools-mcp` server will automatically discover and connect to it.
 
-**Try these prompts in your coding agent:**
+**⚠️ IMPORTANT: Start every Next.js session by calling the `init` tool to set up proper context:**
+
+```
+Use the init tool to set up Next.js DevTools context
+```
+
+This initializes the MCP context and ensures the AI assistant uses official Next.js documentation for all queries.
+
+**After initialization, try these prompts to explore runtime diagnostics:**
 
 ```
 Next Devtools, what errors are in my Next.js application?
@@ -235,6 +243,54 @@ Next Devtools, enable Cache Components in my Next.js app
 ```
 Next Devtools, search Next.js docs for generateMetadata
 ```
+
+### 💡 Pro Tip: Auto-Initialize on Every Session
+
+To make your AI assistant **automatically call the `init` tool** at the start of every Next.js session without being asked, add this instruction to your agent's configuration file:
+
+<details>
+<summary>Claude Code / Claude Desktop</summary>
+
+Add to `~/.claude/CLAUDE.md` (global) or `./.claude/CLAUDE.md` (project-specific):
+
+```markdown
+**When starting work on a Next.js project, ALWAYS call the `init` tool from
+next-devtools-mcp FIRST to set up proper context and establish documentation
+requirements. Do this automatically without being asked.**
+```
+
+</details>
+
+<details>
+<summary>Cursor</summary>
+
+Add to `.cursorrules` in your project root or global Cursor settings:
+
+```
+When working with Next.js, always call the init tool from next-devtools-mcp
+at the start of the session to establish proper context and documentation requirements.
+```
+
+</details>
+
+<details>
+<summary>Codex / Other AI Coding Assistants</summary>
+
+Add to your agent's configuration file (e.g., `.codex/instructions.md`, `agent.md`, or similar):
+
+```markdown
+**Next.js Initialization**: When starting work on a Next.js project, automatically
+call the `init` tool from the next-devtools-mcp server FIRST. This establishes
+proper context and ensures all Next.js queries use official documentation.
+```
+
+</details>
+
+**Why this matters:**
+- ✅ Ensures consistent context across all Next.js work
+- ✅ Automatically establishes the documentation-first requirement
+- ✅ No need to manually call init every time
+- ✅ Works across all your Next.js projects
 
 ## MCP Resources
 
@@ -269,12 +325,38 @@ Pre-configured prompts to help with common Next.js development tasks:
 <details>
 <summary>💡 Available Prompts (click to expand)</summary>
 
+- **`init`** - Initialize context for Next.js development with MCP tools and documentation requirements
 - **`upgrade-nextjs-16`** - Guide for upgrading to Next.js 16
 - **`enable-cache-components`** - Enable caching for React components
 
 </details>
 
 ## MCP Tools
+
+<details>
+<summary><code>init</code></summary>
+
+Initialize Next.js DevTools MCP context and establish documentation requirements.
+
+**Capabilities:**
+- Sets up proper context for AI assistants working with Next.js
+- Establishes requirement to use `nextjs_docs` for ALL Next.js-related queries
+- Documents all available MCP tools and their use cases
+- Provides best practices for Next.js development with MCP
+- Includes example workflows and quick start checklist
+
+**When to use:**
+- At the beginning of a Next.js development session
+- To understand available tools and establish proper context
+- To ensure documentation-first approach for Next.js development
+
+**Input:**
+- `project_path` (optional) - Path to Next.js project (defaults to current directory)
+
+**Output:**
+- Comprehensive initialization context and guidance for Next.js development with MCP tools
+
+</details>
 
 <details>
 <summary><code>nextjs_docs</code></summary>

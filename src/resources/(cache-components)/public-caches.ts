@@ -1,13 +1,14 @@
-import { type ResourceMetadata } from "xmcp"
-import { readResourceFile } from "../../_internal/resource-path"
+import { readResourceFile } from "../../_internal/resource-path.js"
 
-export const metadata: ResourceMetadata = {
+export const metadata = {
+  uri: "cache-components://public-caches",
   name: "cache-components-public-caches",
   title: "Cache Components Public Caches",
   description: "Public cache mechanics using 'use cache'",
+  mimeType: "text/markdown",
 }
 
-export default function handler() {
+export function handler() {
   return readResourceFile("(cache-components)/02-public-caches.md")
 }
 

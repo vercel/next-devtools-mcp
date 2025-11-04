@@ -1,13 +1,12 @@
-import { type InferSchema } from "xmcp"
 import { z } from "zod"
 import {
   discoverNextJsServer,
   listNextJsTools,
   callNextJsTool,
   getAllAvailableServers,
-} from "../_internal/nextjs-runtime-manager"
+} from "../_internal/nextjs-runtime-manager.js"
 
-export const schema = {
+export const inputSchema = {
   action: z
     .enum(["discover_servers", "list_tools", "call_tool"])
     .describe(
@@ -103,7 +102,15 @@ If the MCP endpoint is not available:
 3. Check that the dev server started successfully without errors`,
 }
 
-export default async function nextjsRuntime(args: InferSchema<typeof schema>): Promise<string> {
+type NextjsRuntimeArgs = {
+  action: "discover_servers" | "list_tools" | "call_tool"
+  port?: string | number
+  toolName?: string
+  args?: Record<string, unknown>
+  includeUnverified?: boolean | string
+}
+
+export async function handler(args: NextjsRuntimeArgs): Promise<string> {
   try {
     switch (args.action) {
       case "discover_servers": {
@@ -143,7 +150,8 @@ export default async function nextjsRuntime(args: InferSchema<typeof schema>): P
       }
 
       case "list_tools": {
-        if (!args.port) {
+        let port = args.port
+        if (!port) {
           const discovered = await discoverNextJsServer()
           if (!discovered) {
             return JSON.stringify({
@@ -152,25 +160,29 @@ export default async function nextjsRuntime(args: InferSchema<typeof schema>): P
                 "No port specified and auto-discovery failed. Use action='discover_servers' first or provide a port.",
             })
           }
-          args.port = discovered.port
+          port = discovered.port
         }
 
-        const tools = await listNextJsTools(args.port)
+        // Ensure port is a number
+        const portNumber = typeof port === "string" ? parseInt(port, 10) : port
+
+        const tools = await listNextJsTools(portNumber)
 
         return JSON.stringify({
           success: true,
-          port: args.port,
+          port: portNumber,
           tools: tools.map((t) => ({
             name: t.name,
             description: t.description,
             inputSchema: t.inputSchema,
           })),
-          message: `Found ${tools.length} tool(s) available on Next.js server at port ${args.port}`,
+          message: `Found ${tools.length} tool(s) available on Next.js server at port ${portNumber}`,
         })
       }
 
       case "call_tool": {
-        if (!args.port) {
+        let port = args.port
+        if (!port) {
           const discovered = await discoverNextJsServer()
           if (!discovered) {
             return JSON.stringify({
@@ -179,7 +191,7 @@ export default async function nextjsRuntime(args: InferSchema<typeof schema>): P
                 "No port specified and auto-discovery failed. Use action='discover_servers' first or provide a port.",
             })
           }
-          args.port = discovered.port
+          port = discovered.port
         }
 
         if (!args.toolName) {
@@ -190,11 +202,14 @@ export default async function nextjsRuntime(args: InferSchema<typeof schema>): P
           })
         }
 
-        const result = await callNextJsTool(args.port, args.toolName, args.args || {})
+        // Ensure port is a number
+        const portNumber = typeof port === "string" ? parseInt(port, 10) : port
+
+        const result = await callNextJsTool(portNumber, args.toolName, args.args || {})
 
         return JSON.stringify({
           success: true,
-          port: args.port,
+          port: portNumber,
           toolName: args.toolName,
           result,
         })

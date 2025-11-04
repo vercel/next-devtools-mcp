@@ -1,12 +1,13 @@
-import { type ResourceMetadata } from "xmcp"
-import { readResourceFile } from "../../../_internal/resource-path"
+import { readResourceFile } from "../../../_internal/resource-path.js"
 
-export const metadata: ResourceMetadata = {
+export const metadata = {
+  uri: "nextjs16://migration/beta-to-stable",
   name: "nextjs16-migration-beta-to-stable",
   title: "Next.js 16 Beta to Stable Migration",
   description: "Complete guide for migrating from Next.js 16 beta to stable release",
+  mimeType: "text/markdown",
 }
 
-export default function handler() {
+export function handler() {
   return readResourceFile("(nextjs16)/migration/nextjs-16-beta-to-stable.md")
 }

@@ -1,20 +1,23 @@
-import { type InferSchema, type PromptMetadata } from "xmcp"
 import { z } from "zod"
-import { readResourceFile } from "../_internal/resource-path"
+import { readResourceFile } from "../_internal/resource-path.js"
 import { execSync } from "child_process"
 import {
   detectProjectChannel,
   processConditionalBlocks,
-} from "../_internal/nextjs-channel-detector"
+} from "../_internal/nextjs-channel-detector.js"
 
-export const schema = {
+export const inputSchema = {
   project_path: z
     .string()
     .optional()
     .describe("Path to the Next.js project (defaults to current directory)"),
 }
 
-export const metadata: PromptMetadata = {
+type UpgradeNextjs16PromptArgs = {
+  project_path?: string
+}
+
+export const metadata = {
   name: "upgrade-nextjs-16",
   title: "upgrade-nextjs-16",
   description:
@@ -34,7 +37,7 @@ function checkNextjs16Availability(): { channel: "latest"; version: string } {
   }
 }
 
-export default function getUpgradeNextjs16Prompt(args: InferSchema<typeof schema>): string {
+export function handler(args: UpgradeNextjs16PromptArgs): string {
   const projectPath = args.project_path || process.cwd()
 
   const { version } = checkNextjs16Availability()

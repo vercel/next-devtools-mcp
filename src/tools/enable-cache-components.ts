@@ -1,12 +1,15 @@
-import { type InferSchema } from "xmcp"
 import { z } from "zod"
-import getEnableCacheComponentsPrompt from "../prompts/enable-cache-components"
+import { handler as getEnableCacheComponentsPrompt } from "../prompts/enable-cache-components.js"
 
-export const schema = {
+export const inputSchema = {
   project_path: z
     .string()
     .optional()
     .describe("Path to the Next.js project (defaults to current directory)"),
+}
+
+type EnableCacheComponentsArgs = {
+  project_path?: string
 }
 
 export const metadata = {
@@ -43,9 +46,7 @@ This tool embeds complete knowledge base for:
 - Test-driven patterns from 125+ fixtures`,
 }
 
-export default async function enableCacheComponents(
-  args: InferSchema<typeof schema>
-): Promise<string> {
+export async function handler(args: EnableCacheComponentsArgs): Promise<string> {
   try {
     const projectPath = args.project_path || process.cwd()
 

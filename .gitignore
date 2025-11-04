@@ -1,8 +1,6 @@
 .DS_Store
 node_modules/
 dist/
-.xmcp/
-xmcp-env.d.ts
 .next/
 *.tsbuildinfo
 .turbo

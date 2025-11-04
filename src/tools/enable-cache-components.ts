@@ -15,7 +15,7 @@ export const metadata = {
 
 Handles ALL steps for enabling and verifying Cache Components:
 - Configuration: Updates cacheComponents flag (experimental in 16.0.0, stable in canary > 16), removes incompatible flags
-- Dev Server: Starts dev server with MCP enabled (__NEXT_EXPERIMENTAL_MCP_SERVER=true)
+- Dev Server: Starts dev server (MCP is enabled by default in Next.js 16+)
 - Error Detection: Loads all routes via browser automation, collects errors using Next.js MCP
 - Automated Fixing: Adds Suspense boundaries, "use cache" directives, generateStaticParams, cacheLife profiles, cache tags
 - Verification: Validates all routes work with zero errors

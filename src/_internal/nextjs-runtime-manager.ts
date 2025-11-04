@@ -103,8 +103,7 @@ async function makeNextJsMCPRequest(
         throw new Error(
           `MCP endpoint not found. Next.js MCP support requires Next.js 16+. ` +
             `If you're on an older version, upgrade using the 'upgrade-nextjs-16' MCP prompt. ` +
-            `If you're already on Next.js 16+: MCP is enabled by default - make sure the dev server is running. ` +
-            `For Next.js < 16: enable MCP with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true in next.config.js`
+            `If you're already on Next.js 16+: MCP is enabled by default - make sure the dev server is running.`
         )
       }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -129,9 +128,9 @@ async function makeNextJsMCPRequest(
     if (error instanceof TypeError && error.message.includes("fetch failed")) {
       throw new Error(
         `Cannot connect to Next.js dev server on port ${port}. ` +
-          `Make sure the dev server is running. For Next.js < 16: ` +
-          `enable MCP with __NEXT_EXPERIMENTAL_MCP_SERVER=true or experimental.mcpServer: true. ` +
-          `For Next.js >= 16: MCP is enabled by default. If you're on Next.js 15 or earlier, upgrade using the 'upgrade-nextjs-16' MCP prompt.`
+          `Make sure the dev server is running. ` +
+          `Next.js MCP support requires Next.js 16+ where MCP is enabled by default. ` +
+          `If you're on Next.js 15 or earlier, upgrade using the 'upgrade-nextjs-16' MCP prompt.`
       )
     }
 

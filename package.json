@@ -35,7 +35,7 @@
     "@modelcontextprotocol/sdk": "1.21.0",
     "find-process": "2.0.0",
     "pid-port": "2.0.0",
-    "xmcp": "0.4.0",
+    "xmcp": "0.3.6",
     "zod": "4.1.12"
   },
   "devDependencies": {

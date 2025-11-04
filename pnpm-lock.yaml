@@ -18,8 +18,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0
       xmcp:
-        specifier: 0.4.0
-        version: 0.4.0(typescript@5.9.3)(zod@4.1.12)
+        specifier: 0.3.6
+        version: 0.3.6(typescript@5.9.3)(zod@4.1.12)
       zod:
         specifier: 4.1.12
         version: 4.1.12
@@ -2151,8 +2151,8 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
-  xmcp@0.4.0:
-    resolution: {integrity: sha512-3LK97d9zRy7BeV9bncVC/pV3V0yTV+crK8rCsiOQB4fdNWj8wTP6Djrn/YjzYKDxrFM6sPyiPKjvfmWreujkiw==}
+  xmcp@0.3.6:
+    resolution: {integrity: sha512-X24JSubDTrdQI2iuoECenN+XabK1utizlgGXl6iloDYl1F4QgXacoaoi79xgTIZY2NqtgGIp9k36bjcM4O+kzg==}
     hasBin: true
     peerDependencies:
       react: '>=19.0.0'
@@ -4278,7 +4278,7 @@ snapshots:
 
   wrappy@1.0.2: {}
 
-  xmcp@0.4.0(typescript@5.9.3)(zod@4.1.12):
+  xmcp@0.3.6(typescript@5.9.3)(zod@4.1.12):
     dependencies:
       '@modelcontextprotocol/sdk': 1.21.0
       '@swc/core': 1.11.24

@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { isInitCalled } from "../_internal/global-state"
+import { isInitCalled } from "../_internal/global-state.js"
 
 export const inputSchema = {
   action: z
@@ -33,15 +33,13 @@ export const inputSchema = {
     ),
 }
 
-type NextjsDocsArgs = z.infer<typeof inputSchema["action"]> extends "search" | "get"
-  ? {
-      action: "search" | "get"
-      query?: string
-      path?: string
-      anchor?: string
-      routerType?: "all" | "app" | "pages"
-    }
-  : never
+type NextjsDocsArgs = {
+  action: "search" | "get" | "force-search"
+  query?: string
+  path?: string
+  anchor?: string
+  routerType?: "all" | "app" | "pages"
+}
 
 export const metadata = {
   name: "nextjs_docs",

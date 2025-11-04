@@ -13,6 +13,7 @@ import {
 // Import tools
 import * as browserEval from "./tools/browser-eval.js"
 import * as enableCacheComponents from "./tools/enable-cache-components.js"
+import * as init from "./tools/init.js"
 import * as nextjsDocs from "./tools/nextjs-docs.js"
 import * as nextjsRuntime from "./tools/nextjs-runtime.js"
 import * as upgradeNextjs16 from "./tools/upgrade-nextjs-16.js"
@@ -42,6 +43,7 @@ import * as nextjs16Examples from "./resources/(nextjs16)/migration/examples.js"
 const tools = [
   browserEval,
   enableCacheComponents,
+  init,
   nextjsDocs,
   nextjsRuntime,
   upgradeNextjs16,
@@ -115,8 +117,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   // Validate arguments with Zod schema
   const parsedArgs = validateToolArgs(tool.inputSchema, args || {})
 
-  // Call the tool handler
-  const result = await tool.handler(parsedArgs)
+  // Call the tool handler (cast to any to work around TypeScript union type limitations)
+  const result = await (tool.handler as any)(parsedArgs)
 
   return {
     content: [

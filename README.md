@@ -2,11 +2,11 @@
 
 [![npm next-devtools-mcp package](https://img.shields.io/npm/v/next-devtools-mcp.svg)](https://npmjs.org/package/next-devtools-mcp)
 
-`next-devtools-mcp` is a Model Context Protocol (MCP) server that provides Next.js development tools and utilities for AI coding assistants like Claude and Cursor.
+`next-devtools-mcp` is a Model Context Protocol (MCP) server that provides Next.js development tools and utilities for coding agents like Claude and Cursor.
 
 ## Features
 
-This MCP server provides AI coding assistants with comprehensive Next.js development capabilities through three primary mechanisms:
+This MCP server provides coding agents with comprehensive Next.js development capabilities through three primary mechanisms:
 
 ### **1. Runtime Diagnostics & Live State Access** (Next.js 16+)
 Connect directly to your running Next.js dev server's built-in MCP endpoint to query:
@@ -26,16 +26,14 @@ Tools for common Next.js workflows:
 - Direct access to official Next.js documentation via search API
 - Pre-configured prompts for upgrade guidance and Cache Components enablement
 
-> **Learn more:** See the [Next.js MCP documentation](https://nextjs.org/docs/app/guides/mcp) for details on how MCP servers work with Next.js and AI coding agents.
+> **Learn more:** See the [Next.js MCP documentation](https://nextjs.org/docs/app/guides/mcp) for details on how MCP servers work with Next.js and coding agents.
 
 ## How It Works
 
-This package provides a **bridge MCP server** that connects your AI coding assistant to Next.js development tools:
+This package provides a **bridge MCP server** that connects your coding agent to Next.js development tools:
 
 ```
-AI Assistant (Claude/Cursor)
-      ↓
-  MCP Client (in your IDE)
+Coding Agent
       ↓
   next-devtools-mcp (this package)
       ↓
@@ -46,7 +44,7 @@ AI Assistant (Claude/Cursor)
 
 **Key Architecture Points:**
 
-1. **For Next.js 16+ projects**: This server automatically discovers and connects to your running Next.js dev server's built-in MCP endpoint at `http://localhost:PORT/_next/mcp`. This gives AI assistants direct access to runtime errors, routes, logs, and application state.
+1. **For Next.js 16+ projects**: This server automatically discovers and connects to your running Next.js dev server's built-in MCP endpoint at `http://localhost:PORT/_next/mcp`. This gives coding agents direct access to runtime errors, routes, logs, and application state.
 
 2. **For all Next.js projects**: Provides development automation tools (upgrades, Cache Components setup), documentation access, and browser testing capabilities that work independently of the runtime connection.
 
@@ -206,41 +204,41 @@ npm run dev
 
 Next.js 16+ has MCP enabled by default at `http://localhost:3000/_next/mcp` (or whichever port your dev server uses). The `next-devtools-mcp` server will automatically discover and connect to it.
 
-**Try these prompts in your AI assistant:**
+**Try these prompts in your coding agent:**
 
 ```
-What errors are in my Next.js application?
-```
-
-```
-Show me the structure of my routes
+Next Devtools, what errors are in my Next.js application?
 ```
 
 ```
-What's in the development server logs?
+Next Devtools, show me the structure of my routes
 ```
 
-Your AI assistant will use the `nextjs_runtime` tool to query your running application's actual state.
+```
+Next Devtools, what's in the development server logs?
+```
+
+Your coding agent will use the `nextjs_runtime` tool to query your running application's actual state.
 
 ### For All Next.js Projects
 
 You can use the development automation and documentation tools regardless of Next.js version:
 
 ```
-Help me upgrade my Next.js app to version 16
+Next Devtools, help me upgrade my Next.js app to version 16
 ```
 
 ```
-Enable Cache Components in my Next.js app
+Next Devtools, enable Cache Components in my Next.js app
 ```
 
 ```
-Search Next.js docs for generateMetadata
+Next Devtools, search Next.js docs for generateMetadata
 ```
 
 ## MCP Resources
 
-Next.js 16 knowledge base resources are automatically available to your AI assistant. 
+Next.js 16 knowledge base resources are automatically available to your coding agent. 
 
 These resources provide comprehensive documentation split into focused sections for efficient context management:
 
@@ -262,7 +260,7 @@ These resources provide comprehensive documentation split into focused sections 
 
 </details>
 
-Resources are loaded on-demand by your AI assistant, providing targeted knowledge without overwhelming the context window.
+Resources are loaded on-demand by your coding agent, providing targeted knowledge without overwhelming the context window.
 
 ## MCP Prompts
 
@@ -348,7 +346,7 @@ Connect to your running Next.js dev server's built-in MCP endpoint to access liv
 
 **What this tool does:**
 
-This tool acts as a bridge between your AI assistant and Next.js 16's built-in MCP endpoint at `/_next/mcp`. It provides three key actions:
+This tool acts as a bridge between your coding agent and Next.js 16's built-in MCP endpoint at `/_next/mcp`. It provides three key actions:
 
 1. **`discover_servers`**: Find all running Next.js dev servers on your machine
 2. **`list_tools`**: See what runtime diagnostic tools are available from Next.js
@@ -400,11 +398,11 @@ Once connected to a Next.js 16+ dev server, you can access these built-in tools:
 **Output:**
 - JSON with discovered servers, available tools list, or tool execution results
 
-**Example AI prompts that use this tool:**
-- "What errors are in my Next.js app?"
-- "Show me my application routes"
-- "What's in the dev server logs?"
-- "Find the Server Action with ID xyz"
+**Example prompts that use this tool:**
+- "Next Devtools, what errors are in my Next.js app?"
+- "Next Devtools, show me my application routes"
+- "Next Devtools, what's in the dev server logs?"
+- "Next Devtools, find the Server Action with ID xyz"
 
 </details>
 

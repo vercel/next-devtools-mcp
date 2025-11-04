@@ -9,8 +9,8 @@ vi.setConfig({ testTimeout: 600000, hookTimeout: 60000 })
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const REPO_ROOT = join(__dirname, "../..")
-const MCP_SERVER_PATH = join(REPO_ROOT, "dist/stdio.js")
+const REPO_ROOT = join(__dirname, '../..')
+const MCP_SERVER_PATH = join(REPO_ROOT, 'dist/index.js')
 
 interface MCPRequest {
   jsonrpc: "2.0"
@@ -295,8 +295,8 @@ describe("MCP Server Registration", () => {
         id: 2,
         method: "tools/call",
         params: {
-          name: "nextjs_docs",
-          arguments: { query: "cache" },
+          name: 'nextjs_docs',
+          arguments: { action: 'search', query: 'cache' },
         },
       })
 

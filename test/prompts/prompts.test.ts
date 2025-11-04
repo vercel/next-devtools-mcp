@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { execSync } from 'child_process'
 import { join } from 'path'
-import getEnableCacheComponentsPrompt from '../../src/prompts/enable-cache-components'
-import getUpgradeNextjs16Prompt from '../../src/prompts/upgrade-nextjs-16'
+import { handler as getEnableCacheComponentsPrompt } from '../../src/prompts/enable-cache-components.js'
+import { handler as getUpgradeNextjs16Prompt } from '../../src/prompts/upgrade-nextjs-16.js'
 
 const REPO_ROOT = join(__dirname, '../..')
 const CHARS_PER_TOKEN = 4

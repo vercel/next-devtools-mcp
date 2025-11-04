@@ -1,17 +1,18 @@
 import { z } from "zod"
 import { type InferSchema } from "xmcp"
+import { isInitCalled } from "../_internal/global-state"
 
 export const schema = {
   action: z
-    .enum(["search", "get"])
+    .enum(["search", "get", "force-search"])
     .describe(
-      "Action to perform: 'search' to find docs by keyword, 'get' to fetch full markdown content"
+      "Action to perform: 'search' to find docs by keyword, 'get' to fetch full markdown content, 'force-search' to bypass init check and force search"
     ),
   query: z
     .string()
     .optional()
     .describe(
-      "Required for 'search' action. Keyword search query (e.g., 'metadata', 'generateStaticParams', 'middleware'). Use specific terms, not natural language questions."
+      "Required for 'search' and 'force-search' actions. Keyword search query (e.g., 'metadata', 'generateStaticParams', 'middleware'). Use specific terms, not natural language questions."
     ),
   path: z
     .string()
@@ -29,15 +30,15 @@ export const schema = {
     .enum(["all", "app", "pages"])
     .default("all")
     .describe(
-      "For 'search' action only. Filter by Next.js router type: 'app' (App Router only), 'pages' (Pages Router only), or 'all' (both)"
+      "For 'search' and 'force-search' actions only. Filter by Next.js router type: 'app' (App Router only), 'pages' (Pages Router only), or 'all' (both)"
     ),
 }
 
 export const metadata = {
   name: "nextjs_docs",
   description: `Search and retrieve Next.js official documentation.
-Two-step process: 1) Use action='search' with a keyword query to find relevant docs and get their paths. 2) Use action='get' with a specific path to fetch the full markdown content.
-Use specific API names, concepts, or feature names as search terms.`,
+Three actions: 1) 'get' - Fetch full docs with a path (preferred after init). 2) 'search' - Find docs by keyword (redirects to use llms.txt index if init was called). 3) 'force-search' - Bypass init check and force API search (escape hatch only).
+After calling init, prefer using 'get' directly with paths from the llms.txt index.`,
 }
 
 export default async function nextjsDocs({
@@ -47,9 +48,17 @@ export default async function nextjsDocs({
   anchor,
   routerType = "all",
 }: InferSchema<typeof schema>): Promise<string> {
-  if (action === "search") {
+  if (action === "search" || action === "force-search") {
     if (!query) {
       throw new Error("query parameter is required for search action")
+    }
+
+    // If init has been called and action is 'search' (not 'force-search'), redirect to use llms.txt
+    if (action === "search" && isInitCalled()) {
+      return JSON.stringify({
+        error: "SEARCH_NOT_NEEDED",
+        message: `You already have the complete Next.js docs index from the init tool. Find the path for "${query}" in that llms.txt content, then call action='get' directly. If you cannot locate it in llms.txt, use action='force-search' instead.`,
+      })
     }
 
     // Construct filters based on router type
@@ -102,6 +111,7 @@ export default async function nextjsDocs({
       query,
       routerType,
       results,
+      forced: action === "force-search",
     })
   } else if (action === "get") {
     if (!path) {

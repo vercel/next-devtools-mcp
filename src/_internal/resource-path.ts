@@ -1,5 +1,6 @@
 import { join, dirname } from "node:path"
 import { readFileSync, existsSync } from "node:fs"
+import { fileURLToPath } from "node:url"
 
 const DIST_RESOURCES_DIR = "resources"
 
@@ -21,7 +22,7 @@ function findProjectRoot(startDir: string): string {
 }
 
 function getResourcesRoot(): string {
-  const currentDir = __dirname
+  const currentDir = dirname(fileURLToPath(import.meta.url))
 
   if (currentDir.includes("/dist/")) {
     const distIndex = currentDir.lastIndexOf("/dist/")

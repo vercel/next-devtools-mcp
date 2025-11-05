@@ -1,8 +1,7 @@
-import { type InferSchema } from "xmcp"
 import { z } from "zod"
-import { markInitCalled } from "../_internal/global-state"
+import { markInitCalled } from "../_internal/global-state.js"
 
-export const schema = {
+export const inputSchema = {
   project_path: z
     .string()
     .optional()
@@ -30,7 +29,11 @@ Use this tool at the beginning of a Next.js session to:
 - Follow best practices for Next.js development`,
 }
 
-export default async function init(args: InferSchema<typeof schema>): Promise<string> {
+type InitArgs = {
+  project_path?: string
+}
+
+export async function handler(args: InitArgs): Promise<string> {
   try {
     // Fetch the latest Next.js LLM documentation
     let nextjsDocsContent = ""

@@ -6,7 +6,7 @@ import { execSync } from 'child_process'
 import { fileURLToPath } from 'url'
 import { query } from '@anthropic-ai/claude-agent-sdk'
 import { config } from 'dotenv'
-import upgradeNextjs16Prompt from '../../src/prompts/upgrade-nextjs-16'
+import { handler as upgradeNextjs16Prompt } from '../../src/prompts/upgrade-nextjs-16.js'
 
 config({ path: join(dirname(fileURLToPath(import.meta.url)), '.env') })
 

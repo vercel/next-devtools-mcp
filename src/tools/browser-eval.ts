@@ -1,13 +1,12 @@
 import { z } from "zod"
-import { type InferSchema } from "xmcp"
 import {
   startBrowserEvalMCP,
   stopBrowserEvalMCP,
   getBrowserEvalConnection,
-} from "../_internal/browser-eval-manager"
-import { callServerTool, listServerTools } from "../_internal/mcp-client"
+} from "../_internal/browser-eval-manager.js"
+import { callServerTool, listServerTools } from "../_internal/mcp-client.js"
 
-export const schema = {
+export const inputSchema = {
   action: z
     .enum([
       "start",
@@ -116,7 +115,41 @@ Available actions:
 Note: The playwright-mcp server will be automatically installed if not present.`,
 }
 
-export default async function browserEval(args: InferSchema<typeof schema>): Promise<string> {
+type BrowserEvalArgs = {
+  action:
+    | "start"
+    | "navigate"
+    | "click"
+    | "type"
+    | "fill_form"
+    | "evaluate"
+    | "screenshot"
+    | "console_messages"
+    | "close"
+    | "drag"
+    | "upload_file"
+    | "list_tools"
+  browser?: "chrome" | "firefox" | "webkit" | "msedge"
+  headless?: boolean | string
+  url?: string
+  element?: string
+  ref?: string
+  doubleClick?: boolean | string
+  button?: "left" | "right" | "middle"
+  modifiers?: string[]
+  text?: string
+  fields?: Array<{ selector: string; value: string }>
+  script?: string
+  fullPage?: boolean | string
+  errorsOnly?: boolean | string
+  startElement?: string
+  startRef?: string
+  endElement?: string
+  endRef?: string
+  files?: string[]
+}
+
+export async function handler(args: BrowserEvalArgs): Promise<string> {
   try {
     if (args.action === "start") {
       const connection = await startBrowserEvalMCP({

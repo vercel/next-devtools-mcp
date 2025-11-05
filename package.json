@@ -1,6 +1,7 @@
 {
   "name": "next-devtools-mcp",
   "version": "0.2.6",
+  "type": "module",
   "description": "Next.js development tools MCP server with stdio transport",
   "license": "MIT",
   "repository": {
@@ -8,24 +9,24 @@
     "url": "https://github.com/vercel/next-devtools-mcp.git"
   },
   "bin": {
-    "next-devtools-mcp": "./dist/stdio.js"
+    "next-devtools-mcp": "./dist/index.js"
   },
-  "main": "dist/stdio.js",
+  "main": "dist/index.js",
   "exports": {
     "./package.json": "./package.json",
-    ".": "./dist/stdio.js"
+    ".": "./dist/index.js"
   },
   "files": [
     "dist"
   ],
   "mcpName": "io.github.vercel/next-devtools-mcp",
   "scripts": {
-    "dev": "xmcp dev",
+    "dev": "tsc --watch",
     "copy-resources": "node scripts/copy-resources.js",
-    "build": "xmcp build && npm run copy-resources",
+    "build": "tsc && npm run copy-resources",
     "prepublishOnly": "pnpm run clean && pnpm run build",
     "clean": "rm -rf dist",
-    "start": "node dist/stdio.js",
+    "start": "node dist/index.js",
     "test": "vitest run --exclude 'test/e2e/**'",
     "test:e2e": "vitest run test/e2e",
     "eval": "vitest run test/e2e/upgrade.test.ts",
@@ -35,7 +36,6 @@
     "@modelcontextprotocol/sdk": "1.21.0",
     "find-process": "2.0.0",
     "pid-port": "2.0.0",
-    "xmcp": "0.4.0",
     "zod": "3.25.76"
   },
   "devDependencies": {

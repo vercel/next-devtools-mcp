@@ -1,13 +1,18 @@
-import { type InferSchema } from "xmcp"
 import { z } from "zod"
-import getUpgradeNextjs16Prompt from "../prompts/upgrade-nextjs-16"
+import { handler as getUpgradeNextjs16Prompt } from "../prompts/upgrade-nextjs-16.js"
 
-export const schema = {
+export const inputSchema = {
   project_path: z
     .string()
     .optional()
     .describe("Path to the Next.js project (defaults to current directory)"),
 }
+
+type UpgradeNextjs16Args = z.infer<typeof inputSchema["project_path"]> extends string | undefined
+  ? {
+      project_path?: string
+    }
+  : never
 
 export const metadata = {
   name: "upgrade_nextjs_16",
@@ -32,7 +37,7 @@ The codemod requires:
 After codemod runs, provides manual guidance for any remaining issues not covered by the codemod.`,
 }
 
-export default async function upgradeNextjs16(args: InferSchema<typeof schema>): Promise<string> {
+export async function handler(args: UpgradeNextjs16Args): Promise<string> {
   try {
     const projectPath = args.project_path || process.cwd()
 

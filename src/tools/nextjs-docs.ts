@@ -1,8 +1,7 @@
 import { z } from "zod"
-import { type InferSchema } from "xmcp"
-import { isInitCalled } from "../_internal/global-state"
+import { isInitCalled } from "../_internal/global-state.js"
 
-export const schema = {
+export const inputSchema = {
   action: z
     .enum(["search", "get", "force-search"])
     .describe(
@@ -34,6 +33,14 @@ export const schema = {
     ),
 }
 
+type NextjsDocsArgs = {
+  action: "search" | "get" | "force-search"
+  query?: string
+  path?: string
+  anchor?: string
+  routerType?: "all" | "app" | "pages"
+}
+
 export const metadata = {
   name: "nextjs_docs",
   description: `Search and retrieve Next.js official documentation.
@@ -41,13 +48,13 @@ Three actions: 1) 'get' - Fetch full docs with a path (preferred after init). 2)
 After calling init, prefer using 'get' directly with paths from the llms.txt index.`,
 }
 
-export default async function nextjsDocs({
+export async function handler({
   action,
   query,
   path,
   anchor,
   routerType = "all",
-}: InferSchema<typeof schema>): Promise<string> {
+}: NextjsDocsArgs): Promise<string> {
   if (action === "search" || action === "force-search") {
     if (!query) {
       throw new Error("query parameter is required for search action")
@@ -97,8 +104,19 @@ export default async function nextjsDocs({
       })
     }
 
+    // Define type for search hit
+    interface SearchHit {
+      title: string
+      path: string
+      content: string
+      section?: string
+      anchor?: string
+      isApp?: boolean
+      isPages?: boolean
+    }
+
     // Extract only essential fields to reduce payload
-    const results = hits.map((hit: any) => ({
+    const results = hits.map((hit: SearchHit) => ({
       title: hit.title,
       path: hit.path,
       content: hit.content,

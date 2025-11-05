@@ -1,5 +1,16 @@
-import find from "find-process"
+import * as findProcessModule from "find-process"
 import { pidToPorts } from "pid-port"
+
+// Type for find-process function
+type FindProcessFunction = (
+  by: string,
+  value: string | number,
+  strict?: boolean
+) => Promise<Array<{ pid: number; name: string; cmd?: string }>>
+
+// Handle CommonJS default export in ES modules
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const findProcess = ((findProcessModule as any).default || findProcessModule) as FindProcessFunction
 
 interface NextJsServerInfo {
   port: number
@@ -45,7 +56,7 @@ async function getListeningPort(pid: number): Promise<number | null> {
 async function findNextJsServers(): Promise<NextJsServerInfo[]> {
   try {
     // Find next-server processes (the actual server processes)
-    const nextServerProcesses = await find("name", "next-server", true).catch(() => [] as Awaited<ReturnType<typeof find>>)
+    const nextServerProcesses = await findProcess("name", "next-server", true).catch(() => [] as Awaited<ReturnType<typeof findProcess>>)
     
     const servers: NextJsServerInfo[] = []
     const seenPorts = new Set<number>()

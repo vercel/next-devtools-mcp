@@ -1,5 +1,5 @@
 import { readdirSync, existsSync } from "node:fs"
-import { resolveResourcePath, readResourceFile } from "./resource-path"
+import { resolveResourcePath, readResourceFile } from "./resource-path.js"
 
 export function loadKnowledgeResources(): Record<string, string> {
   const resources: Record<string, string> = {}

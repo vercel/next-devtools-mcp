@@ -1,15 +1,18 @@
-import { type InferSchema, type PromptMetadata } from "xmcp"
 import { z } from "zod"
-import { readResourceFile } from "../_internal/resource-path"
+import { readResourceFile } from "../_internal/resource-path.js"
 
-export const schema = {
+export const inputSchema = {
   project_path: z
     .string()
     .optional()
     .describe("Path to the Next.js project (defaults to current directory)"),
 }
 
-export const metadata: PromptMetadata = {
+type EnableCacheComponentsPromptArgs = {
+  project_path?: string
+}
+
+export const metadata = {
   name: "enable-cache-components",
   title: "enable-cache-components",
   description:
@@ -17,7 +20,7 @@ export const metadata: PromptMetadata = {
   role: "user",
 }
 
-export default function getEnableCacheComponentsPrompt(args: InferSchema<typeof schema>): string {
+export function handler(args: EnableCacheComponentsPromptArgs): string {
   const projectPath = args.project_path || process.cwd()
 
   let promptTemplate = readResourceFile("prompts/enable-cache-components-prompt.md")

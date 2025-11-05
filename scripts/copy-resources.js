@@ -7,8 +7,8 @@
  * Usage: node scripts/copy-resources.js
  */
 
-const fs = require('fs')
-const path = require('path')
+import fs from 'fs'
+import path from 'path'
 
 const SRC_RESOURCES_DIR = 'src/resources'
 const SRC_PROMPTS_DIR = 'src/prompts'

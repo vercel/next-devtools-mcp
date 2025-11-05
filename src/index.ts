@@ -9,6 +9,8 @@ import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js"
+import { z } from "zod"
+import pkg from "../package.json" with { type: "json" }
 
 // Import tools
 import * as browserEval from "./tools/browser-eval.js"
@@ -40,14 +42,7 @@ import * as nextjs16BetaToStable from "./resources/(nextjs16)/migration/beta-to-
 import * as nextjs16Examples from "./resources/(nextjs16)/migration/examples.js"
 
 // Tool registry
-const tools = [
-  browserEval,
-  enableCacheComponents,
-  init,
-  nextjsDocs,
-  nextjsRuntime,
-  upgradeNextjs16,
-]
+const tools = [browserEval, enableCacheComponents, init, nextjsDocs, nextjsRuntime, upgradeNextjs16]
 
 // Prompt registry
 const prompts = [upgradeNextjs16Prompt, enableCacheComponentsPrompt]
@@ -71,11 +66,20 @@ const resources = [
   nextjs16Examples,
 ]
 
+// Type definitions
+interface JSONSchema {
+  type?: string
+  description?: string
+  properties?: Record<string, JSONSchema>
+  items?: JSONSchema
+  enum?: unknown[]
+}
+
 // Create server
 const server = new Server(
   {
     name: "next-devtools-mcp",
-    version: "0.2.6",
+    version: pkg.version,
   },
   {
     capabilities: {
@@ -94,13 +98,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       description: tool.metadata.description,
       inputSchema: {
         type: "object",
-        properties: Object.entries(tool.inputSchema).reduce(
-          (acc, [key, zodSchema]) => {
-            acc[key] = zodSchemaToJsonSchema(zodSchema)
-            return acc
-          },
-          {} as Record<string, any>
-        ),
+        properties: Object.entries(tool.inputSchema).reduce((acc, [key, zodSchema]) => {
+          acc[key] = zodSchemaToJsonSchema(zodSchema)
+          return acc
+        }, {} as Record<string, JSONSchema>),
       },
     })),
   }
@@ -115,10 +116,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 
   // Validate arguments with Zod schema
-  const parsedArgs = validateToolArgs(tool.inputSchema, args || {})
+  const parsedArgs = parseToolArgs(tool.inputSchema, args || {})
 
-  // Call the tool handler (cast to any to work around TypeScript union type limitations)
-  const result = await (tool.handler as any)(parsedArgs)
+  // Call the tool handler
+  const result = await tool.handler(parsedArgs as never)
 
   return {
     content: [
@@ -149,13 +150,13 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
   }
 
   // Validate arguments if schema exists
-  let parsedArgs = args || {}
+  let parsedArgs: Record<string, unknown> = args || {}
   if (prompt.inputSchema) {
-    parsedArgs = validateToolArgs(prompt.inputSchema, args || {})
+    parsedArgs = parseToolArgs(prompt.inputSchema, args || {})
   }
 
   // Get the prompt content
-  const content = await prompt.handler(parsedArgs)
+  const content = await prompt.handler(parsedArgs as never)
 
   return {
     messages: [
@@ -205,7 +206,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 })
 
 // Helper function to convert Zod schema to JSON Schema (simplified)
-function zodSchemaToJsonSchema(zodSchema: any): any {
+function zodSchemaToJsonSchema(zodSchema: z.ZodTypeAny): JSONSchema {
   // Get the description
   const description = zodSchema._def?.description
 
@@ -228,9 +229,9 @@ function zodSchemaToJsonSchema(zodSchema: any): any {
   }
   if (zodSchema._def?.typeName === "ZodObject") {
     const shape = zodSchema._def.shape()
-    const properties: Record<string, any> = {}
+    const properties: Record<string, JSONSchema> = {}
     for (const [key, value] of Object.entries(shape)) {
-      properties[key] = zodSchemaToJsonSchema(value)
+      properties[key] = zodSchemaToJsonSchema(value as z.ZodTypeAny)
     }
     return { type: "object", description, properties }
   }
@@ -253,8 +254,11 @@ function zodSchemaToJsonSchema(zodSchema: any): any {
 }
 
 // Helper function to validate tool arguments with Zod
-function validateToolArgs(schema: Record<string, any>, args: any): any {
-  const result: Record<string, any> = {}
+function parseToolArgs(
+  schema: Record<string, z.ZodTypeAny>,
+  args: Record<string, unknown>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
 
   for (const [key, zodSchema] of Object.entries(schema)) {
     if (args[key] !== undefined) {

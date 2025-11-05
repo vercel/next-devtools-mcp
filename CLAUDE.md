@@ -161,4 +161,3 @@ This server can:
 - Binary: `next-devtools-mcp` points to `dist/index.js`
 - prepublishOnly hook: cleans and rebuilds before publishing
 - Use `pnpm@9.15.9` as package manager
-- Main dependencies: `@modelcontextprotocol/sdk`, `zod`, `find-process`, `pid-port`

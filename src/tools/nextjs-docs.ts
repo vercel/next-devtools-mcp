@@ -104,8 +104,19 @@ export async function handler({
       })
     }
 
+    // Define type for search hit
+    interface SearchHit {
+      title: string
+      path: string
+      content: string
+      section?: string
+      anchor?: string
+      isApp?: boolean
+      isPages?: boolean
+    }
+
     // Extract only essential fields to reduce payload
-    const results = hits.map((hit: any) => ({
+    const results = hits.map((hit: SearchHit) => ({
       title: hit.title,
       path: hit.path,
       content: hit.content,

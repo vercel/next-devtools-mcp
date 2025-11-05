@@ -1,8 +1,16 @@
 import * as findProcessModule from "find-process"
 import { pidToPorts } from "pid-port"
 
+// Type for find-process function
+type FindProcessFunction = (
+  by: string,
+  value: string | number,
+  strict?: boolean
+) => Promise<Array<{ pid: number; name: string; cmd?: string }>>
+
 // Handle CommonJS default export in ES modules
-const findProcess = (findProcessModule as any).default || findProcessModule
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const findProcess = ((findProcessModule as any).default || findProcessModule) as FindProcessFunction
 
 interface NextJsServerInfo {
   port: number

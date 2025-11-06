@@ -18,7 +18,7 @@ Connect directly to your running Next.js dev server's built-in MCP endpoint to q
 ### **2. Development Automation**
 Tools for common Next.js workflows:
 - **Automated Next.js 16 upgrades** with official codemods
-- **Cache Components setup** with error detection and automated fixes
+- **Cache Components migration and setup** with error detection and automated fixes
 - **Browser testing integration** via Playwright for visual verification
 
 ### **3. Knowledge Base & Documentation**
@@ -327,7 +327,7 @@ Pre-configured prompts to help with common Next.js development tasks:
 
 - **`init`** - Initialize context for Next.js development with MCP tools and documentation requirements
 - **`upgrade-nextjs-16`** - Guide for upgrading to Next.js 16
-- **`enable-cache-components`** - Enable caching for React components
+- **`enable-cache-components`** - Migrate and enable Cache Components mode for Next.js 16
 
 </details>
 
@@ -513,7 +513,7 @@ Guides through upgrading Next.js to version 16 with automated codemod execution.
 <details>
 <summary><code>enable_cache_components</code></summary>
 
-Complete Cache Components setup and enablement for Next.js 16 with automated error detection and fixing.
+Complete Cache Components setup, enablement, and migration for Next.js 16 with automated error detection and fixing. This tool is used for migrating Next.js applications to Cache Components mode.
 
 **Capabilities:**
 - Pre-flight checks (package manager, Next.js version, configuration)

@@ -1,16 +1,5 @@
-import * as findProcessModule from "find-process"
+import { findProcess } from "./find-process-import.js"
 import { pidToPorts } from "pid-port"
-
-// Type for find-process function
-type FindProcessFunction = (
-  by: string,
-  value: string | number,
-  strict?: boolean
-) => Promise<Array<{ pid: number; name: string; cmd?: string }>>
-
-// Handle CommonJS default export in ES modules
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const findProcess = ((findProcessModule as any).default || findProcessModule) as FindProcessFunction
 
 interface NextJsServerInfo {
   port: number
@@ -80,7 +69,7 @@ async function findNextJsServers(): Promise<NextJsServerInfo[]> {
 
     return servers
   } catch (error) {
-    console.error("[Next.js Runtime Manager] Error finding Next.js servers:", error)
+    console.error("[next-devtools-mcp] Error finding Next.js servers:", error)
     return []
   }
 }

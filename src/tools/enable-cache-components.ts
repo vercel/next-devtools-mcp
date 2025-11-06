@@ -14,9 +14,16 @@ type EnableCacheComponentsArgs = {
 
 export const metadata = {
   name: "enable_cache_components",
-  description: `Complete Cache Components setup for Next.js 16.
+  description: `Migrate Next.js applications to Cache Components mode and complete setup for Next.js 16.
 
-Handles ALL steps for enabling and verifying Cache Components:
+Use this tool when you need to:
+- Migrate to Cache Components mode
+- Migrate to cache components
+- Enable Cache Components
+- Set up Cache Components
+- Convert to Cache Components
+
+This tool handles ALL steps for migrating and enabling Cache Components:
 - Configuration: Updates cacheComponents flag (experimental in 16.0.0, stable in canary > 16), removes incompatible flags
 - Dev Server: Starts dev server (MCP is enabled by default in Next.js 16+)
 - Error Detection: Loads all routes via browser automation, collects errors using Next.js MCP

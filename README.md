@@ -564,7 +564,7 @@ To run the MCP server locally for development:
      "mcpServers": {
        "next-devtools": {
          "command": "node",
-         "args": ["/absolute/path/to/next-devtools-mcp/dist/stdio.js"]
+         "args": ["/absolute/path/to/next-devtools-mcp/dist/index.js"]
        }
      }
    }
@@ -574,7 +574,7 @@ To run the MCP server locally for development:
 
    or manually add, e.g. with codex:
    ```
-   codex mcp add next-devtools-local -- node dist/stdio.js
+   codex mcp add next-devtools-local -- node dist/index.js
    ```
 
 ## License

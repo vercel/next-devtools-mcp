@@ -21,6 +21,7 @@ The following resources are available from the Next.js MCP server. Load them on-
 - `cache-components://build-behavior` - What gets prerendered, static shells
 - `cache-components://error-patterns` - Common errors and solutions
 - `cache-components://test-patterns` - Real test-driven patterns from 125+ fixtures
+- `cache-components://route-handlers` - Using 'use cache' in Route Handlers (API Routes)
 - `cache-components://reference` - Mental models, API reference, checklists
 
 **How to Access Resources (MANDATORY - ALWAYS LOAD):**
@@ -831,15 +832,16 @@ Route Handlers (`route.ts`/`route.js` files in `app/api/`) follow the same cachi
 
 **📖 For complete guidance on Route Handlers with Cache Components, load:**
 ```
-Read resource "nextjs16://migration/examples"
+Read resource "cache-components://route-handlers"
 ```
 
-Then navigate to **"Cache Components Examples"** → **"Route Handlers with `use cache`"** for:
+This resource provides:
 - Complete correct pattern (extract to helper function)
 - Incorrect pattern examples (direct use in handler)
 - Dynamic, static, and cached Route Handler examples
 - Migration checklist for Route Handlers
 - Common mistakes and how to avoid them
+- Best practices and patterns
 - Reference to [Next.js documentation](https://nextjs.org/docs/app/getting-started/cache-components#route-handlers-with-cache-components)
 
 **Quick Reference:**

@@ -37,6 +37,7 @@ import * as cacheComponentsBuildBehavior from "./resources/(cache-components)/bu
 import * as cacheComponentsErrorPatterns from "./resources/(cache-components)/error-patterns.js"
 import * as cacheComponentsTestPatterns from "./resources/(cache-components)/test-patterns.js"
 import * as cacheComponentsReference from "./resources/(cache-components)/reference.js"
+import * as cacheComponentsRouteHandlers from "./resources/(cache-components)/route-handlers.js"
 import * as nextjsFundamentalsUseClient from "./resources/(nextjs-fundamentals)/use-client.js"
 import * as nextjs16BetaToStable from "./resources/(nextjs16)/migration/beta-to-stable.js"
 import * as nextjs16Examples from "./resources/(nextjs16)/migration/examples.js"
@@ -61,6 +62,7 @@ const resources = [
   cacheComponentsErrorPatterns,
   cacheComponentsTestPatterns,
   cacheComponentsReference,
+  cacheComponentsRouteHandlers,
   nextjsFundamentalsUseClient,
   nextjs16BetaToStable,
   nextjs16Examples,

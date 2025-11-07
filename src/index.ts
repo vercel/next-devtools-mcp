@@ -10,9 +10,17 @@ import {
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js"
 import { z } from "zod"
+import { spawn } from "child_process"
+import { fileURLToPath } from "url"
+import { dirname, join } from "path"
 import pkg from "../package.json" with { type: "json" }
+import type { McpToolName } from "./telemetry/mcp-telemetry-tracker.js"
+import { queueEvent, getSessionAggregationJSON } from "./telemetry/event-queue.js"
+import { log } from "./telemetry/logger.js"
 
-// Import tools
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
 import * as browserEval from "./tools/browser-eval.js"
 import * as enableCacheComponents from "./tools/enable-cache-components.js"
 import * as init from "./tools/init.js"
@@ -20,11 +28,8 @@ import * as nextjsDocs from "./tools/nextjs-docs.js"
 import * as nextjsRuntime from "./tools/nextjs-runtime.js"
 import * as upgradeNextjs16 from "./tools/upgrade-nextjs-16.js"
 
-// Import prompts
 import * as upgradeNextjs16Prompt from "./prompts/upgrade-nextjs-16.js"
 import * as enableCacheComponentsPrompt from "./prompts/enable-cache-components.js"
-
-// Import resources
 import * as cacheComponentsOverview from "./resources/(cache-components)/overview.js"
 import * as cacheComponentsCoreMechanics from "./resources/(cache-components)/core-mechanics.js"
 import * as cacheComponentsPublicCaches from "./resources/(cache-components)/public-caches.js"
@@ -41,13 +46,19 @@ import * as nextjsFundamentalsUseClient from "./resources/(nextjs-fundamentals)/
 import * as nextjs16BetaToStable from "./resources/(nextjs16)/migration/beta-to-stable.js"
 import * as nextjs16Examples from "./resources/(nextjs16)/migration/examples.js"
 
-// Tool registry
 const tools = [browserEval, enableCacheComponents, init, nextjsDocs, nextjsRuntime, upgradeNextjs16]
 
-// Prompt registry
+const toolNameToTelemetryName: Record<string, McpToolName> = {
+  browser_eval: "mcp/browser_eval",
+  enable_cache_components: "mcp/enable_cache_components",
+  init: "mcp/init",
+  nextjs_docs: "mcp/nextjs_docs",
+  nextjs_runtime: "mcp/nextjs_runtime",
+  upgrade_nextjs_16: "mcp/upgrade_nextjs_16",
+}
+
 const prompts = [upgradeNextjs16Prompt, enableCacheComponentsPrompt]
 
-// Resource registry
 const resources = [
   cacheComponentsOverview,
   cacheComponentsCoreMechanics,
@@ -115,11 +126,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     throw new Error(`Tool not found: ${name}`)
   }
 
-  // Validate arguments with Zod schema
+  // Queue telemetry event for later batch sending
+  const telemetryName = toolNameToTelemetryName[name]
+  if (telemetryName) {
+    const event = {
+      eventName: "NEXT_MCP_TOOL_USAGE",
+      fields: {
+        toolName: telemetryName,
+        invocationCount: 1,
+      },
+    }
+    queueEvent(event)
+  }
+
   const parsedArgs = parseToolArgs(tool.inputSchema, args || {})
 
-  // Call the tool handler
-  const result = await tool.handler(parsedArgs as never)
+  const result = await (tool.handler as (args: Record<string, unknown>) => Promise<string>)(parsedArgs)
 
   return {
     content: [
@@ -191,7 +213,6 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     throw new Error(`Resource not found: ${uri}`)
   }
 
-  // Get the resource content
   const content = await resource.handler()
 
   return {
@@ -205,12 +226,9 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   }
 })
 
-// Helper function to convert Zod schema to JSON Schema (simplified)
 function zodSchemaToJsonSchema(zodSchema: z.ZodTypeAny): JSONSchema {
-  // Get the description
   const description = zodSchema._def?.description
 
-  // Handle different Zod types
   if (zodSchema._def?.typeName === "ZodString") {
     return { type: "string", description }
   }
@@ -242,18 +260,15 @@ function zodSchemaToJsonSchema(zodSchema: z.ZodTypeAny): JSONSchema {
     return zodSchemaToJsonSchema(zodSchema._def.innerType)
   }
   if (zodSchema._def?.typeName === "ZodUnion") {
-    // Handle union types (for boolean | string transforms)
     const options = zodSchema._def.options
     if (options.length === 2) {
       return zodSchemaToJsonSchema(options[0])
     }
   }
 
-  // Default fallback
   return { type: "string", description }
 }
 
-// Helper function to validate tool arguments with Zod
 function parseToolArgs(
   schema: Record<string, z.ZodTypeAny>,
   args: Record<string, unknown>
@@ -262,7 +277,6 @@ function parseToolArgs(
 
   for (const [key, zodSchema] of Object.entries(schema)) {
     if (args[key] !== undefined) {
-      // Let Zod handle the validation and transformation
       const parsed = zodSchema.safeParse(args[key])
       if (parsed.success) {
         result[key] = parsed.data
@@ -270,7 +284,6 @@ function parseToolArgs(
         throw new Error(`Invalid argument '${key}': ${parsed.error.message}`)
       }
     } else if (!zodSchema.isOptional()) {
-      // Check if required
       throw new Error(`Missing required argument: ${key}`)
     }
   }
@@ -278,10 +291,41 @@ function parseToolArgs(
   return result
 }
 
-// Start the server
 async function main() {
   const transport = new StdioServerTransport()
   await server.connect(transport)
+
+  log('Server started')
+
+  const shutdown = () => {
+    log('Server terminated')
+
+    const aggregationJSON = getSessionAggregationJSON()
+
+    if (aggregationJSON) {
+      const flushEventsScript = join(__dirname, "telemetry", "flush-events.js")
+      const child = spawn(
+        process.execPath,
+        [flushEventsScript, aggregationJSON],
+        {
+          detached: true,
+          stdio: 'ignore',
+          windowsHide: true
+        }
+      )
+
+      child.unref()
+
+      log('Event flusher spawned with aggregation data')
+    } else {
+      log('No events to flush')
+    }
+
+    process.exit(0)
+  }
+
+  process.on('SIGINT', shutdown)
+  process.on('SIGTERM', shutdown)
 }
 
 main().catch((error) => {

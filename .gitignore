@@ -16,4 +16,3 @@ _*.md
 test/fixtures/**/pnpm-lock.yaml
 test/fixtures/**/node_modules/
 test/fixtures/**/.next/
-

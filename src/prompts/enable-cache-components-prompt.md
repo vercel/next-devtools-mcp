@@ -129,7 +129,7 @@ This prompt automates the complete Cache Components enablement workflow:
 - ✅ Detect package manager (npm/pnpm/yarn/bun)
 - ✅ Verify Next.js version (16.0.0 stable or canary only - beta NOT supported)
 - ✅ Enable cacheComponents (experimental in 16.0.0, stable in canary)
-- ✅ Migrate from `experimental.dynamicIO` or `experimental.ppr` if needed
+- ✅ Migrate from `experimental.dynamicIO`, `experimental.ppr`, or `useCache` if needed (remove old flags)
 - ✅ Document existing Route Segment Config for migration
 
 **Dev Server & MCP Setup (Phase 3):**
@@ -250,6 +250,7 @@ Before enabling Cache Components:
    - `cacheComponents` or `experimental.cacheComponents` (current)
    - `experimental.dynamicIO` (old name - migrate to cacheComponents)
    - `experimental.ppr` (removed - migrate to cacheComponents)
+   - `useCache` or `experimental.useCache` (old name - migrate to cacheComponents and REMOVE)
 
 4. **Route Structure Analysis**
    Scan: app directory structure
@@ -330,17 +331,19 @@ const nextConfig = {
 }
 ```
 
-**Migrating from experimental.dynamicIO or experimental.ppr:**
+**Migrating from experimental.dynamicIO, experimental.ppr, or useCache:**
 ```diff
   const nextConfig = {
     experimental: {
--     dynamicIO: true,  // or ppr: true (both removed)
+-     dynamicIO: true,  // REMOVE - replaced by cacheComponents
+-     ppr: true,        // REMOVE - replaced by cacheComponents
+-     useCache: true,   // REMOVE - replaced by cacheComponents
 +     cacheComponents: true,  // 16.0.0 - for canary, move to root level
     },
   }
 ```
 
-⚠️  **Note**: PPR and dynamicIO are replaced by cacheComponents with enhanced features (cacheLife, cacheTag, "use cache: private")
+⚠️  **CRITICAL**: When migrating to `cacheComponents`, you MUST remove ALL old flags (`ppr`, `dynamicIO`, `useCache`). Do not leave any of these flags present alongside `cacheComponents`. They are all replaced by `cacheComponents` with enhanced features (cacheLife, cacheTag, "use cache: private").
 
 **Step 3: Remove incompatible flags**
 
@@ -350,9 +353,13 @@ If present, REMOVE these flags (they conflict with Cache Components):
     experimental: {
       cacheComponents: true,
 -     ppr: true,              // Remove - replaced by cacheComponents
+-     useCache: true,         // Remove - replaced by cacheComponents
+-     dynamicIO: true,         // Remove - replaced by cacheComponents
     },
   }
 ```
+
+⚠️  **CRITICAL**: When migrating to `cacheComponents`, ensure ALL old flags (`ppr`, `dynamicIO`, `useCache`) are completely removed. Do not leave any of these flags present alongside `cacheComponents`.
 
 **Step 4: Preserve compatible flags**
 
@@ -403,7 +410,7 @@ Document all locations now - you'll migrate them in Phase 5.
 
 Verify by reading the config file:
 - ✅ cacheComponents enabled (location depends on version)
-- ✅ Incompatible flags removed (ppr, dynamicIO)
+- ✅ Incompatible flags removed (ppr, dynamicIO, useCache)
 - ✅ Compatible flags preserved
 - ✅ Valid syntax, correct file format
 
@@ -1066,7 +1073,7 @@ Report findings in this format:
 ## Phase 2: Configuration & Flags
 [x] cacheComponents enabled (version-aware: experimental for 16.0.0, root level for canary)
 [x] Configuration backed up
-[x] Incompatible flags removed (ppr, dynamicIO)
+[x] Incompatible flags removed (ppr, dynamicIO, useCache)
 [x] Compatible flags preserved
 [x] Route Segment Config documented
 [x] Config syntax validated
@@ -1189,7 +1196,7 @@ This enablement process made the following comprehensive changes:
 
 ### Configuration Changes (Phase 2):
 - ✅ Enabled cacheComponents (location depends on version)
-- ✅ Removed incompatible flags (ppr, dynamicIO)
+- ✅ Removed incompatible flags (ppr, dynamicIO, useCache)
 - ✅ Preserved compatible flags
 - ✅ Documented Route Segment Config
 

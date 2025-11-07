@@ -517,6 +517,8 @@ or a short-lived cache without a Suspense boundary nor a "use cache" above it.
 Route "/blog/[slug]": Dynamic value detected during prerender
 
 Route "/api/users": Cannot use cookies() inside a cached function
+
+Route "/api/products": Cannot serialize Response object for caching
 ```
 
 **Document all errors** - you'll fix them in Step 3.
@@ -533,6 +535,7 @@ Review the build output from Step 2 and fix all errors that have clear solutions
 - **"Dynamic value detected during prerender"** → Add `await connection()`
 - **"Cannot use cookies() inside a cached function"** → Move outside cache or use `"use cache: private"`
 - **"Route params need generateStaticParams"** → Add `generateStaticParams`
+- **"Cannot serialize Response object for caching"** → Extract data fetching to helper function, add `use cache` to helper (see Route Handlers special case)
 - Any other error with an obvious fix from the error message
 
 **Special Case: 3rd Party Package Errors**
@@ -684,6 +687,9 @@ For detailed code examples and patterns for each error type, refer to the knowle
   - If you want to cache specific content, use `"use cache"` instead
   - **Add migration comment** explaining the removal
 - G. Caching strategies → Configure cacheLife() and cacheTag()
+- H. Route Handlers with `use cache` → Extract data fetching to helper function (cannot use `use cache` directly in handler body)
+  - **CRITICAL:** `use cache` **MUST** be extracted to a helper function - Response objects cannot be serialized for caching
+  - See "Special Case: Using `use cache` in Route Handlers" section for complete examples and patterns
 
 ### Removing unstable_noStore() Usage
 
@@ -810,6 +816,43 @@ When you encounter `new Date()` or `Math.random()` in cached components, ask:
 1. **Fresh Per-Request (Recommended):** Use `"use cache: private"` - always fresh
 2. **Captured at Cache Time:** Use `"use cache"` - frozen until revalidation (document tradeoff)
 3. **Extract to Separate Component:** Mix static (cached) + dynamic (Suspense)
+
+**Load the MCP resource for detailed examples and complete migration patterns.**
+
+### Special Case: Using `use cache` in Route Handlers (API Routes)
+
+**CRITICAL: `use cache` cannot be used directly inside Route Handler body**
+
+Route Handlers (`route.ts`/`route.js` files in `app/api/`) follow the same caching model as UI routes, but with an important restriction:
+
+**⚠️ Key Rule:** `use cache` **MUST** be extracted to a helper function - it cannot be used directly in the Route Handler function body.
+
+**Why:** Response objects (`Response.json()`, `NextResponse`, etc.) cannot be directly serialized for caching. The cached function must return serializable data (objects, arrays, primitives), not Response objects.
+
+**📖 For complete guidance on Route Handlers with Cache Components, load:**
+```
+Read resource "nextjs16://migration/examples"
+```
+
+Then navigate to **"Cache Components Examples"** → **"Route Handlers with `use cache`"** for:
+- Complete correct pattern (extract to helper function)
+- Incorrect pattern examples (direct use in handler)
+- Dynamic, static, and cached Route Handler examples
+- Migration checklist for Route Handlers
+- Common mistakes and how to avoid them
+- Reference to [Next.js documentation](https://nextjs.org/docs/app/getting-started/cache-components#route-handlers-with-cache-components)
+
+**Quick Reference:**
+
+**Route Handler Behavior:**
+1. **Dynamic by default:** Route Handlers are dynamic by default (like all routes with Cache Components)
+2. **Pre-rendering:** Static handlers (no dynamic data) will be pre-rendered at build time
+3. **Caching:** Extract data fetching to a helper function with `use cache` to cache the data
+4. **Runtime APIs:** Using `cookies()`, `headers()`, or `connection()` defers to request time (no pre-rendering)
+
+**Key Pattern:**
+- ✅ **Correct:** Extract data fetching to helper function, add `use cache` to helper, return `Response.json()` in handler
+- ❌ **Incorrect:** Using `use cache` directly in Route Handler body (will cause serialization errors)
 
 **Load the MCP resource for detailed examples and complete migration patterns.**
 

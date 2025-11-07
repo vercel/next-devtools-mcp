@@ -294,25 +294,31 @@ proper context and ensures all Next.js queries use official documentation.
 
 ## MCP Resources
 
-Next.js 16 knowledge base resources are automatically available to your coding agent. 
-
-These resources provide comprehensive documentation split into focused sections for efficient context management:
+The knowledge base resources are automatically available to your coding agent and are split into focused sections for efficient context management. Current resource URIs:
 
 <details>
 <summary>📚 Available Knowledge Base Resources (click to expand)</summary>
 
-- **`nextjs16://knowledge/overview`** - Overview and critical errors AI agents make
-- **`nextjs16://knowledge/core-mechanics`** - Fundamental paradigm shift and how cacheComponents works
-- **`nextjs16://knowledge/public-caches`** - Public cache mechanics with 'use cache'
-- **`nextjs16://knowledge/private-caches`** - Private cache patterns with 'use cache: private'
-- **`nextjs16://knowledge/runtime-prefetching`** - Runtime prefetch configuration and patterns
-- **`nextjs16://knowledge/request-apis`** - Async params, searchParams, cookies, headers APIs
-- **`nextjs16://knowledge/cache-invalidation`** - updateTag, revalidateTag, and refresh patterns
-- **`nextjs16://knowledge/advanced-patterns`** - cacheLife, cacheTag, draft mode, and more
-- **`nextjs16://knowledge/build-behavior`** - Prerendering, resume data cache, and metadata
-- **`nextjs16://knowledge/error-patterns`** - Common errors and how to fix them
-- **`nextjs16://knowledge/test-patterns`** - E2E patterns from 125+ test fixtures
-- **`nextjs16://knowledge/reference`** - API reference, checklists, and comprehensive nuances
+- Cache Components (12 sections):
+  - `cache-components://overview`
+  - `cache-components://core-mechanics`
+  - `cache-components://public-caches`
+  - `cache-components://private-caches`
+  - `cache-components://runtime-prefetching`
+  - `cache-components://request-apis`
+  - `cache-components://cache-invalidation`
+  - `cache-components://advanced-patterns`
+  - `cache-components://build-behavior`
+  - `cache-components://error-patterns`
+  - `cache-components://test-patterns`
+  - `cache-components://reference`
+
+- Next.js 16 migration:
+  - `nextjs16://migration/beta-to-stable`
+  - `nextjs16://migration/examples`
+
+- Next.js fundamentals:
+  - `nextjs-fundamentals://use-client`
 
 </details>
 
@@ -325,7 +331,6 @@ Pre-configured prompts to help with common Next.js development tasks:
 <details>
 <summary>💡 Available Prompts (click to expand)</summary>
 
-- **`init`** - Initialize context for Next.js development with MCP tools and documentation requirements
 - **`upgrade-nextjs-16`** - Guide for upgrading to Next.js 16
 - **`enable-cache-components`** - Migrate and enable Cache Components mode for Next.js 16
 
@@ -548,6 +553,40 @@ With other agents or programmatically:
 
 </details>
 
+## Privacy & Telemetry
+
+### What Data is Collected
+
+`next-devtools-mcp` collects anonymous usage telemetry to help improve the tool. The following data is collected:
+
+- **Tool usage**: Which MCP tools are invoked (e.g., `nextjs_runtime`, `browser_eval`, `upgrade_nextjs_16`)
+- **Error events**: Anonymous error messages when tools fail
+- **Session metadata**: Session ID, timestamps, and basic environment info (OS, Node.js version)
+
+**What is NOT collected:**
+- Your project code, file contents, or file paths
+- Personal information or identifiable data
+- API keys, credentials, or sensitive configuration
+- Arguments passed to tools (except tool names)
+
+Local files are written under `~/.next-devtools-mcp/` (anonymous `telemetry-id`, `telemetry-salt`, and a debug log `mcp.log`). Events are sent to the telemetry endpoint in the background to help us understand usage patterns and improve reliability.
+
+### Opt-Out
+
+To disable telemetry completely, set the environment variable:
+
+```bash
+export NEXT_TELEMETRY_DISABLED=1
+```
+
+Add this to your shell configuration file (e.g., `~/.bashrc`, `~/.zshrc`) to make it permanent.
+
+You can also delete your local telemetry data at any time:
+
+```bash
+rm -rf ~/.next-devtools-mcp
+```
+
 ## Local Development
 
 To run the MCP server locally for development:
@@ -580,4 +619,3 @@ To run the MCP server locally for development:
 ## License
 
 MIT License
-

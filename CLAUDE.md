@@ -75,15 +75,25 @@ All tools, prompts, and resources are explicitly imported and registered in `src
 - `browser-eval-manager.ts`: Manages Playwright MCP server lifecycle
 - `nextjs-runtime-manager.ts`: Discovers and connects to Next.js dev servers with MCP enabled
 
+**Telemetry System** (`src/telemetry/`):
+- `mcp-telemetry-tracker.ts`: Singleton tracker for MCP tool invocations
+- `telemetry-events.ts`: Event schema definitions and factory functions
+- `telemetry-storage.ts`: Handles anonymous ID, session tracking, and API submission
+- `event-queue.ts`: In-memory aggregation of events during session
+- `flush-events.ts`: Background process that sends events after server shutdown
+- `logger.ts`: Synchronous file logging for debugging
+- Telemetry can be disabled via `NEXT_TELEMETRY_DISABLED=1` environment variable
+- Data stored in `~/.next-devtools-mcp/` (telemetry-id, telemetry-salt, mcp.log)
+
 **Resources Architecture**:
 - Knowledge base split into focused sections (12 sections for Cache Components, 2 for Next.js 16, 1 for fundamentals)
 - Each resource exports: `metadata` (uri, name, description, mimeType) and `handler` (function returning content)
 - Resources use URI-based addressing (e.g., `cache-components://overview`)
-- Markdown files in `src/resources/` are copied to `dist/resources/` during build via `scripts/copy-resources.js`
+- Markdown files in `src/resources/` and `src/prompts/` are copied during build via `scripts/copy-resources.js` (to `dist/resources/` and `dist/resources/prompts/` respectively)
 
 ### TypeScript Configuration
 
-- Target: ES2022, ES modules (Node16 module resolution)
+- Target: ES2022, ES modules (NodeNext module resolution)
 - Strict mode enabled
 - Output directory: `dist/`
 - Declaration files generated
@@ -92,7 +102,7 @@ All tools, prompts, and resources are explicitly imported and registered in `src
 ## Build Process
 
 1. TypeScript compilation: `tsc` compiles all TypeScript files from `src/` to `dist/`
-2. Resource copying: `scripts/copy-resources.js` copies markdown files from `src/resources/` and `src/prompts/` to `dist/resources/`
+2. Resource copying: `scripts/copy-resources.js` copies markdown files from `src/resources/` and `src/prompts/` (to `dist/resources/` and `dist/resources/prompts/` respectively)
 
 The `dist/index.js` file is the entry point for the MCP server and includes a shebang for CLI execution.
 

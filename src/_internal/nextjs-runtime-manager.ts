@@ -1,5 +1,9 @@
 import { findProcess } from "./find-process-import.js"
 import { pidToPorts } from "pid-port"
+import { exec } from "child_process"
+import { promisify } from "util"
+
+const execAsync = promisify(exec)
 
 interface NextJsServerInfo {
   port: number
@@ -27,19 +31,72 @@ interface NextJsMCPResponse {
 }
 
 /**
+ * Detect if we're running in WSL
+ */
+function isWSL(): boolean {
+  return process.platform === 'linux' && (
+    !!process.env.WSL_DISTRO_NAME ||
+    !!process.env.WSL_INTEROP ||
+    !!process.env.WSL_DISTRO
+  )
+}
+
+/**
+ * Get listening ports for a process using ss command (WSL-compatible)
+ * ss output format: LISTEN 0 511 *:3000 *:* users:(("next-server",pid=4660,fd=24))
+ */
+async function getPortsViaSs(pid: number): Promise<number[]> {
+  try {
+    const { stdout } = await execAsync(`ss -tlnp 2>/dev/null | grep "pid=${pid}" || true`)
+    if (!stdout) return []
+
+    const ports: number[] = []
+    const lines = stdout.split('\n')
+
+    for (const line of lines) {
+      // Match port number before the "users:" part
+      // Patterns like *:3000 or 127.0.0.1:3000
+      const match = line.match(/[:\*](\d+)\s+[\*\d]/)
+      if (match) {
+        const port = parseInt(match[1], 10)
+        if (!ports.includes(port)) {
+          ports.push(port)
+        }
+      }
+    }
+
+    return ports
+  } catch {
+    return []
+  }
+}
+
+/**
  * Get the listening port for a process by PID
- * Uses pid-port library to directly query the system without enumerating ports
+ * Uses pid-port on most systems, falls back to ss command in WSL
  * @param pid - Process ID to check
  * @returns The first listening port found, or null if none
  */
 async function getListeningPort(pid: number): Promise<number | null> {
+  // First try the pid-port library (works on most systems)
   try {
     const ports = await pidToPorts(pid)
-    // Return the first port if any exist
-    return ports.size > 0 ? Array.from(ports)[0] : null
+    if (ports.size > 0) {
+      return Array.from(ports)[0]
+    }
   } catch {
-    return null
+    // Continue to fallback methods
   }
+
+  // If we're in WSL or on Linux where pid-port failed, try ss command
+  if (isWSL() || process.platform === 'linux') {
+    const ssPorts = await getPortsViaSs(pid)
+    if (ssPorts.length > 0) {
+      return ssPorts[0]
+    }
+  }
+
+  return null
 }
 
 async function findNextJsServers(): Promise<NextJsServerInfo[]> {

@@ -2,6 +2,7 @@ import { findProcess } from "./find-process-import.js"
 import { pidToPorts } from "pid-port"
 import { exec } from "child_process"
 import { promisify } from "util"
+import { Agent as UndiciAgent } from "undici"
 
 const execAsync = promisify(exec)
 
@@ -39,6 +40,26 @@ function isWSL(): boolean {
     !!process.env.WSL_INTEROP ||
     !!process.env.WSL_DISTRO
   )
+}
+
+function getProtocol(): "http" | "https" {
+  const fromEnv = process.env.NEXT_DEVTOOLS_PROTOCOL?.toLowerCase()
+  return fromEnv === "https" ? "https" : "http"
+}
+
+let insecureHttpsAgent: UndiciAgent | undefined
+
+function getFetchOptions(protocol: "http" | "https") {
+  const allowInsecure =
+    process.env.NEXT_DEVTOOLS_ALLOW_INSECURE_TLS === "true" ||
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0"
+
+  if (protocol !== "https" || !allowInsecure) return {}
+
+  if (!insecureHttpsAgent) {
+    insecureHttpsAgent = new UndiciAgent({ connect: { rejectUnauthorized: false } })
+  }
+  return { dispatcher: insecureHttpsAgent }
 }
 
 /**
@@ -136,7 +157,10 @@ async function makeNextJsMCPRequest(
   method: string,
   params: Record<string, unknown> = {}
 ): Promise<NextJsMCPResponse> {
-  const url = `http://localhost:${port}/_next/mcp`
+  const protocol = getProtocol()
+  const host = process.env.NEXT_DEVTOOLS_HOST ?? "localhost"
+  const url = `${protocol}://${host}:${port}/_next/mcp`
+  const fetchOptions = getFetchOptions(protocol)
 
   const jsonRpcRequest = {
     jsonrpc: "2.0",
@@ -147,6 +171,7 @@ async function makeNextJsMCPRequest(
 
   try {
     const response = await fetch(url, {
+      ...fetchOptions,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -250,11 +275,15 @@ export async function callNextJsTool(
  */
 async function verifyMCPEndpoint(port: number): Promise<boolean> {
   try {
-    const url = `http://localhost:${port}/_next/mcp`
+    const protocol = getProtocol()
+    const host = process.env.NEXT_DEVTOOLS_HOST ?? "localhost"
+    const url = `${protocol}://${host}:${port}/_next/mcp`
+    const fetchOptions = getFetchOptions(protocol)
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 1000) // 1 second timeout
 
     const response = await fetch(url, {
+      ...fetchOptions,
       method: "POST",
       headers: {
         "Content-Type": "application/json",

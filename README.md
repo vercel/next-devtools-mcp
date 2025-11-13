@@ -4,58 +4,14 @@
 
 `next-devtools-mcp` is a Model Context Protocol (MCP) server that provides Next.js development tools and utilities for coding agents like Claude and Cursor.
 
-## Features
 
-This MCP server provides coding agents with comprehensive Next.js development capabilities through three primary mechanisms:
+## Getting Started
 
-### **1. Runtime Diagnostics & Live State Access** (Next.js 16+)
-Connect directly to your running Next.js dev server's built-in MCP endpoint to query:
-- Real-time build and runtime errors
-- Application routes, pages, and component metadata
-- Development server logs and diagnostics
-- Server Actions and component hierarchies
-
-### **2. Development Automation**
-Tools for common Next.js workflows:
-- **Automated Next.js 16 upgrades** with official codemods
-- **Cache Components migration and setup** with error detection and automated fixes
-- **Browser testing integration** via Playwright for visual verification
-
-### **3. Knowledge Base & Documentation**
-- Curated Next.js 16 knowledge base (12 focused resources on Cache Components, async APIs, etc.)
-- Direct access to official Next.js documentation via search API
-- Pre-configured prompts for upgrade guidance and Cache Components enablement
-
-> **Learn more:** See the [Next.js MCP documentation](https://nextjs.org/docs/app/guides/mcp) for details on how MCP servers work with Next.js and coding agents.
-
-## How It Works
-
-This package provides a **bridge MCP server** that connects your coding agent to Next.js development tools:
-
-```
-Coding Agent
-      ↓
-  next-devtools-mcp (this package)
-      ↓
-      ├─→ Next.js Dev Server MCP Endpoint (/_next/mcp) ← Runtime diagnostics
-      ├─→ Playwright MCP Server ← Browser automation
-      └─→ Knowledge Base & Tools ← Documentation, upgrades, setup automation
-```
-
-**Key Architecture Points:**
-
-1. **For Next.js 16+ projects**: This server automatically discovers and connects to your running Next.js dev server's built-in MCP endpoint at `http://localhost:PORT/_next/mcp`. This gives coding agents direct access to runtime errors, routes, logs, and application state.
-
-2. **For all Next.js projects**: Provides development automation tools (upgrades, Cache Components setup), documentation access, and browser testing capabilities that work independently of the runtime connection.
-
-3. **Auto-discovery**: The `nextjs_runtime` tool scans common ports (3000, 3001, etc.) to find running Next.js servers, so you don't need to manually specify ports in most cases.
-
-## Requirements
+### Requirements
 
 - [Node.js](https://nodejs.org/) v20.19 or a newer [latest maintenance LTS](https://github.com/nodejs/Release#release-schedule) version
 - [npm](https://www.npmjs.com/) or [pnpm](https://pnpm.io/)
 
-## Getting Started
 
 Add the following config to your MCP client:
 
@@ -615,6 +571,53 @@ To run the MCP server locally for development:
    ```
    codex mcp add next-devtools-local -- node dist/index.js
    ```
+
+## Features
+
+This MCP server provides coding agents with comprehensive Next.js development capabilities through three primary mechanisms:
+
+### **1. Runtime Diagnostics & Live State Access** (Next.js 16+)
+Connect directly to your running Next.js dev server's built-in MCP endpoint to query:
+- Real-time build and runtime errors
+- Application routes, pages, and component metadata
+- Development server logs and diagnostics
+- Server Actions and component hierarchies
+
+### **2. Development Automation**
+Tools for common Next.js workflows:
+- **Automated Next.js 16 upgrades** with official codemods
+- **Cache Components migration and setup** with error detection and automated fixes
+- **Browser testing integration** via Playwright for visual verification
+
+### **3. Knowledge Base & Documentation**
+- Curated Next.js 16 knowledge base (12 focused resources on Cache Components, async APIs, etc.)
+- Direct access to official Next.js documentation via search API
+- Pre-configured prompts for upgrade guidance and Cache Components enablement
+
+> **Learn more:** See the [Next.js MCP documentation](https://nextjs.org/docs/app/guides/mcp) for details on how MCP servers work with Next.js and coding agents.
+
+## How It Works
+
+This package provides a **bridge MCP server** that connects your coding agent to Next.js development tools:
+
+```
+Coding Agent
+      ↓
+  next-devtools-mcp (this package)
+      ↓
+      ├─→ Next.js Dev Server MCP Endpoint (/_next/mcp) ← Runtime diagnostics
+      ├─→ Playwright MCP Server ← Browser automation
+      └─→ Knowledge Base & Tools ← Documentation, upgrades, setup automation
+```
+
+**Key Architecture Points:**
+
+1. **For Next.js 16+ projects**: This server automatically discovers and connects to your running Next.js dev server's built-in MCP endpoint at `http://localhost:PORT/_next/mcp`. This gives coding agents direct access to runtime errors, routes, logs, and application state.
+
+2. **For all Next.js projects**: Provides development automation tools (upgrades, Cache Components setup), documentation access, and browser testing capabilities that work independently of the runtime connection.
+
+3. **Auto-discovery**: The `nextjs_runtime` tool scans common ports (3000, 3001, etc.) to find running Next.js servers, so you don't need to manually specify ports in most cases.
+
 
 ## License
 

@@ -4,6 +4,7 @@ import {
   listNextJsTools,
   callNextJsTool,
   getAllAvailableServers,
+  detectProtocol,
 } from "../_internal/nextjs-runtime-manager.js"
 
 export const inputSchema = {
@@ -128,24 +129,37 @@ export async function handler(args: NextjsRuntimeArgs): Promise<string> {
           })
         }
 
+        // Detect protocol for each server (uses cached results)
+        const serversWithProtocol = await Promise.all(
+          servers.map(async (s) => {
+            const protocol = await detectProtocol(s.port)
+            return {
+              ...s,
+              protocol,
+              url: `${protocol}://localhost:${s.port}`,
+              mcpEndpoint: `${protocol}://localhost:${s.port}/_next/mcp`,
+            }
+          })
+        )
+
         return JSON.stringify({
           success: true,
-          count: servers.length,
-          servers: servers.map((s) => ({
+          count: serversWithProtocol.length,
+          servers: serversWithProtocol.map((s) => ({
             port: s.port,
             pid: s.pid,
             command: s.command,
-            url: `http://localhost:${s.port}`,
-            mcpEndpoint: `http://localhost:${s.port}/_next/mcp`,
+            url: s.url,
+            mcpEndpoint: s.mcpEndpoint,
           })),
           message: verifyMCP
-            ? `Found ${servers.length} Next.js server${
-                servers.length === 1 ? "" : "s"
+            ? `Found ${serversWithProtocol.length} Next.js server${
+                serversWithProtocol.length === 1 ? "" : "s"
               } running with MCP support`
-            : `Found ${servers.length} Next.js server${
-                servers.length === 1 ? "" : "s"
+            : `Found ${serversWithProtocol.length} Next.js server${
+                serversWithProtocol.length === 1 ? "" : "s"
               } running (MCP verification skipped)`,
-          summary: servers.map((s) => `Server on port ${s.port} (PID: ${s.pid})`).join("\n"),
+          summary: serversWithProtocol.map((s) => `Server on port ${s.port} (PID: ${s.pid})`).join("\n"),
         })
       }
 

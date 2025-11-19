@@ -137,6 +137,51 @@ Follow the official VS Code MCP server setup guide and add the Next.js DevTools 
 </details>
 
 <details>
+<summary>GitHub Copilot Coding Agent</summary>
+
+Add the following configuration to the `mcp` section of your GitHub Copilot Coding Agent configuration file Repository->Settings->Copilot->Coding agent->MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "next-devtools": {
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"],
+      "tools": ["init", "nextjs_docs", "browser_eval", "nextjs_runtime", "upgrade_nextjs_16", "enable_cache_components"]
+    }
+  }
+}
+```
+
+For more information, see the [official GitHub documentation](https://docs.github.com/en/enterprise-cloud@latest/copilot/how-tos/agents/copilot-coding-agent/extending-copilot-coding-agent-with-mcp).
+
+</details>
+
+<details>
+<summary>GitHub Copilot CLI</summary>
+
+1.  Open the GitHub Copilot CLI MCP config file. The location is `~/.copilot/mcp-config.json` (where `~` is your home directory).
+2.  Add the following to the `mcpServers` object in your `mcp-config.json` file:
+
+```json
+{
+  "mcpServers": {
+    "next-devtools": {
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"],
+      "tools": ["init", "nextjs_docs", "browser_eval", "nextjs_runtime", "upgrade_nextjs_16", "enable_cache_components"]
+    }
+  }
+}
+```
+
+If the `mcp-config.json` file does not exist, create it.
+
+</details>
+
+<details>
 <summary>Warp</summary>
 
 **Using Warp UI:**

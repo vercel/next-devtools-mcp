@@ -17,6 +17,9 @@ importers:
       pid-port:
         specifier: 2.0.0
         version: 2.0.0
+      undici:
+        specifier: 7.16.0
+        version: 7.16.0
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -1028,6 +1031,10 @@ packages:
 
   undici-types@7.14.0:
     resolution: {integrity: sha512-QQiYxHuyZ9gQUIrmPo3IA+hUl4KYk8uSA7cHrcKd/l3p1OTpZcM0Tbp9x7FAtXdAYhlasd60ncPpgu6ihG6TOA==}
+
+  undici@7.16.0:
+    resolution: {integrity: sha512-QEg3HPMll0o3t2ourKwOeUAZ159Kn9mx5pnzHRQO8+Wixmh88YdZRiIwat0iNzNNXn0yoEtXJqFpyW7eM8BV7g==}
+    engines: {node: '>=20.18.1'}
 
   unicorn-magic@0.3.0:
     resolution: {integrity: sha512-+QBBXBCvifc56fsbuxZQ6Sic3wqqc3WWaqxs58gvJrcOuN83HGTCwz3oS5phzU9LthRNE9VrJCFCLUgHeeFnfA==}
@@ -2057,6 +2064,8 @@ snapshots:
   typescript@5.9.3: {}
 
   undici-types@7.14.0: {}
+
+  undici@7.16.0: {}
 
   unicorn-magic@0.3.0: {}
 

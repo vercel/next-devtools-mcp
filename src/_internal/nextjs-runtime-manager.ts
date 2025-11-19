@@ -2,6 +2,7 @@ import { findProcess } from "./find-process-import.js"
 import { pidToPorts } from "pid-port"
 import { exec } from "child_process"
 import { promisify } from "util"
+import { Agent as UndiciAgent } from "undici"
 
 const execAsync = promisify(exec)
 
@@ -39,6 +40,116 @@ function isWSL(): boolean {
     !!process.env.WSL_INTEROP ||
     !!process.env.WSL_DISTRO
   )
+}
+
+// Cache detected protocol per port to avoid repeated detection
+const protocolCache = new Map<number, "http" | "https">()
+
+let insecureHttpsAgent: UndiciAgent | undefined
+
+/**
+ * Get fetch options for HTTPS requests
+ * Automatically allows insecure TLS for HTTPS (self-signed certificates)
+ * Can be disabled via NEXT_DEVTOOLS_ALLOW_INSECURE_TLS=false
+ */
+function getFetchOptions(protocol: "http" | "https") {
+  // For HTTPS, automatically allow insecure TLS (for self-signed certificates)
+  // Can be disabled via environment variable: NEXT_DEVTOOLS_ALLOW_INSECURE_TLS=false
+  const allowInsecure =
+    protocol === "https" && (
+      process.env.NEXT_DEVTOOLS_ALLOW_INSECURE_TLS !== "false" ||
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0"
+    )
+
+  if (protocol !== "https" || !allowInsecure) return {}
+
+  if (!insecureHttpsAgent) {
+    insecureHttpsAgent = new UndiciAgent({ connect: { rejectUnauthorized: false } })
+  }
+  return { dispatcher: insecureHttpsAgent }
+}
+
+/**
+ * Automatically detect protocol by trying HTTPS first, then falling back to HTTP
+ * Caches the result per port to avoid repeated detection
+ */
+async function detectProtocol(port: number): Promise<"http" | "https"> {
+  // Return cached protocol if available
+  if (protocolCache.has(port)) {
+    return protocolCache.get(port)!
+  }
+
+  const host = process.env.NEXT_DEVTOOLS_HOST ?? "localhost"
+  
+  // Try HTTPS first (with insecure TLS allowed for self-signed certificates)
+  try {
+    const httpsUrl = `https://${host}:${port}/_next/mcp`
+    const httpsFetchOptions = getFetchOptions("https")
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 500) // Short timeout for quick failure
+
+    const response = await fetch(httpsUrl, {
+      ...httpsFetchOptions,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        method: "tools/list",
+        params: {},
+        id: 1,
+      }),
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+    
+    // If HTTPS succeeds (even if it returns an error, it means the protocol is correct)
+    if (response.status !== 404) {
+      protocolCache.set(port, "https")
+      return "https"
+    }
+  } catch (error) {
+    // HTTPS failed, continue to try HTTP
+  }
+
+  // HTTPS failed, fallback to HTTP
+  try {
+    const httpUrl = `http://${host}:${port}/_next/mcp`
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 500)
+
+    const response = await fetch(httpUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        method: "tools/list",
+        params: {},
+        id: 1,
+      }),
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+    
+    // HTTP succeeded
+    if (response.status !== 404) {
+      protocolCache.set(port, "http")
+      return "http"
+    }
+  } catch (error) {
+    // Both protocols failed
+  }
+
+  // Default to HTTP (backward compatibility)
+  protocolCache.set(port, "http")
+  return "http"
 }
 
 /**
@@ -136,7 +247,10 @@ async function makeNextJsMCPRequest(
   method: string,
   params: Record<string, unknown> = {}
 ): Promise<NextJsMCPResponse> {
-  const url = `http://localhost:${port}/_next/mcp`
+  const protocol = await detectProtocol(port) // Auto-detect protocol
+  const host = process.env.NEXT_DEVTOOLS_HOST ?? "localhost"
+  const url = `${protocol}://${host}:${port}/_next/mcp`
+  const fetchOptions = getFetchOptions(protocol)
 
   const jsonRpcRequest = {
     jsonrpc: "2.0",
@@ -147,6 +261,7 @@ async function makeNextJsMCPRequest(
 
   try {
     const response = await fetch(url, {
+      ...fetchOptions,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -250,11 +365,15 @@ export async function callNextJsTool(
  */
 async function verifyMCPEndpoint(port: number): Promise<boolean> {
   try {
-    const url = `http://localhost:${port}/_next/mcp`
+    const protocol = await detectProtocol(port) // Auto-detect protocol
+    const host = process.env.NEXT_DEVTOOLS_HOST ?? "localhost"
+    const url = `${protocol}://${host}:${port}/_next/mcp`
+    const fetchOptions = getFetchOptions(protocol)
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 1000) // 1 second timeout
 
     const response = await fetch(url, {
+      ...fetchOptions,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -299,3 +418,6 @@ export async function getAllAvailableServers(
 
   return verifiedServers
 }
+
+// Export detectProtocol for use in nextjs-runtime.ts
+export { detectProtocol }

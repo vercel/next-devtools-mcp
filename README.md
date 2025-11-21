@@ -148,7 +148,6 @@ Add the following configuration to the `mcp` section of your GitHub Copilot Codi
       "type": "local",
       "command": "npx",
       "args": ["-y", "next-devtools-mcp@latest"],
-      "tools": ["init", "nextjs_docs", "browser_eval", "nextjs_runtime", "upgrade_nextjs_16", "enable_cache_components"]
     }
   }
 }
@@ -171,7 +170,6 @@ For more information, see the [official GitHub documentation](https://docs.githu
       "type": "local",
       "command": "npx",
       "args": ["-y", "next-devtools-mcp@latest"],
-      "tools": ["init", "nextjs_docs", "browser_eval", "nextjs_runtime", "upgrade_nextjs_16", "enable_cache_components"]
     }
   }
 }

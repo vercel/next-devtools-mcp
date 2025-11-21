@@ -46,6 +46,7 @@ import * as cacheComponentsRouteHandlers from "./resources/(cache-components)/ro
 import * as nextjsFundamentalsUseClient from "./resources/(nextjs-fundamentals)/use-client.js"
 import * as nextjs16BetaToStable from "./resources/(nextjs16)/migration/beta-to-stable.js"
 import * as nextjs16Examples from "./resources/(nextjs16)/migration/examples.js"
+import * as nextjsDocsLlmsIndex from "./resources/(nextjs-docs)/llms-index.js"
 
 const tools = [browserEval, enableCacheComponents, init, nextjsDocs, nextjsRuntime, upgradeNextjs16]
 
@@ -77,6 +78,7 @@ const resources = [
   nextjsFundamentalsUseClient,
   nextjs16BetaToStable,
   nextjs16Examples,
+  nextjsDocsLlmsIndex,
 ]
 
 // Type definitions

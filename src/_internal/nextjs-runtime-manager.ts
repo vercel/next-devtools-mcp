@@ -50,16 +50,14 @@ let insecureHttpsAgent: UndiciAgent | undefined
 /**
  * Get fetch options for HTTPS requests
  * Automatically allows insecure TLS for HTTPS (self-signed certificates)
- * Can be disabled via NEXT_DEVTOOLS_ALLOW_INSECURE_TLS=false
+ * Can be disabled via NODE_TLS_REJECT_UNAUTHORIZED=0
  */
 function getFetchOptions(protocol: "http" | "https") {
   // For HTTPS, automatically allow insecure TLS (for self-signed certificates)
-  // Can be disabled via environment variable: NEXT_DEVTOOLS_ALLOW_INSECURE_TLS=false
+  // Can be disabled via environment variable: NODE_TLS_REJECT_UNAUTHORIZED=0
   const allowInsecure =
-    protocol === "https" && (
-      process.env.NEXT_DEVTOOLS_ALLOW_INSECURE_TLS !== "false" ||
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0"
-    )
+    protocol === "https" && process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0"
+    
 
   if (protocol !== "https" || !allowInsecure) return {}
 

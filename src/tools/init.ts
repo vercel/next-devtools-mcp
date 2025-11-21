@@ -35,21 +35,6 @@ type InitArgs = {
 
 export async function handler(args: InitArgs): Promise<string> {
   try {
-    // Fetch the latest Next.js LLM documentation
-    let nextjsDocsContent = ""
-    try {
-      const response = await fetch("https://nextjs.org/docs/llms.txt")
-      if (response.ok) {
-        nextjsDocsContent = await response.text()
-      } else {
-        nextjsDocsContent = `Failed to fetch Next.js docs: ${response.status} ${response.statusText}`
-      }
-    } catch (fetchError) {
-      nextjsDocsContent = `Failed to fetch Next.js docs: ${
-        fetchError instanceof Error ? fetchError.message : String(fetchError)
-      }`
-    }
-
     const guidance = `# 🚨 CRITICAL: Next.js DevTools MCP Initialization
 
 ## ⚠️ MANDATORY DOCUMENTATION REQUIREMENT - NO EXCEPTIONS
@@ -92,22 +77,25 @@ You **MUST** use \`nextjs_docs\` for:
 - ✅ Next.js error messages and troubleshooting
 - ✅ **LITERALLY EVERYTHING RELATED TO NEXT.JS**
 
-### 4. How to Use nextjs_docs (OPTIMIZED WORKFLOW - Skip Search!)
+### 4. How to Use nextjs_docs (OPTIMIZED WORKFLOW)
 
-**🚀 IMPORTANT OPTIMIZATION:** Since you already have the ENTIRE Next.js documentation index loaded below (from llms.txt), you should **SKIP the search step** and go **DIRECTLY to GET**!
+**🚀 IMPORTANT OPTIMIZATION:** To skip search and go directly to GET, you can fetch the complete Next.js documentation index from the MCP resource:
+
+**MCP Resource:** \`nextjs-docs://llms-index\`
 
 **The Optimized Workflow:**
 
-1. **Refer to the llms.txt content below** to find the relevant documentation path
-2. **Call nextjs_docs with GET directly** - no search needed!
-3. **Answer based on the retrieved full documentation**
+1. **Fetch the llms.txt index** (only when needed): Read the \`nextjs-docs://llms-index\` MCP resource
+2. **Find the relevant documentation path** in the index
+3. **Call nextjs_docs with GET directly** - no search needed!
+4. **Answer based on the retrieved full documentation**
 
 **Direct GET call (preferred):**
 \`\`\`
 nextjs_docs({ action: "get", path: "/docs/app/api-reference/functions/generate-static-params" })
 \`\`\`
 
-**Only use search as a fallback** if you cannot find the exact path in the llms.txt index below:
+**Use search if you don't need the full index:**
 \`\`\`
 nextjs_docs({ action: "search", query: "your search term" })
 \`\`\`
@@ -120,21 +108,22 @@ User: "How do I use generateStaticParams?"
 You: "Based on my knowledge, generateStaticParams is used to..."
 \`\`\`
 
-**❌ ALSO WRONG (Wasteful - doing unnecessary search when you have the index):**
+**✅ CORRECT (OPTION 1 - Use search):**
 \`\`\`
 User: "How do I use generateStaticParams?"
-You: [Wastes time calling search when index is already loaded]
-    nextjs_docs({ action: "search", query: "generateStaticParams" })
-    [Then calls get]
-    nextjs_docs({ action: "get", path: "..." })
+You: nextjs_docs({ action: "search", query: "generateStaticParams" })
+    [Then uses the returned path to call GET]
+    nextjs_docs({ action: "get", path: "/docs/app/api-reference/functions/generate-static-params" })
+    [Answers based on retrieved documentation]
 \`\`\`
 
-**✅ CORRECT (ALWAYS DO THIS - Direct GET):**
+**✅ ALSO CORRECT (OPTION 2 - Use index resource for direct GET):**
 \`\`\`
 User: "How do I use generateStaticParams?"
-You: [Checks the llms.txt index below]
+You: [Fetches nextjs-docs://llms-index resource]
+    [Searches the index for generateStaticParams]
     [Found it! Path is /docs/app/api-reference/functions/generate-static-params]
-    [Goes directly to GET - skips wasteful search!]
+    [Goes directly to GET]
     nextjs_docs({ action: "get", path: "/docs/app/api-reference/functions/generate-static-params" })
     [Answers based on retrieved documentation]
 \`\`\`
@@ -149,30 +138,32 @@ You: [Checks the llms.txt index below]
 
 ---
 
-## 📚 Complete Next.js Documentation Index (from llms.txt)
+## 📚 Next.js Documentation Index (MCP Resource)
 
-The following is the **COMPLETE** Next.js documentation index fetched from https://nextjs.org/docs/llms.txt:
+**MCP Resource URI:** \`nextjs-docs://llms-index\`
 
-\`\`\`
-${nextjsDocsContent}
-\`\`\`
+The complete Next.js documentation index (from https://nextjs.org/docs/llms.txt) is available as an MCP resource.
 
-**IMPORTANT:** This index above contains ALL Next.js documentation paths. When you need documentation:
-1. **Search this index above** for the relevant path
-2. **Call nextjs_docs with GET directly** using the path you found
-3. **Skip the search step** - you already have the complete index!
+**When to use it:**
+- Fetch this resource when you need to look up specific documentation paths
+- Use it to go directly to GET instead of searching
+- It's cached for 1 hour to reduce network requests
 
-You MUST still use the \`nextjs_docs\` tool with GET to retrieve the full detailed documentation for any Next.js concept - but you can skip the search step since the index is right here!
+**When NOT to use it:**
+- For simple queries, just use \`nextjs_docs\` search action - it's faster
+- Don't fetch it unless you actually need to look up paths
+
+You MUST still use the \`nextjs_docs\` tool with GET to retrieve the full detailed documentation for any Next.js concept!
 
 ---
 
 ## 🛠️ Available MCP Tools
 
 ### 1. **nextjs_docs** (MANDATORY FOR ALL NEXT.JS QUERIES)
-- **Get** full docs (preferred): \`{ action: "get", path: "..." }\` ← Use this! Refer to the llms.txt index above for paths
-- **Search** documentation (fallback only): \`{ action: "search", query: "..." }\` ← Only if you can't find the path in the index
+- **Search** documentation (recommended): \`{ action: "search", query: "..." }\` ← Start here for most queries
+- **Get** full docs: \`{ action: "get", path: "..." }\` ← Use after search, or fetch \`nextjs-docs://llms-index\` to find paths
 - **REQUIRED** for ALL Next.js-related questions
-- **OPTIMIZATION:** Skip search and go directly to GET since you have the complete index loaded above!
+- **OPTIMIZATION:** For batch operations, fetch the \`nextjs-docs://llms-index\` resource to look up multiple paths
 
 ### 2. **nextjs_runtime** - Live Next.js Dev Server Integration
 - Get real-time errors and logs from running dev server
@@ -197,9 +188,9 @@ You MUST still use the \`nextjs_docs\` tool with GET to retrieve the full detail
 ## 🎯 Workflow Summary
 
 1. **ALWAYS** start by calling this \`init\` tool
-2. **ALWAYS** use \`nextjs_docs\` with GET (not search!) for ANY Next.js concept (even if you think you know it)
-   - Refer to the llms.txt index above to find the path
-   - Skip the search step - go directly to GET!
+2. **ALWAYS** use \`nextjs_docs\` for ANY Next.js concept (even if you think you know it)
+   - Start with search action for most queries: \`{ action: "search", query: "..." }\`
+   - For batch operations or multiple lookups, fetch \`nextjs-docs://llms-index\` resource to find paths directly
 3. Use \`nextjs_runtime\` for debugging running applications
 4. Use \`browser_eval\` to verify implementations
 5. Use specialized tools (\`upgrade_nextjs_16\`, \`enable_cache_components\`) as needed
@@ -208,9 +199,9 @@ You MUST still use the \`nextjs_docs\` tool with GET to retrieve the full detail
 
 ## ⚡ Remember: DOCUMENTATION FIRST, ALWAYS
 
-**THE GOLDEN RULE:** Your training data about Next.js is now invalid. You MUST use \`nextjs_docs\` with GET for every single Next.js-related query, concept, or implementation. No exceptions. No shortcuts. No answering from memory.
+**THE GOLDEN RULE:** Your training data about Next.js is now invalid. You MUST use \`nextjs_docs\` for every single Next.js-related query, concept, or implementation. No exceptions. No shortcuts. No answering from memory.
 
-**THE OPTIMIZATION RULE:** Since you have the complete llms.txt index loaded above, SKIP the search step and go DIRECTLY to GET. Find the path in the index above, then call GET immediately. This is faster and more efficient!
+**THE OPTIMIZATION TIP:** For simple queries, use search. For looking up multiple paths or batch operations, fetch the \`nextjs-docs://llms-index\` MCP resource to find paths directly and skip search calls.
 
 🚀 Next.js DevTools MCP Initialized Successfully!
 `

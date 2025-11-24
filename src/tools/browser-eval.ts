@@ -93,10 +93,10 @@ in a real browser instead of curl or simple HTTP requests. This is because:
 - Captures browser console errors and warnings via console_messages action
 
 IMPORTANT FOR NEXT.JS PROJECTS:
-If working with a Next.js application, PRIORITIZE using the 'nextjs_runtime' tool instead of browser console log forwarding.
+If working with a Next.js application, PRIORITIZE using the 'nextjs_index' and 'nextjs_call' tools instead of browser console log forwarding.
 Next.js has built-in MCP integration that provides superior error reporting, build diagnostics, and runtime information
-directly from the Next.js dev server. Only use browser_eval's console_messages action as a fallback when nextjs_runtime
-tools are not available or when you specifically need to test client-side browser behavior that Next.js runtime cannot capture.
+directly from the Next.js dev server. Only use browser_eval's console_messages action as a fallback when these Next.js tools
+are not available or when you specifically need to test client-side browser behavior that Next.js runtime cannot capture.
 
 Available actions:
 - start: Start browser automation (automatically installs if needed). Verbose logging is always enabled.
@@ -106,7 +106,7 @@ Available actions:
 - fill_form: Fill multiple form fields at once
 - evaluate: Execute JavaScript in browser context
 - screenshot: Take a screenshot of the page
-- console_messages: Get browser console messages (for Next.js, prefer nextjs_runtime tool instead)
+- console_messages: Get browser console messages (for Next.js, prefer nextjs_index/nextjs_call tools instead)
 - close: Close the browser
 - drag: Perform drag and drop
 - upload_file: Upload files

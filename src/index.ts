@@ -25,7 +25,8 @@ import * as browserEval from "./tools/browser-eval.js"
 import * as enableCacheComponents from "./tools/enable-cache-components.js"
 import * as init from "./tools/init.js"
 import * as nextjsDocs from "./tools/nextjs-docs.js"
-import * as nextjsRuntime from "./tools/nextjs-runtime.js"
+import * as nextjsIndex from "./tools/nextjs_index.js"
+import * as nextjsCall from "./tools/nextjs_call.js"
 import * as upgradeNextjs16 from "./tools/upgrade-nextjs-16.js"
 
 import * as upgradeNextjs16Prompt from "./prompts/upgrade-nextjs-16.js"
@@ -48,14 +49,15 @@ import * as nextjs16BetaToStable from "./resources/(nextjs16)/migration/beta-to-
 import * as nextjs16Examples from "./resources/(nextjs16)/migration/examples.js"
 import * as nextjsDocsLlmsIndex from "./resources/(nextjs-docs)/llms-index.js"
 
-const tools = [browserEval, enableCacheComponents, init, nextjsDocs, nextjsRuntime, upgradeNextjs16]
+const tools = [browserEval, enableCacheComponents, init, nextjsDocs, nextjsIndex, nextjsCall, upgradeNextjs16]
 
 const toolNameToTelemetryName: Record<string, McpToolName> = {
   browser_eval: "mcp/browser_eval",
   enable_cache_components: "mcp/enable_cache_components",
   init: "mcp/init",
   nextjs_docs: "mcp/nextjs_docs",
-  nextjs_runtime: "mcp/nextjs_runtime",
+  nextjs_index: "mcp/nextjs_index",
+  nextjs_call: "mcp/nextjs_call",
   upgrade_nextjs_16: "mcp/upgrade_nextjs_16",
 }
 

@@ -99,7 +99,8 @@ describe("MCP Server Registration", () => {
         "init",
         "browser_eval",
         "nextjs_docs",
-        "nextjs_runtime",
+        "nextjs_index",
+        "nextjs_call",
         "upgrade_nextjs_16",
         "enable_cache_components",
       ]

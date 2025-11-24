@@ -49,17 +49,18 @@ describe("Telemetry Events", () => {
     })
   })
 
-  it("should handle all 6 MCP tool types", () => {
+  it("should handle all 7 MCP tool types", () => {
     const events = eventMcpToolUsage([
       { featureName: "mcp/browser_eval", invocationCount: 1 },
       { featureName: "mcp/enable_cache_components", invocationCount: 1 },
       { featureName: "mcp/init", invocationCount: 1 },
       { featureName: "mcp/nextjs_docs", invocationCount: 1 },
-      { featureName: "mcp/nextjs_runtime", invocationCount: 1 },
+      { featureName: "mcp/nextjs_index", invocationCount: 1 },
+      { featureName: "mcp/nextjs_call", invocationCount: 1 },
       { featureName: "mcp/upgrade_nextjs_16", invocationCount: 1 },
     ])
 
-    expect(events).toHaveLength(6)
+    expect(events).toHaveLength(7)
     expect(events.every((e) => e.eventName === EVENT_MCP_TOOL_USAGE)).toBe(true)
   })
 

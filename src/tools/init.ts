@@ -20,7 +20,7 @@ Key Points:
 - Fetches latest Next.js LLM documentation from nextjs.org
 - Establishes MANDATORY requirement to use nextjs_docs for ALL Next.js concepts
 - Instructs AI to forget any prior Next.js knowledge and always query docs
-- Documents all available MCP tools (nextjs_docs, nextjs_runtime, browser_eval, upgrade_nextjs_16, enable_cache_components)
+- Documents all available MCP tools (nextjs_docs, nextjs_index, nextjs_call, browser_eval, upgrade_nextjs_16, enable_cache_components)
 
 Use this tool at the beginning of a Next.js session to:
 - Reset AI's Next.js knowledge baseline
@@ -165,12 +165,19 @@ You MUST still use the \`nextjs_docs\` tool with GET to retrieve the full detail
 - **REQUIRED** for ALL Next.js-related questions
 - **OPTIMIZATION:** For batch operations, fetch the \`nextjs-docs://llms-index\` resource to look up multiple paths
 
-### 2. **nextjs_runtime** - Live Next.js Dev Server Integration
-- Get real-time errors and logs from running dev server
-- Inspect routes, components, and runtime diagnostics
-- Requires Next.js 16+ (or experimental.mcpServer in older versions)
+### 2. **nextjs_index** - Discover Running Next.js Servers
+- Lists all running Next.js dev servers with MCP enabled
+- Shows available runtime tools for each server
+- Takes no parameters - automatically discovers servers
+- Requires Next.js 16+
 
-### 3. **browser_eval** - Browser Automation
+### 3. **nextjs_call** - Execute Next.js Runtime Tools
+- Calls specific MCP tools on a running Next.js dev server
+- Get real-time errors, logs, routes, and diagnostics
+- Requires port and toolName (use nextjs_index first to discover)
+- Requires Next.js 16+
+
+### 4. **browser_eval** - Browser Automation
 - Test Next.js pages with Playwright
 - Verify functionality and capture runtime errors
 - Use after implementing features to verify behavior
@@ -191,7 +198,7 @@ You MUST still use the \`nextjs_docs\` tool with GET to retrieve the full detail
 2. **ALWAYS** use \`nextjs_docs\` for ANY Next.js concept (even if you think you know it)
    - Start with search action for most queries: \`{ action: "search", query: "..." }\`
    - For batch operations or multiple lookups, fetch \`nextjs-docs://llms-index\` resource to find paths directly
-3. Use \`nextjs_runtime\` for debugging running applications
+3. Use \`nextjs_index\` to discover servers, then \`nextjs_call\` to debug running applications
 4. Use \`browser_eval\` to verify implementations
 5. Use specialized tools (\`upgrade_nextjs_16\`, \`enable_cache_components\`) as needed
 

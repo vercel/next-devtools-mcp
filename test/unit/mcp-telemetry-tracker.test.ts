@@ -54,23 +54,25 @@ describe("MCP Telemetry Tracker", () => {
     expect(usageMap.get("mcp/browser_eval")).toBe(1)
   })
 
-  it("should track all 6 MCP tools", () => {
+  it("should track all 7 MCP tools", () => {
     mcpTelemetryTracker.recordToolCall("mcp/browser_eval")
     mcpTelemetryTracker.recordToolCall("mcp/enable_cache_components")
     mcpTelemetryTracker.recordToolCall("mcp/init")
     mcpTelemetryTracker.recordToolCall("mcp/nextjs_docs")
-    mcpTelemetryTracker.recordToolCall("mcp/nextjs_runtime")
+    mcpTelemetryTracker.recordToolCall("mcp/nextjs_index")
+    mcpTelemetryTracker.recordToolCall("mcp/nextjs_call")
     mcpTelemetryTracker.recordToolCall("mcp/upgrade_nextjs_16")
 
     const usages = getMcpTelemetryUsage()
-    expect(usages).toHaveLength(6)
+    expect(usages).toHaveLength(7)
 
     const toolNames = usages.map((u) => u.featureName)
     expect(toolNames).toContain("mcp/browser_eval")
     expect(toolNames).toContain("mcp/enable_cache_components")
     expect(toolNames).toContain("mcp/init")
     expect(toolNames).toContain("mcp/nextjs_docs")
-    expect(toolNames).toContain("mcp/nextjs_runtime")
+    expect(toolNames).toContain("mcp/nextjs_index")
+    expect(toolNames).toContain("mcp/nextjs_call")
     expect(toolNames).toContain("mcp/upgrade_nextjs_16")
   })
 
@@ -94,7 +96,9 @@ describe("MCP Telemetry Tracker", () => {
     mcpTelemetryTracker.recordToolCall("mcp/nextjs_docs")
     mcpTelemetryTracker.recordToolCall("mcp/browser_eval") // Browser testing
     mcpTelemetryTracker.recordToolCall("mcp/browser_eval")
-    mcpTelemetryTracker.recordToolCall("mcp/nextjs_runtime") // Check runtime
+    mcpTelemetryTracker.recordToolCall("mcp/nextjs_index") // Discover servers
+    mcpTelemetryTracker.recordToolCall("mcp/nextjs_call") // Call runtime tool
+    mcpTelemetryTracker.recordToolCall("mcp/nextjs_call") // Call another tool
     mcpTelemetryTracker.recordToolCall("mcp/upgrade_nextjs_16") // Run upgrade
 
     const usages = getMcpTelemetryUsage()
@@ -103,7 +107,8 @@ describe("MCP Telemetry Tracker", () => {
     expect(usageMap.get("mcp/init")).toBe(1)
     expect(usageMap.get("mcp/nextjs_docs")).toBe(3)
     expect(usageMap.get("mcp/browser_eval")).toBe(2)
-    expect(usageMap.get("mcp/nextjs_runtime")).toBe(1)
+    expect(usageMap.get("mcp/nextjs_index")).toBe(1)
+    expect(usageMap.get("mcp/nextjs_call")).toBe(2)
     expect(usageMap.get("mcp/upgrade_nextjs_16")).toBe(1)
   })
 })

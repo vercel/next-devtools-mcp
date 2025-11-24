@@ -182,7 +182,7 @@ Next Devtools, show me the structure of my routes
 Next Devtools, what's in the development server logs?
 ```
 
-Your coding agent will use the `nextjs_runtime` tool to query your running application's actual state.
+Your coding agent will use the `nextjs_index` and `nextjs_call` tools to query your running application's actual state.
 
 ### For All Next.js Projects
 
@@ -355,7 +355,7 @@ Automate and test web applications using Playwright browser automation.
 - Detecting runtime errors, hydration issues, and client-side problems
 - Capturing browser console errors and warnings
 
-**Important:** For Next.js projects, prioritize using the `nextjs_runtime` tool instead of browser console log forwarding. Only use browser_eval's `console_messages` action as a fallback when `nextjs_runtime` tools are not available.
+**Important:** For Next.js projects, prioritize using the `nextjs_index` and `nextjs_call` tools instead of browser console log forwarding. Only use browser_eval's `console_messages` action as a fallback when these tools are not available.
 
 **Available actions:**
 - `start` - Start browser automation (automatically installs if needed)
@@ -383,21 +383,17 @@ Automate and test web applications using Playwright browser automation.
 </details>
 
 <details>
-<summary><code>nextjs_runtime</code></summary>
+<summary><code>nextjs_index</code></summary>
 
-Connect to your running Next.js dev server's built-in MCP endpoint to access live application state, runtime diagnostics, and internal information.
+Discover all running Next.js dev servers and list their available MCP tools.
 
 **What this tool does:**
 
-This tool acts as a bridge between your coding agent and Next.js 16's built-in MCP endpoint at `/_next/mcp`. It provides three key actions:
+Automatically discovers all running Next.js 16+ dev servers on your machine and lists the runtime diagnostic tools available from each server's built-in MCP endpoint at `/_next/mcp`.
 
-1. **`discover_servers`**: Find all running Next.js dev servers on your machine
-2. **`list_tools`**: See what runtime diagnostic tools are available from Next.js
-3. **`call_tool`**: Execute a specific Next.js runtime tool (e.g., get errors, query routes, fetch logs)
+**No parameters required** - Just call the tool and it will scan for servers.
 
-**Available Next.js Runtime Tools** (accessed via `call_tool`):
-
-Once connected to a Next.js 16+ dev server, you can access these built-in tools:
+**Available Next.js Runtime Tools** (varies by Next.js version):
 - `get_errors` - Get current build, runtime, and type errors
 - `get_logs` - Get path to development log file (browser console + server output)
 - `get_page_metadata` - Query application routes, pages, and component metadata
@@ -408,38 +404,52 @@ Once connected to a Next.js 16+ dev server, you can access these built-in tools:
 - Next.js 16+ (MCP enabled by default)
 - Running dev server (`npm run dev`)
 
+**Output:**
+- JSON with list of discovered servers, each containing:
+  - Port, PID, URL
+  - Available tools with descriptions and input schemas
+
+**Example prompts:**
+- "Next Devtools, what servers are running?"
+- "Next Devtools, show me available diagnostic tools"
+
+</details>
+
+<details>
+<summary><code>nextjs_call</code></summary>
+
+Execute a specific MCP tool on a running Next.js dev server.
+
+**What this tool does:**
+
+Calls a specific runtime diagnostic tool on a Next.js 16+ dev server's built-in MCP endpoint at `/_next/mcp`.
+
+**Input Parameters:**
+- `port` (required) - Dev server port (use `nextjs_index` first to discover)
+- `toolName` (required) - Name of the Next.js tool to invoke
+- `args` (optional) - Arguments object for the tool (only if required by that tool)
+
+**Requirements:**
+- Next.js 16+ (MCP enabled by default)
+- Running dev server (`npm run dev`)
+- Use `nextjs_index` first to discover available servers and tools
+
 **Typical workflow:**
 
 ```javascript
-// Step 1: Discover running servers (optional - auto-discovery works in most cases)
-{
-  "action": "discover_servers"
-}
+// Step 1: Discover servers and tools
+// (call nextjs_index first)
 
-// Step 2: List available runtime tools
+// Step 2: Call a specific tool
 {
-  "action": "list_tools",
-  "port": 3000  // optional if only one server is running
-}
-
-// Step 3: Call a specific tool
-{
-  "action": "call_tool",
   "port": 3000,
   "toolName": "get_errors"
   // args is optional and only needed if the tool requires parameters
 }
 ```
 
-**Input Parameters:**
-- `action` (required) - `discover_servers`, `list_tools`, or `call_tool`
-- `port` (optional) - Dev server port (auto-discovers if not provided)
-- `toolName` (required for `call_tool`) - Name of the Next.js tool to invoke
-- `args` (optional) - Arguments object for the tool (only if required by that tool)
-- `includeUnverified` (optional) - For `discover_servers`: include servers even if MCP verification fails
-
 **Output:**
-- JSON with discovered servers, available tools list, or tool execution results
+- JSON with tool execution results
 
 **Example prompts that use this tool:**
 - "Next Devtools, what errors are in my Next.js app?"
@@ -515,7 +525,7 @@ With other agents or programmatically:
 
 `next-devtools-mcp` collects anonymous usage telemetry to help improve the tool. The following data is collected:
 
-- **Tool usage**: Which MCP tools are invoked (e.g., `nextjs_runtime`, `browser_eval`, `upgrade_nextjs_16`)
+- **Tool usage**: Which MCP tools are invoked (e.g., `nextjs_index`, `nextjs_call`, `browser_eval`, `upgrade_nextjs_16`)
 - **Error events**: Anonymous error messages when tools fail
 - **Session metadata**: Session ID, timestamps, and basic environment info (OS, Node.js version)
 
@@ -616,7 +626,7 @@ Coding Agent
 
 2. **For all Next.js projects**: Provides development automation tools (upgrades, Cache Components setup), documentation access, and browser testing capabilities that work independently of the runtime connection.
 
-3. **Auto-discovery**: The `nextjs_runtime` tool scans common ports (3000, 3001, etc.) to find running Next.js servers, so you don't need to manually specify ports in most cases.
+3. **Simple workflow**: Call `nextjs_index` to see all servers and available tools, then call `nextjs_call` with the specific port and tool name you want to execute.
 
 
 ## License

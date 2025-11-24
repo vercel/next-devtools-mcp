@@ -203,7 +203,7 @@ describe("Telemetry Integration (Unit)", () => {
     mcpTelemetryTracker.recordToolCall("mcp/nextjs_docs")
     mcpTelemetryTracker.recordToolCall("mcp/nextjs_docs")
     mcpTelemetryTracker.recordToolCall("mcp/browser_eval")
-    mcpTelemetryTracker.recordToolCall("mcp/nextjs_runtime")
+    mcpTelemetryTracker.recordToolCall("mcp/nextjs_index")
 
     const usages = getMcpTelemetryUsage()
     const events = eventMcpToolUsage(usages)
@@ -216,6 +216,6 @@ describe("Telemetry Integration (Unit)", () => {
     expect(toolMap.get("mcp/init")).toBe(1)
     expect(toolMap.get("mcp/nextjs_docs")).toBe(2)
     expect(toolMap.get("mcp/browser_eval")).toBe(1)
-    expect(toolMap.get("mcp/nextjs_runtime")).toBe(1)
+    expect(toolMap.get("mcp/nextjs_index")).toBe(1)
   })
 })

@@ -62,14 +62,14 @@ All tools, prompts, and resources are explicitly imported and registered in `src
 - Tools are manually imported and registered in `src/index.ts`
 - `nextjs_docs`: Search Next.js documentation and knowledge base
 - `browser_eval`: Playwright browser automation (via `playwright-mcp` server)
-- `nextjs_runtime`: Connect to Next.js dev server MCP endpoint for runtime diagnostics
+- `nextjs_index`: Discover all running Next.js dev servers and list their available MCP tools
+- `nextjs_call`: Execute specific MCP tools on a running Next.js dev server
 - `upgrade_nextjs_16`: Automated Next.js 16 upgrade guidance
 - `enable_cache_components`: Complete Cache Components setup with error detection
 
 **MCP Client Library** (`src/_internal/mcp-client.ts`):
 - Connects to external MCP servers via stdio transport
 - Used by `browser_eval` to communicate with `playwright-mcp`
-- Used by `nextjs_runtime` to communicate with Next.js dev server MCP endpoint
 
 **Runtime Managers** (`src/_internal/`):
 - `browser-eval-manager.ts`: Manages Playwright MCP server lifecycle
@@ -127,7 +127,7 @@ This server can:
 - Command: `npx @playwright/mcp@latest` (with optional `--browser` and `--headless` flags)
 - Used for browser automation and testing
 
-**Next.js Runtime MCP** (`nextjs_runtime` tool):
+**Next.js Runtime MCP** (`nextjs_index` and `nextjs_call` tools):
 - Built into Next.js 16+ (enabled by default)
 - Endpoint: `http://localhost:<port>/_next/mcp`
 - Provides runtime diagnostics, errors, routes, and build status

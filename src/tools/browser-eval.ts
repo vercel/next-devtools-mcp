@@ -255,7 +255,7 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
         break
 
       case "screenshot":
-        toolName = "browser_screenshot"
+        toolName = "browser_take_screenshot"
         toolArgs = { fullPage: args.fullPage }
         break
 

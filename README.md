@@ -553,6 +553,29 @@ You can also delete your local telemetry data at any time:
 rm -rf ~/.next-devtools-mcp
 ```
 
+## Troubleshooting
+
+### Module Not Found Error
+
+If you encounter an error like:
+
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '...\next-devtools-mcp\dist\resources\(cache-components)\...'
+```
+
+**Solution:** Clear your npx cache and restart your MCP client (Cursor, Claude Code, etc.). The server will be freshly installed.
+
+### "No server info found" Error
+
+If you see `[error] No server info found`:
+
+**Solutions:**
+1. Make sure your Next.js dev server is running: `npm run dev`
+2. If using Next.js 15 or earlier, use the `upgrade_nextjs_16` tool to upgrade to Next.js 16+
+3. Verify your dev server started successfully without errors
+
+**Note:** The `nextjs_index` and `nextjs_call` tools require Next.js 16+ with a running dev server. Other tools (`nextjs_docs`, `browser_eval`, `upgrade_nextjs_16`, `enable_cache_components`) work without a running server.
+
 ## Local Development
 
 To run the MCP server locally for development:

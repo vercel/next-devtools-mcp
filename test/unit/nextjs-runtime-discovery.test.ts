@@ -1,12 +1,42 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { spawn, ChildProcess } from "child_process"
+import { spawn, ChildProcess, execSync } from "child_process"
 import { join } from "path"
 import { mkdirSync, cpSync, rmSync, existsSync } from "fs"
 import { tmpdir } from "os"
-import {
-  discoverNextJsServer,
-  getAllAvailableServers,
-} from "../../src/_internal/nextjs-runtime-manager"
+import { getAllAvailableServers } from "../../src/_internal/nextjs-runtime-manager"
+
+/**
+ * Kill a process tree cross-platform
+ * On Windows, SIGTERM/SIGKILL don't work properly, so we use taskkill
+ */
+function killProcessTree(proc: ChildProcess): void {
+  if (!proc.pid) return
+
+  if (process.platform === "win32") {
+    try {
+      // /T kills the process tree, /F forces termination
+      execSync(`taskkill /pid ${proc.pid} /T /F`, { stdio: "ignore" })
+    } catch {
+      // Process may already be dead
+    }
+  } else {
+    proc.kill("SIGTERM")
+  }
+}
+
+function forceKillProcessTree(proc: ChildProcess): void {
+  if (!proc.pid) return
+
+  if (process.platform === "win32") {
+    try {
+      execSync(`taskkill /pid ${proc.pid} /T /F`, { stdio: "ignore" })
+    } catch {
+      // Process may already be dead
+    }
+  } else {
+    proc.kill("SIGKILL")
+  }
+}
 
 const FIXTURE_SOURCE = join(__dirname, "../fixtures/nextjs16-minimal")
 const TEST_PORT = 3456
@@ -126,7 +156,7 @@ describe("nextjs-runtime-discovery", () => {
   afterAll(async () => {
     if (nextProcess) {
       console.log("[Test] Stopping Next.js dev server...")
-      nextProcess.kill("SIGTERM")
+      killProcessTree(nextProcess)
 
       await new Promise<void>((resolve) => {
         if (!nextProcess) {
@@ -137,7 +167,7 @@ describe("nextjs-runtime-discovery", () => {
         const killTimeout = setTimeout(() => {
           if (nextProcess && !nextProcess.killed) {
             console.log("[Test] Force killing Next.js server...")
-            nextProcess.kill("SIGKILL")
+            forceKillProcessTree(nextProcess)
           }
           resolve()
         }, 5000)
@@ -148,6 +178,11 @@ describe("nextjs-runtime-discovery", () => {
           resolve()
         })
       })
+    }
+
+    // Wait a bit for file handles to be released on Windows
+    if (process.platform === "win32") {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
     }
 
     if (tempDir && existsSync(tempDir)) {
@@ -162,73 +197,31 @@ describe("nextjs-runtime-discovery", () => {
   })
 
   it(
-    "should discover the running Next.js 16 dev server when only one is running",
+    "should discover Next.js server on non-standard port via process discovery",
     async () => {
-      console.log("[Test] Attempting to discover Next.js server...")
+      // Port 3456 is outside the common ports range (3000-3010), so it must
+      // be discovered via process discovery (findNextJsServers), not port probing
+      console.log(`[Test] Discovering Next.js server on port ${TEST_PORT}...`)
 
-      const allServers = await getAllAvailableServers(false)
+      const allServers = await getAllAvailableServers()
       console.log(
         "[Test] All discovered servers:",
         allServers.map((s) => ({ port: s.port, pid: s.pid, cmd: s.command }))
       )
 
-      const server = await discoverNextJsServer()
+      const server = allServers.find((s) => s.port === TEST_PORT)
 
-      if (allServers.length === 1) {
-        expect(server).not.toBeNull()
-        expect(server?.port).toBe(TEST_PORT)
-        expect(server?.pid).toBeGreaterThan(0)
-        expect(server?.command).toBeTruthy()
-        expect(server?.command).toContain("next")
+      // These assertions must pass - if they fail, process discovery is broken
+      expect(server, `Server on port ${TEST_PORT} should be discovered`).toBeDefined()
+      expect(server?.port).toBe(TEST_PORT)
+      expect(server?.pid).toBeGreaterThan(0)
+      expect(server?.command).toBeTruthy()
 
-        console.log("[Test] Successfully discovered server:", {
-          port: server?.port,
-          pid: server?.pid,
-          command: server?.command?.substring(0, 100),
-        })
-        console.log(
-          `[Test] Port verification: discovered port ${server?.port} matches expected port ${TEST_PORT}: ${server?.port === TEST_PORT}`
-        )
-      } else {
-        console.log("[Test] Multiple servers detected, this is expected to return null")
-        expect(server).toBeNull()
-      }
-    },
-    TEST_TIMEOUT
-  )
-
-  it(
-    "should return null when multiple servers are running",
-    async () => {
-      console.log("[Test] Testing behavior with multiple servers...")
-
-      const allServers = await getAllAvailableServers(false)
-      console.log(
-        "[Test] All discovered servers:",
-        allServers.map((s) => ({ port: s.port, pid: s.pid, cmd: s.command }))
-      )
-
-      const server = await discoverNextJsServer()
-
-      if (allServers.length > 1) {
-        expect(server).toBeNull()
-        console.log("[Test] Correctly returned null for multiple servers")
-      } else {
-        console.log("[Test] Only one server running, skipping this test case")
-        expect(allServers.length).toBeLessThanOrEqual(1)
-        if (allServers.length === 1 && server) {
-          const portMatch = server.port === TEST_PORT
-          console.log(
-            `[Test] Port verification for single server: discovered port ${server.port} matches expected port ${TEST_PORT}: ${portMatch}`
-          )
-          // If there's only one server, verify port matches even in this test
-          if (portMatch === false) {
-            console.warn(
-              `[Test] WARNING: Port mismatch! Expected ${TEST_PORT}, but discovered ${server.port}`
-            )
-          }
-        }
-      }
+      console.log("[Test] Successfully discovered server:", {
+        port: server?.port,
+        pid: server?.pid,
+        command: server?.command?.substring(0, 100),
+      })
     },
     TEST_TIMEOUT
   )

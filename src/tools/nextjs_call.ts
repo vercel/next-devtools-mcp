@@ -31,6 +31,7 @@ REQUIREMENTS:
 - Optional arguments object (if the tool requires parameters)
 
 Use 'nextjs_index' first to discover available servers, tools, and their input schemas.
+If 'nextjs_index' auto-discovery fails, ask the user for the port and call 'nextjs_index' again with the 'port' parameter.
 
 IMPORTANT: When calling tools:
 - The 'args' parameter MUST be an object (e.g., {key: "value"}), NOT a string
@@ -61,7 +62,7 @@ export async function handler(args: NextjsCallArgs): Promise<string> {
       return JSON.stringify({
         success: false,
         error: "Port is required.",
-        hint: "Use 'nextjs_index' first to discover available servers and their ports.",
+        hint: "Use 'nextjs_index' first to discover available servers and their ports. If auto-discovery fails, ask the user for the port and call 'nextjs_index' with the 'port' parameter.",
       })
     }
 

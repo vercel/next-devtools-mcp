@@ -3,10 +3,18 @@ import {
   getAllAvailableServers,
   listNextJsTools,
   detectProtocol,
+  MCP_HOST,
 } from "../_internal/nextjs-runtime-manager.js"
 
-// No input parameters needed
-export const inputSchema = {}
+export const inputSchema = {
+  port: z
+    .union([z.string(), z.number()])
+    .transform((val) => (typeof val === "string" ? parseInt(val, 10) : val))
+    .optional()
+    .describe(
+      "Optional port number to probe directly. Use this when auto-discovery fails - ask the user which port their Next.js dev server is running on."
+    ),
+}
 
 export const metadata = {
   name: "nextjs_index",
@@ -48,22 +56,97 @@ This tool discovers all running Next.js servers and returns:
 
 After calling this tool, use 'nextjs_call' to execute specific tools.
 
+[IMPORTANT] If auto-discovery returns no servers:
+1. Ask the user which port their Next.js dev server is running on
+2. Call this tool again with the 'port' parameter set to the user-provided port
+
 If the MCP endpoint is not available:
 1. Ensure you're running Next.js 16 or later (use the 'upgrade-nextjs-16' prompt to upgrade)
 2. Verify the dev server is running (npm run dev)
 3. Check that the dev server started successfully without errors`,
 }
 
-export async function handler(): Promise<string> {
+type NextjsIndexArgs = {
+  port?: string | number
+}
+
+async function probeAndListTools(port: number): Promise<{
+  success: boolean
+  server?: {
+    port: number
+    url: string
+    toolCount: number
+    tools: { name: string; description?: string; inputSchema?: Record<string, unknown> }[]
+  }
+  error?: string
+}> {
   try {
-    // Always discover all servers and list their tools
-    const servers = await getAllAvailableServers(true)
+    const protocol = await detectProtocol(port)
+    const tools = await listNextJsTools(port)
+
+    if (tools.length === 0) {
+      return {
+        success: false,
+        error: `No MCP tools found on port ${port}. The server may not be running Next.js 16+ or MCP may not be enabled.`,
+      }
+    }
+
+    return {
+      success: true,
+      server: {
+        port,
+        url: `${protocol}://${MCP_HOST}:${port}`,
+        toolCount: tools.length,
+        tools: tools.map((t) => ({
+          name: t.name,
+          description: t.description,
+          inputSchema: t.inputSchema,
+        })),
+      },
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return {
+      success: false,
+      error: `Failed to connect to port ${port}: ${errorMessage}`,
+    }
+  }
+}
+
+export async function handler(args: NextjsIndexArgs = {}): Promise<string> {
+  try {
+    // If a specific port is provided, probe it directly
+    if (args.port !== undefined) {
+      const portNumber = typeof args.port === "string" ? parseInt(args.port, 10) : args.port
+      const result = await probeAndListTools(portNumber)
+
+      if (result.success && result.server) {
+        return JSON.stringify({
+          success: true,
+          count: 1,
+          servers: [result.server],
+          message: `Successfully connected to Next.js server on port ${portNumber}`,
+        })
+      } else {
+        return JSON.stringify({
+          success: false,
+          error: result.error,
+          port: portNumber,
+          hint: "Make sure the Next.js dev server is running on this port and is version 16+.",
+        })
+      }
+    }
+
+    // Auto-discover all servers
+    const servers = await getAllAvailableServers()
 
     if (servers.length === 0) {
       return JSON.stringify({
         success: false,
         error: "No running Next.js dev servers with MCP enabled found",
         hint: "Make sure you're running Next.js 16+ (MCP is enabled by default). Start the dev server with 'npm run dev'. If on Next.js 15 or earlier, upgrade using the 'upgrade-nextjs-16' prompt.",
+        ai_instruction:
+          "IMPORTANT: Server auto-discovery may not work on all operating systems or network configurations. Please ask the user: 'What port is your Next.js dev server running on?'. Once you have the port number, call this tool again with the 'port' parameter set to the user-provided port.",
         servers: [],
       })
     }

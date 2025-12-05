@@ -1,9 +1,42 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { spawn, ChildProcess } from "child_process"
+import { spawn, ChildProcess, execSync } from "child_process"
 import { join } from "path"
 import { mkdirSync, cpSync, rmSync, existsSync } from "fs"
 import { tmpdir } from "os"
 import { getAllAvailableServers } from "../../src/_internal/nextjs-runtime-manager"
+
+/**
+ * Kill a process tree cross-platform
+ * On Windows, SIGTERM/SIGKILL don't work properly, so we use taskkill
+ */
+function killProcessTree(proc: ChildProcess): void {
+  if (!proc.pid) return
+
+  if (process.platform === "win32") {
+    try {
+      // /T kills the process tree, /F forces termination
+      execSync(`taskkill /pid ${proc.pid} /T /F`, { stdio: "ignore" })
+    } catch {
+      // Process may already be dead
+    }
+  } else {
+    proc.kill("SIGTERM")
+  }
+}
+
+function forceKillProcessTree(proc: ChildProcess): void {
+  if (!proc.pid) return
+
+  if (process.platform === "win32") {
+    try {
+      execSync(`taskkill /pid ${proc.pid} /T /F`, { stdio: "ignore" })
+    } catch {
+      // Process may already be dead
+    }
+  } else {
+    proc.kill("SIGKILL")
+  }
+}
 
 const FIXTURE_SOURCE = join(__dirname, "../fixtures/nextjs16-minimal")
 const TEST_PORT = 3456
@@ -123,7 +156,7 @@ describe("nextjs-runtime-discovery", () => {
   afterAll(async () => {
     if (nextProcess) {
       console.log("[Test] Stopping Next.js dev server...")
-      nextProcess.kill("SIGTERM")
+      killProcessTree(nextProcess)
 
       await new Promise<void>((resolve) => {
         if (!nextProcess) {
@@ -134,7 +167,7 @@ describe("nextjs-runtime-discovery", () => {
         const killTimeout = setTimeout(() => {
           if (nextProcess && !nextProcess.killed) {
             console.log("[Test] Force killing Next.js server...")
-            nextProcess.kill("SIGKILL")
+            forceKillProcessTree(nextProcess)
           }
           resolve()
         }, 5000)
@@ -145,6 +178,11 @@ describe("nextjs-runtime-discovery", () => {
           resolve()
         })
       })
+    }
+
+    // Wait a bit for file handles to be released on Windows
+    if (process.platform === "win32") {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
     }
 
     if (tempDir && existsSync(tempDir)) {

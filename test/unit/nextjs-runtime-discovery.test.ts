@@ -197,9 +197,11 @@ describe("nextjs-runtime-discovery", () => {
   })
 
   it(
-    "should discover the running Next.js 16 dev server when only one is running",
+    "should discover Next.js server on non-standard port via process discovery",
     async () => {
-      console.log("[Test] Attempting to discover Next.js server...")
+      // Port 3456 is outside the common ports range (3000-3010), so it must
+      // be discovered via process discovery (findNextJsServers), not port probing
+      console.log(`[Test] Discovering Next.js server on port ${TEST_PORT}...`)
 
       const allServers = await getAllAvailableServers()
       console.log(
@@ -207,44 +209,19 @@ describe("nextjs-runtime-discovery", () => {
         allServers.map((s) => ({ port: s.port, pid: s.pid, cmd: s.command }))
       )
 
-      // Find our test server by port
       const server = allServers.find((s) => s.port === TEST_PORT)
 
-      expect(server).not.toBeUndefined()
+      // These assertions must pass - if they fail, process discovery is broken
+      expect(server, `Server on port ${TEST_PORT} should be discovered`).toBeDefined()
       expect(server?.port).toBe(TEST_PORT)
+      expect(server?.pid).toBeGreaterThan(0)
+      expect(server?.command).toBeTruthy()
 
       console.log("[Test] Successfully discovered server:", {
         port: server?.port,
         pid: server?.pid,
         command: server?.command?.substring(0, 100),
       })
-      console.log(
-        `[Test] Port verification: discovered port ${server?.port} matches expected port ${TEST_PORT}: ${server?.port === TEST_PORT}`
-      )
-    },
-    TEST_TIMEOUT
-  )
-
-  it(
-    "should discover server on non-standard port via process discovery",
-    async () => {
-      console.log("[Test] Testing discovery on non-standard port (3456)...")
-
-      const allServers = await getAllAvailableServers()
-      console.log(
-        "[Test] All discovered servers:",
-        allServers.map((s) => ({ port: s.port, pid: s.pid, cmd: s.command }))
-      )
-
-      // Port 3456 is outside the common ports range (3000-3010), so it should
-      // be discovered via process discovery fallback
-      const server = allServers.find((s) => s.port === TEST_PORT)
-
-      expect(server).not.toBeUndefined()
-      expect(server?.port).toBe(TEST_PORT)
-      console.log(
-        `[Test] Successfully discovered server on non-standard port ${TEST_PORT}`
-      )
     },
     TEST_TIMEOUT
   )

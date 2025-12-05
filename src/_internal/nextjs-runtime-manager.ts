@@ -31,17 +31,6 @@ interface NextJsMCPResponse {
   id: number | string
 }
 
-/**
- * Detect if we're running in WSL
- */
-function isWSL(): boolean {
-  return process.platform === 'linux' && (
-    !!process.env.WSL_DISTRO_NAME ||
-    !!process.env.WSL_INTEROP ||
-    !!process.env.WSL_DISTRO
-  )
-}
-
 // Cache detected protocol per port to avoid repeated detection
 const protocolCache = new Map<number, "http" | "https">()
 
@@ -149,7 +138,7 @@ async function detectProtocol(port: number): Promise<"http" | "https"> {
 }
 
 /**
- * Get listening ports for a process using ss command (WSL-compatible)
+ * Get listening ports for a process using ss command (WSL/Linux)
  * ss output format: LISTEN 0 511 *:3000 *:* users:(("next-server",pid=4660,fd=24))
  */
 async function getPortsViaSs(pid: number): Promise<number[]> {
@@ -179,8 +168,46 @@ async function getPortsViaSs(pid: number): Promise<number[]> {
 }
 
 /**
+ * Get listening ports for a process using netstat command (Windows)
+ * netstat output format: TCP    0.0.0.0:3000    0.0.0.0:0    LISTENING    1234
+ */
+async function getPortsViaNetstat(pid: number): Promise<number[]> {
+  try {
+    // Use findstr to filter LISTENING lines, then filter by exact PID in JS
+    // (findstr would match partial PIDs, e.g. "123" matches "1234")
+    const { stdout } = await execAsync(`netstat -ano | findstr LISTENING`)
+    if (!stdout) return []
+
+    const ports: number[] = []
+    const lines = stdout.split('\n')
+    const pidStr = String(pid)
+
+    for (const line of lines) {
+      // Format: TCP    0.0.0.0:3000    0.0.0.0:0    LISTENING    1234
+      const parts = line.trim().split(/\s+/)
+      // Exact PID match (last column)
+      if (parts.length >= 5 && parts[parts.length - 1] === pidStr) {
+        // Extract port from local address (e.g., "0.0.0.0:3000" or "[::]:3000")
+        const localAddr = parts[1]
+        const portMatch = localAddr.match(/:(\d+)$/)
+        if (portMatch) {
+          const port = parseInt(portMatch[1], 10)
+          if (!ports.includes(port)) {
+            ports.push(port)
+          }
+        }
+      }
+    }
+
+    return ports
+  } catch {
+    return []
+  }
+}
+
+/**
  * Get the listening port for a process by PID
- * Uses pid-port on most systems, falls back to ss command in WSL
+ * Uses pid-port on most systems, falls back to platform-specific commands
  * @param pid - Process ID to check
  * @returns The first listening port found, or null if none
  */
@@ -195,8 +222,15 @@ async function getListeningPort(pid: number): Promise<number | null> {
     // Continue to fallback methods
   }
 
-  // If we're in WSL or on Linux where pid-port failed, try ss command
-  if (isWSL() || process.platform === 'linux') {
+  // Platform-specific fallbacks
+  if (process.platform === 'win32') {
+    // On Windows, use netstat
+    const netstatPorts = await getPortsViaNetstat(pid)
+    if (netstatPorts.length > 0) {
+      return netstatPorts[0]
+    }
+  } else if (process.platform === 'linux') {
+    // On Linux (including WSL), use ss command
     const ssPorts = await getPortsViaSs(pid)
     if (ssPorts.length > 0) {
       return ssPorts[0]
@@ -208,26 +242,51 @@ async function getListeningPort(pid: number): Promise<number | null> {
 
 async function findNextJsServers(): Promise<NextJsServerInfo[]> {
   try {
-    // Find next-server processes (the actual server processes)
-    const nextServerProcesses = await findProcess("name", "next-server", true).catch(() => [] as Awaited<ReturnType<typeof findProcess>>)
-
     const servers: NextJsServerInfo[] = []
     const seenPorts = new Set<number>()
 
-    for (const proc of nextServerProcesses) {
-      // proc.name === "next-server" is definitive - no need to check command
-      if (proc.name !== "next-server") {
-        continue
+    // On Unix/macOS, Next.js renames its worker process to "next-server"
+    // On Windows, the process is "node.exe" so we need to search by command line
+    if (process.platform === "win32") {
+      // On Windows, search for node processes and filter by command line
+      const nodeProcesses = await findProcess("name", "node", false).catch(() => [] as Awaited<ReturnType<typeof findProcess>>)
+
+      for (const proc of nodeProcesses) {
+        const command = proc.cmd || ""
+
+        // Look for Next.js server indicators in the command line
+        // Next.js server runs as: node [...]/next/dist/server/lib/start-server.js
+        const isNextServer =
+          command.includes("next-server") ||
+          command.includes("next/dist/server") ||
+          command.includes("next\\dist\\server") // Windows paths
+
+        if (!isNextServer) {
+          continue
+        }
+
+        const port = await getListeningPort(proc.pid)
+        if (port && !seenPorts.has(port)) {
+          seenPorts.add(port)
+          servers.push({ port, pid: proc.pid, command })
+        }
       }
+    } else {
+      // On Unix/macOS, find next-server processes directly
+      const nextServerProcesses = await findProcess("name", "next-server", true).catch(() => [] as Awaited<ReturnType<typeof findProcess>>)
 
-      const command = proc.cmd || ""
+      for (const proc of nextServerProcesses) {
+        if (proc.name !== "next-server") {
+          continue
+        }
 
-      // Always query system for listening port from the process
-      const port = await getListeningPort(proc.pid)
+        const command = proc.cmd || ""
+        const port = await getListeningPort(proc.pid)
 
-      if (port && !seenPorts.has(port)) {
-        seenPorts.add(port)
-        servers.push({ port, pid: proc.pid, command })
+        if (port && !seenPorts.has(port)) {
+          seenPorts.add(port)
+          servers.push({ port, pid: proc.pid, command })
+        }
       }
     }
 

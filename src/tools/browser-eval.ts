@@ -149,6 +149,45 @@ type BrowserEvalArgs = {
   files?: string[]
 }
 
+/**
+ * Filter out base64 image data from the `screenshot` result to reduce context usage.
+ * Extract file paths from text content and attach guidance.
+ */
+export function filterImageDataFromResult(result: unknown): unknown {
+  if (typeof result !== "object" || result === null) {
+    return result
+  }
+
+  const typedResult = result as { content?: { type: string; text?: string; data?: string }[] }
+
+  if (!Array.isArray(typedResult.content)) {
+    return result
+  }
+
+  const filteredContent = typedResult.content.filter((block) => block.type !== "image")
+
+  const textBlock = filteredContent.find((block) => block.type === "text")
+  let screenshotPath: string | null = null
+
+  if (textBlock?.text) {
+    // Extract file path from text like "saved it as /path/to/screenshot.png"
+    const pathMatch = textBlock.text.match(/(?:saved (?:it )?as|saved to) (.+\.png)/i)
+    if (pathMatch) {
+      screenshotPath = pathMatch[1]
+    }
+  }
+
+  // Add helpful message about reading the screenshot
+  if (screenshotPath && textBlock) {
+    filteredContent.push({
+      type: "text",
+      text: `\n\nTo view this screenshot, use the "read" tool with the file path: ${screenshotPath}`,
+    })
+  }
+
+  return { ...typedResult, content: filteredContent }
+}
+
 export async function handler(args: BrowserEvalArgs): Promise<string> {
   try {
     if (args.action === "start") {
@@ -288,10 +327,13 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
 
     const result = await callServerTool(connection, toolName, toolArgs)
 
+    const formattedResult =
+      args.action === "screenshot" ? filterImageDataFromResult(result) : result
+
     return JSON.stringify({
       success: true,
       action: args.action,
-      result,
+      result: formattedResult,
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)

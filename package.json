@@ -33,7 +33,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.21.0",
+    "@modelcontextprotocol/sdk": "1.24.3",
     "find-process": "2.0.0",
     "pid-port": "2.0.0",
     "undici": "7.16.0",

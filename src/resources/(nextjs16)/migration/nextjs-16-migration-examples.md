@@ -1429,7 +1429,20 @@ async function DynamicTimestamp() {
 
 ### Removing Route Segment Config
 
-When enabling Cache Components, remove all Route Segment Config exports:
+When enabling Cache Components, remove all Route Segment Config exports. **IMPORTANT:** Capture the original revalidate value and suggest the matching cacheLife profile.
+
+**Revalidate → cacheLife Mapping Table:**
+
+| Original revalidate | Suggested cacheLife | Profile timing |
+|---------------------|---------------------|----------------|
+| `0` or `false` | Dynamic (no "use cache") | Was already dynamic |
+| `60` | `cacheLife('minutes')` | revalidate: 60s |
+| `3600` | `cacheLife('hours')` | revalidate: 3600s (1 hour) |
+| `86400` | `cacheLife('days')` | revalidate: 86400s (1 day) |
+| `604800` | `cacheLife('weeks')` | revalidate: 604800s (1 week) |
+| Other values | `cacheLife({ revalidate: X })` | Custom timing |
+
+**Example 1: Exact match (revalidate = 3600)**
 
 ```typescript
 // ❌ BEFORE - Route Segment Config (incompatible with Cache Components)
@@ -1443,18 +1456,80 @@ export default async function Page() {
 }
 
 // ✅ AFTER - Cache Components approach
-// MIGRATED: Removed export const dynamic = 'force-static' (incompatible with Cache Components)
-// MIGRATED: Removed export const revalidate = 3600 (incompatible with Cache Components) 
-// MIGRATED: Removed export const fetchCache = 'force-cache' (incompatible with Cache Components)
-// DECISION: Content changes hourly, cached for performance
+// MIGRATED from: export const revalidate = 3600
+// → Using cacheLife('hours') to maintain ~1 hour revalidation
 import { cacheLife } from 'next/cache'
 
 export default async function Page() {
-  "use cache";
-  cacheLife('hours');  // Equivalent to old revalidate: 3600
-  
+  "use cache"
+  cacheLife('hours')  // Replaces: export const revalidate = 3600
+
   const data = await fetch('https://api.example.com/data')
   return <div>{data}</div>
+}
+```
+
+**Example 2: Custom value (revalidate = 1800)**
+
+```typescript
+// ❌ BEFORE
+export const revalidate = 1800  // 30 minutes
+
+export default async function Page() {
+  // ...
+}
+
+// ✅ AFTER
+// MIGRATED from: export const revalidate = 1800 (30 minutes)
+// → Using cacheLife({ revalidate: 1800 }) to maintain exact timing
+import { cacheLife } from 'next/cache'
+
+export default async function Page() {
+  "use cache"
+  cacheLife({ revalidate: 1800 })  // Replaces: export const revalidate = 1800
+  // ...
+}
+```
+
+**Example 3: Short revalidation (revalidate = 60)**
+
+```typescript
+// ❌ BEFORE
+export const revalidate = 60  // 1 minute
+
+export default async function Page() {
+  // ...
+}
+
+// ✅ AFTER
+// MIGRATED from: export const revalidate = 60
+// → Using cacheLife('minutes') to maintain ~60s revalidation
+import { cacheLife } from 'next/cache'
+
+export default async function Page() {
+  "use cache"
+  cacheLife('minutes')  // Replaces: export const revalidate = 60
+  // ...
+}
+```
+
+**Example 4: Dynamic content (revalidate = 0)**
+
+```typescript
+// ❌ BEFORE
+export const revalidate = 0  // Always dynamic
+
+export default async function Page() {
+  // ...
+}
+
+// ✅ AFTER
+// MIGRATED from: export const revalidate = 0
+// → No "use cache" needed - dynamic is now the default with Cache Components
+
+export default async function Page() {
+  // Dynamic by default - no changes needed
+  // ...
 }
 ```
 

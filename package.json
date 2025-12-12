@@ -1,6 +1,6 @@
 {
   "name": "next-devtools-mcp",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "type": "module",
   "description": "Next.js development tools MCP server with stdio transport",
   "license": "MIT",

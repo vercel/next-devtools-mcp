@@ -6,12 +6,12 @@
     "url": "https://github.com/vercel/next-devtools-mcp",
     "source": "github"
   },
-  "version": "0.3.6",
+  "version": "0.3.7",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "next-devtools-mcp",
-      "version": "0.3.6",
+      "version": "0.3.7",
       "transport": {
         "type": "stdio"
       },

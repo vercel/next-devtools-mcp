@@ -223,7 +223,7 @@ You MUST still use the \`nextjs_docs\` tool with GET to retrieve the full detail
       critical_requirement:
         "MANDATORY: Use nextjs_docs for ALL Next.js concepts. Forget all prior Next.js knowledge. Documentation lookup is 100% REQUIRED with ZERO exceptions.",
       ai_response_instruction:
-        "⚠️ DO NOT summarize or explain this initialization. Simply respond with: 'Initialization complete.' Nothing more.",
+        "⚠️ DO NOT summarize or explain this initialization. Simply respond with: 'Initialization complete.' and continue with the conversation.",
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)

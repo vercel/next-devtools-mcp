@@ -391,21 +391,30 @@ Search for Route Segment Config exports (these are DISABLED with Cache Component
 
 **Migration Map:**
 - `export const dynamic = 'force-static'` → Add `"use cache"` + cacheLife
-- `export const dynamic = 'force-dynamic'` → Add `<Suspense>` boundary
-- `export const revalidate = 3600` → Use `cacheLife('hours')` or custom profile
+- `export const dynamic = 'force-dynamic'` → Add `<Suspense>` boundary (or nothing - dynamic is default)
+- `export const revalidate = X` → Use matching `cacheLife()` profile (see table below)
 - `export const fetchCache = 'force-cache'` → Add `"use cache"`
 - `export const runtime = 'edge'` → Keep (still supported)
 - `export const runtime = 'nodejs'` → Remove (this is the default, no need to specify)
 - `export const dynamicParams = true` → Use `generateStaticParams` instead
 
-**When removing exports, add migration comments:**
+**Revalidate → cacheLife Mapping:**
+| revalidate value | cacheLife equivalent |
+|------------------|---------------------|
+| `0` or `false` | Dynamic (no "use cache" needed) |
+| `60` | `cacheLife('minutes')` |
+| `3600` | `cacheLife('hours')` |
+| `86400` | `cacheLife('days')` |
+| `604800` | `cacheLife('weeks')` |
+| Other values | `cacheLife({ revalidate: X })` |
+
+**When removing exports, add migration comments with the original value:**
 ```typescript
-// MIGRATED: Was 'force-static' (export const dynamic) - now using "use cache"
-// MIGRATED: Was 'force-dynamic' (export const dynamic) - now using <Suspense>
-// MIGRATED: Was revalidate: 3600 - now using cacheLife('hours')
+// MIGRATED from: export const revalidate = 60
+// → Add "use cache" + cacheLife('minutes') to maintain ~60s revalidation
 ```
 
-Document all locations now - you'll migrate them in Phase 5.
+Document all locations now - you'll migrate them in Phase 3.
 
 **Step 6: Verify configuration changes**
 
@@ -456,11 +465,58 @@ Make these changes FIRST, before running any build or dev server:
 grep -r "export const dynamic\|export const revalidate\|export const fetchCache" app/
 ```
 
-For each file found, remove these exports and add migration comments:
+For each file found, remove these exports and add migration comments with suggested cacheLife:
+
+**For `export const revalidate = X`:**
+
+Use this mapping to suggest the appropriate cacheLife based on the original value:
+
+| Original revalidate | Suggested cacheLife | Notes |
+|---------------------|---------------------|-------|
+| `revalidate = 0` (or `false`) | Dynamic (no cache) | Was already dynamic, no "use cache" needed |
+| `revalidate = 1-59` | `cacheLife('seconds')` or custom | Very short cache, consider if caching helps |
+| `revalidate = 60` | `cacheLife('minutes')` | revalidate: 60s |
+| `revalidate = 61-3599` | `cacheLife({ revalidate: X })` | Custom value needed |
+| `revalidate = 3600` | `cacheLife('hours')` | revalidate: 3600s (1 hour) |
+| `revalidate = 3601-86399` | `cacheLife({ revalidate: X })` | Custom value needed |
+| `revalidate = 86400` | `cacheLife('days')` | revalidate: 86400s (1 day) |
+| `revalidate = 604800` | `cacheLife('weeks')` | revalidate: 604800s (1 week) |
+
+**Migration comment format - include the original value and suggestion:**
 ```typescript
-// MIGRATED: Removed export const dynamic = 'force-static' (incompatible with Cache Components)
-// MIGRATED: Removed export const revalidate = 3600 (incompatible with Cache Components)
-// TODO: Will add "use cache" + cacheLife() after analyzing build errors
+// MIGRATED from: export const revalidate = 60
+// → Add "use cache" + cacheLife('minutes') to maintain ~60s revalidation
+import { cacheLife } from 'next/cache'
+
+export default async function Page() {
+  "use cache"
+  cacheLife('minutes')  // Replaces: export const revalidate = 60
+  // ...
+}
+```
+
+**For custom revalidate values (not matching a preset):**
+```typescript
+// MIGRATED from: export const revalidate = 1800 (30 minutes)
+// → Add "use cache" + cacheLife({ revalidate: 1800 }) to maintain existing behavior
+import { cacheLife } from 'next/cache'
+
+export default async function Page() {
+  "use cache"
+  cacheLife({ revalidate: 1800 })  // Replaces: export const revalidate = 1800
+  // ...
+}
+```
+
+**For `export const dynamic`:**
+```typescript
+// MIGRATED from: export const dynamic = 'force-static'
+// → Add "use cache" to opt into caching (dynamic is now the default)
+```
+
+```typescript
+// MIGRATED from: export const dynamic = 'force-dynamic'
+// → No change needed (dynamic is now the default), or wrap in <Suspense> for loading states
 ```
 
 **Keep these exports if found:**
@@ -1127,8 +1183,10 @@ Report findings in this format:
 
 ### Step 1: Obvious Breaking Changes Removed
 [x] Route Segment Config exports removed: [count]
-  - [file path]: Removed export const dynamic = 'force-static'
-  - [file path]: Removed export const revalidate = 3600
+  - [file path]: Removed `export const dynamic = 'force-static'` → Added "use cache"
+  - [file path]: Removed `export const revalidate = 3600` → Added cacheLife('hours')
+  - [file path]: Removed `export const revalidate = 60` → Added cacheLife('minutes')
+  - [file path]: Removed `export const revalidate = 1800` → Added cacheLife({ revalidate: 1800 })
   - ...
 
 [x] unstable_noStore() calls removed: [count]
@@ -1220,6 +1278,12 @@ Report findings in this format:
 
 ### Summary of All Code Changes:
 - Total Route Segment Config exports removed: [count]
+  - `revalidate` exports migrated to cacheLife: [count]
+    - cacheLife('minutes'): [count] (was revalidate ≈ 60)
+    - cacheLife('hours'): [count] (was revalidate ≈ 3600)
+    - cacheLife('days'): [count] (was revalidate ≈ 86400)
+    - cacheLife({ revalidate: X }): [count] (custom values)
+  - `dynamic` exports removed: [count]
 - Total unstable_noStore() calls removed: [count]
 - Total Suspense boundaries added: [count]
 - Total "use cache" directives added: [count]

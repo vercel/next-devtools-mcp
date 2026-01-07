@@ -122,6 +122,28 @@ Follow the MCP setup guide with these parameters:
 </details>
 
 <details>
+<summary>Google Antigravity</summary>
+
+**Configure in MCP config file:**
+
+Add this to your Antigravity MCP config file: `.gemini/antigravity/mcp_config.json`
+
+```json
+{
+  "mcpServers": {
+    "next-devtools": {
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"]
+    }
+  }
+}
+```
+
+See [Antigravity MCP docs](https://antigravity.google/docs/mcp) for more info.
+
+</details>
+
+<details>
 <summary>VS Code / Copilot</summary>
 
 **Using VS Code CLI:**

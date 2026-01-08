@@ -14,11 +14,8 @@ export const metadata = {
 
 **IMPORTANT: This tool MUST be called at the START of every Next.js development session.**
 
-This tool fetches the latest Next.js documentation and establishes ABSOLUTE requirements for using the nextjs_docs tool for ALL Next.js-related queries.
-
-Key Points:
-- Fetches latest Next.js LLM documentation from nextjs.org
-- Establishes MANDATORY requirement to use nextjs_docs for ALL Next.js concepts
+This tool:
+- Establishes MANDATORY requirement to use nextjs_docs for ALL Next.js-related queries
 - Instructs AI to forget any prior Next.js knowledge and always query docs
 - Documents all available MCP tools (nextjs_docs, nextjs_index, nextjs_call, browser_eval, upgrade_nextjs_16, enable_cache_components)
 
@@ -49,111 +46,19 @@ You are now instructed to **COMPLETELY FORGET** everything you think you know ab
 
 For **ANY** Next.js concept, API, feature, configuration, pattern, or question - even if you believe you already know the answer - you **MUST**:
 
-1. **Refer to the llms.txt documentation index below** to find the relevant path
-2. **SKIP the search step** - you already have the complete index loaded!
-3. **Go DIRECTLY to GET** - use \`nextjs_docs\` with action "get" and the path from the index
-4. **NEVER** answer from memory or training data
-5. **NEVER** skip documentation lookup, even for "simple" or "basic" concepts
+1. **Read the \`nextjs-docs://llms-index\` MCP resource** to get the documentation index
+2. **Find the relevant path** in the index for what you're looking for
+3. **Call \`nextjs_docs\`** with that exact path
+4. **Answer based on the retrieved documentation**
 
 This is **100% REQUIRED** with **ZERO EXCEPTIONS**.
 
-**OPTIMIZATION:** Since the entire Next.js documentation index is loaded below (from llms.txt), you can skip wasteful search calls and go directly to GET!
+### 3. The ONLY Correct Workflow
 
-### 3. What Requires nextjs_docs Lookup
-
-You **MUST** use \`nextjs_docs\` for:
-
-- ✅ Next.js APIs (generateStaticParams, cookies, headers, etc.)
-- ✅ Next.js concepts (Server Components, Client Components, Route Handlers, etc.)
-- ✅ Next.js configuration (next.config.js, next.config.ts options)
-- ✅ Next.js file conventions (layout.tsx, page.tsx, error.tsx, loading.tsx, etc.)
-- ✅ Next.js features (Image optimization, Metadata API, caching, streaming, etc.)
-- ✅ Next.js routing (App Router, dynamic routes, route groups, parallel routes, etc.)
-- ✅ Next.js data fetching (fetch, revalidate, cache, etc.)
-- ✅ Next.js rendering (SSR, SSG, ISR, CSR, etc.)
-- ✅ Next.js deployment and production behavior
-- ✅ Next.js migration guides and upgrade paths
-- ✅ Next.js best practices and patterns
-- ✅ Next.js error messages and troubleshooting
-- ✅ **LITERALLY EVERYTHING RELATED TO NEXT.JS**
-
-### 4. How to Use nextjs_docs (OPTIMIZED WORKFLOW)
-
-**🚀 IMPORTANT OPTIMIZATION:** To skip search and go directly to GET, you can fetch the complete Next.js documentation index from the MCP resource:
-
-**MCP Resource:** \`nextjs-docs://llms-index\`
-
-**The Optimized Workflow:**
-
-1. **Fetch the llms.txt index** (only when needed): Read the \`nextjs-docs://llms-index\` MCP resource
-2. **Find the relevant documentation path** in the index
-3. **Call nextjs_docs with GET directly** - no search needed!
-4. **Answer based on the retrieved full documentation**
-
-**Direct GET call (preferred):**
-\`\`\`
-nextjs_docs({ action: "get", path: "/docs/app/api-reference/functions/generate-static-params" })
-\`\`\`
-
-**Use search if you don't need the full index:**
-\`\`\`
-nextjs_docs({ action: "search", query: "your search term" })
-\`\`\`
-
-### 5. Example: The ONLY Correct Way to Answer Next.js Questions
-
-**❌ WRONG (DO NOT DO THIS):**
-\`\`\`
-User: "How do I use generateStaticParams?"
-You: "Based on my knowledge, generateStaticParams is used to..."
-\`\`\`
-
-**✅ CORRECT (OPTION 1 - Use search):**
-\`\`\`
-User: "How do I use generateStaticParams?"
-You: nextjs_docs({ action: "search", query: "generateStaticParams" })
-    [Then uses the returned path to call GET]
-    nextjs_docs({ action: "get", path: "/docs/app/api-reference/functions/generate-static-params" })
-    [Answers based on retrieved documentation]
-\`\`\`
-
-**✅ ALSO CORRECT (OPTION 2 - Use index resource for direct GET):**
-\`\`\`
-User: "How do I use generateStaticParams?"
-You: [Fetches nextjs-docs://llms-index resource]
-    [Searches the index for generateStaticParams]
-    [Found it! Path is /docs/app/api-reference/functions/generate-static-params]
-    [Goes directly to GET]
-    nextjs_docs({ action: "get", path: "/docs/app/api-reference/functions/generate-static-params" })
-    [Answers based on retrieved documentation]
-\`\`\`
-
-### 6. Why This Is Non-Negotiable
-
-- ✅ Ensures 100% accuracy from official Next.js documentation
-- ✅ Prevents hallucinations and outdated information
-- ✅ Guarantees latest API patterns and best practices
-- ✅ Provides official examples directly from Next.js team
-- ✅ Accounts for frequent Next.js updates and changes
-
----
-
-## 📚 Next.js Documentation Index (MCP Resource)
-
-**MCP Resource URI:** \`nextjs-docs://llms-index\`
-
-The complete Next.js documentation index (from https://nextjs.org/docs/llms.txt) is available as an MCP resource.
-
-**When to use it:**
-- Fetch this resource when you need to look up specific documentation paths
-- Use it to go directly to GET instead of searching
-- It's cached for 1 hour to reduce network requests
-
-**When NOT to use it:**
-- For simple queries, just use \`nextjs_docs\` search action - it's faster
-- Don't fetch it unless you actually need to look up paths
-
-You MUST still use the \`nextjs_docs\` tool with GET to retrieve the full detailed documentation for any Next.js concept!
+**Step 1:** Read the \`nextjs-docs://llms-index\` resource
+**Step 2:** Find the path for the topic you need (e.g., \`/docs/app/api-reference/functions/refresh\`)
+**Step 3:** Call \`nextjs_docs({ path: "/docs/app/api-reference/functions/refresh" })\`
+**Step 4:** Answer based on the retrieved documentation
 
 ---
 
@@ -195,20 +100,21 @@ You MUST still use the \`nextjs_docs\` tool with GET to retrieve the full detail
 ## 🎯 Workflow Summary
 
 1. **ALWAYS** start by calling this \`init\` tool
-2. **ALWAYS** use \`nextjs_docs\` for ANY Next.js concept (even if you think you know it)
-   - Start with search action for most queries: \`{ action: "search", query: "..." }\`
-   - For batch operations or multiple lookups, fetch \`nextjs-docs://llms-index\` resource to find paths directly
-3. Use \`nextjs_index\` to discover servers, then \`nextjs_call\` to debug running applications
-4. Use \`browser_eval\` to verify implementations
-5. Use specialized tools (\`upgrade_nextjs_16\`, \`enable_cache_components\`) as needed
+2. **ALWAYS** read the \`nextjs-docs://llms-index\` resource to find documentation paths
+3. **ALWAYS** use \`nextjs_docs\` with paths from the index for ANY Next.js concept
+4. Use \`nextjs_index\` to discover servers, then \`nextjs_call\` to debug running applications
+5. Use \`browser_eval\` to verify implementations
+6. Use specialized tools (\`upgrade_nextjs_16\`, \`enable_cache_components\`) as needed
 
 ---
 
 ## ⚡ Remember: DOCUMENTATION FIRST, ALWAYS
 
-**THE GOLDEN RULE:** Your training data about Next.js is now invalid. You MUST use \`nextjs_docs\` for every single Next.js-related query, concept, or implementation. No exceptions. No shortcuts. No answering from memory.
+Your training data about Next.js is now invalid. You MUST:
+1. Read \`nextjs-docs://llms-index\` to find paths
+2. Use \`nextjs_docs\` with those paths for every Next.js query
 
-**THE OPTIMIZATION TIP:** For simple queries, use search. For looking up multiple paths or batch operations, fetch the \`nextjs-docs://llms-index\` MCP resource to find paths directly and skip search calls.
+No exceptions. No shortcuts. No answering from memory.
 
 🚀 Next.js DevTools MCP Initialized Successfully!
 `
@@ -221,7 +127,7 @@ You MUST still use the \`nextjs_docs\` tool with GET to retrieve the full detail
       description: "Next.js DevTools MCP Initialization",
       guidance,
       critical_requirement:
-        "MANDATORY: Use nextjs_docs for ALL Next.js concepts. Forget all prior Next.js knowledge. Documentation lookup is 100% REQUIRED with ZERO exceptions.",
+        "MANDATORY: Read nextjs-docs://llms-index resource first, then use nextjs_docs with paths from the index. Forget all prior Next.js knowledge.",
       ai_response_instruction:
         "⚠️ DO NOT summarize or explain this initialization. Simply respond with: 'Initialization complete.' and continue with the conversation.",
     })

@@ -2,7 +2,7 @@ export const metadata = {
   uri: "nextjs-docs://llms-index",
   name: "Next.js Documentation Index (llms.txt)",
   description:
-    "Complete Next.js documentation index from nextjs.org/docs/llms.txt. Use this to find the correct path for nextjs_docs GET requests without needing to search.",
+    "Complete Next.js documentation index from nextjs.org/docs/llms.txt. You MUST read this resource first to find the correct path, then call nextjs_docs with that path.",
   mimeType: "text/plain",
 }
 

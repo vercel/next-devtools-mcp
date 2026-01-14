@@ -33,6 +33,13 @@ export const inputSchema = {
     .optional()
     .describe("Run browser in headless mode (default: true). Only used with 'start' action."),
 
+  executablePath: z
+    .string()
+    .optional()
+    .describe(
+      "Custom browser executable path. Use this when Playwright browsers are installed in non-standard locations (e.g., Homebrew installations at ~/Library/Caches/ms-playwright/). Only used with 'start' action."
+    ),
+
   url: z.string().optional().describe("URL to navigate to (required for 'navigate' action)"),
 
   element: z.string().optional().describe("Element to interact with (CSS selector or text)"),
@@ -84,6 +91,11 @@ export const metadata = {
   description: `Automate and test web applications using Playwright browser automation.
 This tool connects to playwright-mcp server and provides access to all Playwright capabilities.
 
+CUSTOM BROWSER PATH:
+Use the 'executablePath' parameter when starting the browser to specify a custom browser binary location.
+This is useful for Homebrew-installed Playwright browsers at ~/Library/Caches/ms-playwright/.
+Example: executablePath="/path/to/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+
 CRITICAL FOR PAGE VERIFICATION:
 When verifying pages in Next.js projects (especially during upgrades or testing), you MUST use browser automation to load pages
 in a real browser instead of curl or simple HTTP requests. This is because:
@@ -131,6 +143,7 @@ type BrowserEvalArgs = {
     | "list_tools"
   browser?: "chrome" | "firefox" | "webkit" | "msedge"
   headless?: boolean | string
+  executablePath?: string
   url?: string
   element?: string
   ref?: string
@@ -155,6 +168,7 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
       const connection = await startBrowserEvalMCP({
         browser: args.browser || "chrome",
         headless: args.headless !== false,
+        executablePath: args.executablePath,
       })
       return JSON.stringify({
         success: true,

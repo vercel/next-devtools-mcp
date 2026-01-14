@@ -50,6 +50,7 @@ export async function ensureBrowserEvalMCP(): Promise<void> {
 export async function startBrowserEvalMCP(options?: {
   browser?: "chrome" | "firefox" | "webkit" | "msedge"
   headless?: boolean
+  executablePath?: string
 }): Promise<MCPConnection> {
   // Ensure playwright-mcp is installed
   await ensureBrowserEvalMCP()
@@ -73,6 +74,11 @@ export async function startBrowserEvalMCP(options?: {
   // Pass the flag only if headless is true
   if (options?.headless === true) {
     args.push("--headless")
+  }
+
+  // Custom browser executable path (useful for Homebrew-installed Playwright browsers)
+  if (options?.executablePath) {
+    args.push("--executable-path", options.executablePath)
   }
 
   // Always enable verbose logging via environment variables

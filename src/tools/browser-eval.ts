@@ -11,15 +11,29 @@ export const inputSchema = {
     .enum([
       "start",
       "navigate",
+      "go_back",
+      "snapshot",
+      "wait",
       "click",
+      "click_xy",
+      "hover",
+      "move_xy",
+      "drag_xy",
+      "press_key",
       "type",
       "fill_form",
       "evaluate",
       "screenshot",
+      "save_pdf",
       "console_messages",
+      "handle_dialog",
       "close",
       "drag",
       "upload_file",
+      "new_tab",
+      "list_tabs",
+      "switch_tab",
+      "close_tab",
       "list_tools",
     ])
     .describe("The action to perform using browser automation"),
@@ -31,7 +45,7 @@ export const inputSchema = {
   headless: z
     .union([z.boolean(), z.string().transform((val) => val === "true")])
     .optional()
-    .describe("Run browser in headless mode (default: true). Only used with 'start' action."),
+    .describe("Run browser in headless mode. Defaults to true (headless). Set to false only if you need to visually observe the browser. Only used with 'start' action."),
 
   url: z.string().optional().describe("URL to navigate to (required for 'navigate' action)"),
 
@@ -77,6 +91,40 @@ export const inputSchema = {
   endRef: z.string().optional().describe("Ending element reference"),
 
   files: z.array(z.string()).optional().describe("File paths to upload"),
+
+  time: z
+    .number()
+    .optional()
+    .describe("Time in milliseconds to wait (for 'wait' action with time-based waiting)"),
+
+  tabId: z
+    .string()
+    .optional()
+    .describe("Tab ID for tab management actions (required for 'switch_tab' and 'close_tab')"),
+
+  key: z
+    .string()
+    .optional()
+    .describe("Key to press (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown', 'Control+a'). For 'press_key' action."),
+
+  dialogAction: z
+    .enum(["accept", "dismiss"])
+    .optional()
+    .describe("Action to take on dialog: 'accept' (OK/Yes) or 'dismiss' (Cancel/No). For 'handle_dialog' action."),
+
+  promptText: z
+    .string()
+    .optional()
+    .describe("Text to enter in a prompt dialog before accepting. For 'handle_dialog' action with prompts."),
+
+  // Coordinate-based actions (click_xy, move_xy, drag_xy)
+  x: z.number().optional().describe("X coordinate for coordinate-based actions (click_xy, move_xy)"),
+  y: z.number().optional().describe("Y coordinate for coordinate-based actions (click_xy, move_xy)"),
+  startX: z.number().optional().describe("Starting X coordinate for drag_xy action"),
+  startY: z.number().optional().describe("Starting Y coordinate for drag_xy action"),
+  endX: z.number().optional().describe("Ending X coordinate for drag_xy action"),
+  endY: z.number().optional().describe("Ending Y coordinate for drag_xy action"),
+
 }
 
 export const metadata = {
@@ -99,17 +147,31 @@ directly from the Next.js dev server. Only use browser_eval's console_messages a
 are not available or when you specifically need to test client-side browser behavior that Next.js runtime cannot capture.
 
 Available actions:
-- start: Start browser automation (automatically installs if needed). Verbose logging is always enabled.
+- start: Start browser automation in headless mode by default (automatically installs if needed). Verbose logging is always enabled.
 - navigate: Navigate to a URL
-- click: Click on an element
+- go_back: Navigate back in browser history (like clicking the back button)
+- snapshot: Get accessibility snapshot of the page with element refs. Returns structured page content with refs (@ref1, @ref2...) that can be used in subsequent click/type actions. This is the RECOMMENDED workflow for AI agents: snapshot → identify element refs → use refs in actions → re-snapshot after changes.
+- wait: Wait for a specified time in milliseconds. Use 'time' parameter. Essential for handling async operations and animations.
+- click: Click on an element (use 'ref' parameter with snapshot refs for reliable element targeting)
+- click_xy: Click at specific x,y coordinates (requires 'element' description for permission, e.g., "Submit button")
+- hover: Hover over an element to trigger hover states, tooltips, or dropdown menus (use 'ref' from snapshot for reliable targeting)
+- move_xy: Move mouse to specific x,y coordinates (requires 'element' description for permission)
+- drag_xy: Drag from startX,startY to endX,endY coordinates (requires 'element' description for permission)
+- press_key: Press a keyboard key (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown'). Supports key combinations like 'Control+a'.
 - type: Type text into an element
 - fill_form: Fill multiple form fields at once
 - evaluate: Execute JavaScript in browser context
 - screenshot: Take a screenshot of the page
+- save_pdf: Save the current page as a PDF file. Returns the PDF content encoded in base64.
 - console_messages: Get browser console messages (for Next.js, prefer nextjs_index/nextjs_call tools instead)
+- handle_dialog: Handle browser dialogs (alert, confirm, prompt). Use dialogAction='accept' or 'dismiss'. For prompts, use promptText to enter text.
 - close: Close the browser
 - drag: Perform drag and drop
 - upload_file: Upload files
+- new_tab: Open a new browser tab (optionally with a URL)
+- list_tabs: List all open browser tabs with their IDs and URLs
+- switch_tab: Switch to a specific tab by ID (use tabId parameter)
+- close_tab: Close a specific tab by ID (use tabId parameter)
 - list_tools: List all available browser automation tools from the server
 
 Note: The playwright-mcp server will be automatically installed if not present.`,
@@ -119,15 +181,29 @@ type BrowserEvalArgs = {
   action:
     | "start"
     | "navigate"
+    | "go_back"
+    | "snapshot"
+    | "wait"
     | "click"
+    | "click_xy"
+    | "hover"
+    | "move_xy"
+    | "drag_xy"
+    | "press_key"
     | "type"
     | "fill_form"
     | "evaluate"
     | "screenshot"
+    | "save_pdf"
     | "console_messages"
+    | "handle_dialog"
     | "close"
     | "drag"
     | "upload_file"
+    | "new_tab"
+    | "list_tabs"
+    | "switch_tab"
+    | "close_tab"
     | "list_tools"
   browser?: "chrome" | "firefox" | "webkit" | "msedge"
   headless?: boolean | string
@@ -147,12 +223,24 @@ type BrowserEvalArgs = {
   endElement?: string
   endRef?: string
   files?: string[]
+  time?: number
+  tabId?: string
+  key?: string
+  dialogAction?: "accept" | "dismiss"
+  promptText?: string
+  // Coordinate-based actions
+  x?: number
+  y?: number
+  startX?: number
+  startY?: number
+  endX?: number
+  endY?: number
 }
 
 export async function handler(args: BrowserEvalArgs): Promise<string> {
   try {
     if (args.action === "start") {
-      const connection = await startBrowserEvalMCP({
+      await startBrowserEvalMCP({
         browser: args.browser || "chrome",
         headless: args.headless !== false,
       })
@@ -211,7 +299,28 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
         toolArgs = { url: args.url }
         break
 
+      case "go_back":
+        toolName = "browser_navigate_back"
+        toolArgs = {}
+        break
+
+      case "snapshot":
+        toolName = "browser_snapshot"
+        toolArgs = {}
+        break
+
+      case "wait":
+        if (!args.time) {
+          throw new Error("time (in milliseconds) is required for wait action")
+        }
+        toolName = "browser_wait_for"
+        toolArgs = { time: args.time }
+        break
+
       case "click":
+        if (!args.element && !args.ref) {
+          throw new Error("element or ref is required for click action")
+        }
         toolName = "browser_click"
         toolArgs = {
           element: args.element,
@@ -220,6 +329,25 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
           button: args.button,
           modifiers: args.modifiers,
         }
+        break
+
+      case "hover":
+        if (!args.element && !args.ref) {
+          throw new Error("element or ref is required for hover action")
+        }
+        toolName = "browser_hover"
+        toolArgs = {
+          element: args.element,
+          ref: args.ref,
+        }
+        break
+
+      case "press_key":
+        if (!args.key) {
+          throw new Error("key is required for press_key action")
+        }
+        toolName = "browser_press_key"
+        toolArgs = { key: args.key }
         break
 
       case "type":
@@ -247,8 +375,9 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
           throw new Error("Script is required for evaluate action")
         }
         toolName = "browser_evaluate"
+        // Wrap script as arrow function for playwright-mcp compatibility
         toolArgs = {
-          function: args.script,
+          function: `() => { ${args.script} }`,
           element: args.element,
           ref: args.ref,
         }
@@ -259,9 +388,25 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
         toolArgs = { fullPage: args.fullPage }
         break
 
+      case "save_pdf":
+        toolName = "browser_pdf_save"
+        toolArgs = {}
+        break
+
       case "console_messages":
         toolName = "browser_console_messages"
         toolArgs = { errorsOnly: args.errorsOnly }
+        break
+
+      case "handle_dialog":
+        if (!args.dialogAction) {
+          throw new Error("dialogAction ('accept' or 'dismiss') is required for handle_dialog action")
+        }
+        toolName = "browser_handle_dialog"
+        toolArgs = {
+          accept: args.dialogAction === "accept",
+          promptText: args.promptText,
+        }
         break
 
       case "drag":
@@ -280,6 +425,81 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
       case "upload_file":
         toolName = "browser_file_upload"
         toolArgs = { files: args.files }
+        break
+
+      case "new_tab": {
+        // Create the new tab first
+        const createResult = await callServerTool(connection, "browser_tabs", { action: "new" })
+        // If URL provided, navigate to it in the new tab
+        if (args.url) {
+          const navResult = await callServerTool(connection, "browser_navigate", { url: args.url })
+          return JSON.stringify({
+            success: true,
+            action: args.action,
+            result: { created: createResult, navigated: navResult },
+          })
+        }
+        return JSON.stringify({
+          success: true,
+          action: args.action,
+          result: createResult,
+        })
+      }
+
+      case "list_tabs":
+        toolName = "browser_tabs"
+        toolArgs = { action: "list" }
+        break
+
+      case "switch_tab":
+        if (!args.tabId) {
+          throw new Error("tabId is required for switch_tab action")
+        }
+        toolName = "browser_tabs"
+        toolArgs = { action: "select", index: parseInt(args.tabId, 10) }
+        break
+
+      case "close_tab":
+        if (!args.tabId) {
+          throw new Error("tabId is required for close_tab action")
+        }
+        toolName = "browser_tabs"
+        toolArgs = { action: "close", index: parseInt(args.tabId, 10) }
+        break
+
+      // Coordinate-based actions (vision mode) - require element description for permission
+      case "click_xy":
+        if (!args.element) {
+          throw new Error("element description is required for click_xy action (e.g., 'Submit button')")
+        }
+        if (args.x === undefined || args.y === undefined) {
+          throw new Error("x and y coordinates are required for click_xy action")
+        }
+        toolName = "browser_mouse_click_xy"
+        toolArgs = { element: args.element, x: args.x, y: args.y }
+        break
+
+      case "move_xy":
+        if (!args.element) {
+          throw new Error("element description is required for move_xy action (e.g., 'Navigation menu')")
+        }
+        if (args.x === undefined || args.y === undefined) {
+          throw new Error("x and y coordinates are required for move_xy action")
+        }
+        toolName = "browser_mouse_move_xy"
+        toolArgs = { element: args.element, x: args.x, y: args.y }
+        break
+
+      case "drag_xy":
+        if (!args.element) {
+          throw new Error("element description is required for drag_xy action (e.g., 'Slider handle')")
+        }
+        if (args.startX === undefined || args.startY === undefined ||
+            args.endX === undefined || args.endY === undefined) {
+          throw new Error("startX, startY, endX, and endY are required for drag_xy action")
+        }
+        toolName = "browser_mouse_drag_xy"
+        toolArgs = { element: args.element, startX: args.startX, startY: args.startY, endX: args.endX, endY: args.endY }
         break
 
       default:

@@ -63,7 +63,7 @@ export async function startBrowserEvalMCP(options?: {
   console.error("[Browser Eval Manager] Starting playwright-mcp server with verbose logging...")
 
   // Build args for playwright-mcp
-  const args: string[] = ["@playwright/mcp@latest", "--image-responses", "omit"]
+  const args: string[] = ["@playwright/mcp@latest", "--image-responses", "omit", "--caps", "pdf,vision"]
 
   if (options?.browser) {
     args.push("--browser", options.browser)

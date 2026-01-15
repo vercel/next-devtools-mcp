@@ -11,6 +11,7 @@ export const inputSchema = {
     .enum([
       "start",
       "navigate",
+      "snapshot",
       "click",
       "type",
       "fill_form",
@@ -101,7 +102,8 @@ are not available or when you specifically need to test client-side browser beha
 Available actions:
 - start: Start browser automation (automatically installs if needed). Verbose logging is always enabled.
 - navigate: Navigate to a URL
-- click: Click on an element
+- snapshot: Get accessibility snapshot of the page with element refs. Returns structured page content with refs (@ref1, @ref2...) that can be used in subsequent click/type actions. This is the RECOMMENDED workflow for AI agents: snapshot → identify element refs → use refs in actions → re-snapshot after changes.
+- click: Click on an element (use 'ref' parameter with snapshot refs for reliable element targeting)
 - type: Type text into an element
 - fill_form: Fill multiple form fields at once
 - evaluate: Execute JavaScript in browser context
@@ -119,6 +121,7 @@ type BrowserEvalArgs = {
   action:
     | "start"
     | "navigate"
+    | "snapshot"
     | "click"
     | "type"
     | "fill_form"
@@ -209,6 +212,11 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
         }
         toolName = "browser_navigate"
         toolArgs = { url: args.url }
+        break
+
+      case "snapshot":
+        toolName = "browser_snapshot"
+        toolArgs = {}
         break
 
       case "click":

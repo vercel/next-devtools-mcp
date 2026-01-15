@@ -11,6 +11,8 @@ export const inputSchema = {
     .enum([
       "start",
       "navigate",
+      "go_back",
+      "go_forward",
       "snapshot",
       "wait",
       "click",
@@ -124,6 +126,8 @@ are not available or when you specifically need to test client-side browser beha
 Available actions:
 - start: Start browser automation (automatically installs if needed). Verbose logging is always enabled.
 - navigate: Navigate to a URL
+- go_back: Navigate back in browser history (like clicking the back button)
+- go_forward: Navigate forward in browser history (like clicking the forward button)
 - snapshot: Get accessibility snapshot of the page with element refs. Returns structured page content with refs (@ref1, @ref2...) that can be used in subsequent click/type actions. This is the RECOMMENDED workflow for AI agents: snapshot → identify element refs → use refs in actions → re-snapshot after changes.
 - wait: Wait for a specified time in milliseconds. Use 'time' parameter. Essential for handling async operations and animations.
 - click: Click on an element (use 'ref' parameter with snapshot refs for reliable element targeting)
@@ -150,6 +154,8 @@ type BrowserEvalArgs = {
   action:
     | "start"
     | "navigate"
+    | "go_back"
+    | "go_forward"
     | "snapshot"
     | "wait"
     | "click"
@@ -251,6 +257,16 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
         }
         toolName = "browser_navigate"
         toolArgs = { url: args.url }
+        break
+
+      case "go_back":
+        toolName = "browser_navigate_back"
+        toolArgs = {}
+        break
+
+      case "go_forward":
+        toolName = "browser_navigate_forward"
+        toolArgs = {}
         break
 
       case "snapshot":

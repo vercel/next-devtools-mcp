@@ -14,6 +14,7 @@ export const inputSchema = {
       "snapshot",
       "wait",
       "click",
+      "hover",
       "type",
       "fill_form",
       "evaluate",
@@ -120,6 +121,7 @@ Available actions:
 - snapshot: Get accessibility snapshot of the page with element refs. Returns structured page content with refs (@ref1, @ref2...) that can be used in subsequent click/type actions. This is the RECOMMENDED workflow for AI agents: snapshot → identify element refs → use refs in actions → re-snapshot after changes.
 - wait: Wait for a specified time in milliseconds. Use 'time' parameter. Essential for handling async operations and animations.
 - click: Click on an element (use 'ref' parameter with snapshot refs for reliable element targeting)
+- hover: Hover over an element to trigger hover states, tooltips, or dropdown menus
 - type: Type text into an element
 - fill_form: Fill multiple form fields at once
 - evaluate: Execute JavaScript in browser context
@@ -144,6 +146,7 @@ type BrowserEvalArgs = {
     | "snapshot"
     | "wait"
     | "click"
+    | "hover"
     | "type"
     | "fill_form"
     | "evaluate"
@@ -262,6 +265,14 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
           doubleClick: args.doubleClick,
           button: args.button,
           modifiers: args.modifiers,
+        }
+        break
+
+      case "hover":
+        toolName = "browser_hover"
+        toolArgs = {
+          element: args.element,
+          ref: args.ref,
         }
         break
 

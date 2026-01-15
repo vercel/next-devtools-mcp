@@ -12,6 +12,7 @@ export const inputSchema = {
       "start",
       "navigate",
       "snapshot",
+      "wait",
       "click",
       "type",
       "fill_form",
@@ -78,6 +79,11 @@ export const inputSchema = {
   endRef: z.string().optional().describe("Ending element reference"),
 
   files: z.array(z.string()).optional().describe("File paths to upload"),
+
+  time: z
+    .number()
+    .optional()
+    .describe("Time in milliseconds to wait (for 'wait' action with time-based waiting)"),
 }
 
 export const metadata = {
@@ -103,6 +109,7 @@ Available actions:
 - start: Start browser automation (automatically installs if needed). Verbose logging is always enabled.
 - navigate: Navigate to a URL
 - snapshot: Get accessibility snapshot of the page with element refs. Returns structured page content with refs (@ref1, @ref2...) that can be used in subsequent click/type actions. This is the RECOMMENDED workflow for AI agents: snapshot → identify element refs → use refs in actions → re-snapshot after changes.
+- wait: Wait for a specified time in milliseconds. Use 'time' parameter. Essential for handling async operations and animations.
 - click: Click on an element (use 'ref' parameter with snapshot refs for reliable element targeting)
 - type: Type text into an element
 - fill_form: Fill multiple form fields at once
@@ -122,6 +129,7 @@ type BrowserEvalArgs = {
     | "start"
     | "navigate"
     | "snapshot"
+    | "wait"
     | "click"
     | "type"
     | "fill_form"
@@ -150,6 +158,7 @@ type BrowserEvalArgs = {
   endElement?: string
   endRef?: string
   files?: string[]
+  time?: number
 }
 
 export async function handler(args: BrowserEvalArgs): Promise<string> {
@@ -217,6 +226,14 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
       case "snapshot":
         toolName = "browser_snapshot"
         toolArgs = {}
+        break
+
+      case "wait":
+        if (!args.time) {
+          throw new Error("time (in milliseconds) is required for wait action")
+        }
+        toolName = "browser_wait_for"
+        toolArgs = { time: args.time }
         break
 
       case "click":

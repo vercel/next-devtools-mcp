@@ -15,6 +15,7 @@ export const inputSchema = {
       "wait",
       "click",
       "hover",
+      "press_key",
       "type",
       "fill_form",
       "evaluate",
@@ -94,6 +95,11 @@ export const inputSchema = {
     .string()
     .optional()
     .describe("Tab ID for tab management actions (required for 'switch_tab' and 'close_tab')"),
+
+  key: z
+    .string()
+    .optional()
+    .describe("Key to press (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown', 'Control+a'). For 'press_key' action."),
 }
 
 export const metadata = {
@@ -122,6 +128,7 @@ Available actions:
 - wait: Wait for a specified time in milliseconds. Use 'time' parameter. Essential for handling async operations and animations.
 - click: Click on an element (use 'ref' parameter with snapshot refs for reliable element targeting)
 - hover: Hover over an element to trigger hover states, tooltips, or dropdown menus
+- press_key: Press a keyboard key (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown'). Supports key combinations like 'Control+a'.
 - type: Type text into an element
 - fill_form: Fill multiple form fields at once
 - evaluate: Execute JavaScript in browser context
@@ -147,6 +154,7 @@ type BrowserEvalArgs = {
     | "wait"
     | "click"
     | "hover"
+    | "press_key"
     | "type"
     | "fill_form"
     | "evaluate"
@@ -180,6 +188,7 @@ type BrowserEvalArgs = {
   files?: string[]
   time?: number
   tabId?: string
+  key?: string
 }
 
 export async function handler(args: BrowserEvalArgs): Promise<string> {
@@ -274,6 +283,14 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
           element: args.element,
           ref: args.ref,
         }
+        break
+
+      case "press_key":
+        if (!args.key) {
+          throw new Error("key is required for press_key action")
+        }
+        toolName = "browser_press_key"
+        toolArgs = { key: args.key }
         break
 
       case "type":

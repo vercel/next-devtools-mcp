@@ -22,6 +22,10 @@ export const inputSchema = {
       "close",
       "drag",
       "upload_file",
+      "new_tab",
+      "list_tabs",
+      "switch_tab",
+      "close_tab",
       "list_tools",
     ])
     .describe("The action to perform using browser automation"),
@@ -84,6 +88,11 @@ export const inputSchema = {
     .number()
     .optional()
     .describe("Time in milliseconds to wait (for 'wait' action with time-based waiting)"),
+
+  tabId: z
+    .string()
+    .optional()
+    .describe("Tab ID for tab management actions (required for 'switch_tab' and 'close_tab')"),
 }
 
 export const metadata = {
@@ -119,6 +128,10 @@ Available actions:
 - close: Close the browser
 - drag: Perform drag and drop
 - upload_file: Upload files
+- new_tab: Open a new browser tab (optionally with a URL)
+- list_tabs: List all open browser tabs with their IDs and URLs
+- switch_tab: Switch to a specific tab by ID (use tabId parameter)
+- close_tab: Close a specific tab by ID (use tabId parameter)
 - list_tools: List all available browser automation tools from the server
 
 Note: The playwright-mcp server will be automatically installed if not present.`,
@@ -139,6 +152,10 @@ type BrowserEvalArgs = {
     | "close"
     | "drag"
     | "upload_file"
+    | "new_tab"
+    | "list_tabs"
+    | "switch_tab"
+    | "close_tab"
     | "list_tools"
   browser?: "chrome" | "firefox" | "webkit" | "msedge"
   headless?: boolean | string
@@ -159,6 +176,7 @@ type BrowserEvalArgs = {
   endRef?: string
   files?: string[]
   time?: number
+  tabId?: string
 }
 
 export async function handler(args: BrowserEvalArgs): Promise<string> {
@@ -305,6 +323,32 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
       case "upload_file":
         toolName = "browser_file_upload"
         toolArgs = { files: args.files }
+        break
+
+      case "new_tab":
+        toolName = "browser_tab_new"
+        toolArgs = args.url ? { url: args.url } : {}
+        break
+
+      case "list_tabs":
+        toolName = "browser_tab_list"
+        toolArgs = {}
+        break
+
+      case "switch_tab":
+        if (!args.tabId) {
+          throw new Error("tabId is required for switch_tab action")
+        }
+        toolName = "browser_tab_select"
+        toolArgs = { tabId: args.tabId }
+        break
+
+      case "close_tab":
+        if (!args.tabId) {
+          throw new Error("tabId is required for close_tab action")
+        }
+        toolName = "browser_tab_close"
+        toolArgs = { tabId: args.tabId }
         break
 
       default:

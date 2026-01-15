@@ -11,15 +11,27 @@ export const inputSchema = {
     .enum([
       "start",
       "navigate",
+      "go_back",
+      "go_forward",
+      "snapshot",
+      "wait",
       "click",
+      "hover",
+      "press_key",
       "type",
       "fill_form",
       "evaluate",
       "screenshot",
+      "save_pdf",
       "console_messages",
+      "handle_dialog",
       "close",
       "drag",
       "upload_file",
+      "new_tab",
+      "list_tabs",
+      "switch_tab",
+      "close_tab",
       "list_tools",
     ])
     .describe("The action to perform using browser automation"),
@@ -77,6 +89,31 @@ export const inputSchema = {
   endRef: z.string().optional().describe("Ending element reference"),
 
   files: z.array(z.string()).optional().describe("File paths to upload"),
+
+  time: z
+    .number()
+    .optional()
+    .describe("Time in milliseconds to wait (for 'wait' action with time-based waiting)"),
+
+  tabId: z
+    .string()
+    .optional()
+    .describe("Tab ID for tab management actions (required for 'switch_tab' and 'close_tab')"),
+
+  key: z
+    .string()
+    .optional()
+    .describe("Key to press (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown', 'Control+a'). For 'press_key' action."),
+
+  dialogAction: z
+    .enum(["accept", "dismiss"])
+    .optional()
+    .describe("Action to take on dialog: 'accept' (OK/Yes) or 'dismiss' (Cancel/No). For 'handle_dialog' action."),
+
+  promptText: z
+    .string()
+    .optional()
+    .describe("Text to enter in a prompt dialog before accepting. For 'handle_dialog' action with prompts."),
 }
 
 export const metadata = {
@@ -101,15 +138,27 @@ are not available or when you specifically need to test client-side browser beha
 Available actions:
 - start: Start browser automation (automatically installs if needed). Verbose logging is always enabled.
 - navigate: Navigate to a URL
-- click: Click on an element
+- go_back: Navigate back in browser history (like clicking the back button)
+- go_forward: Navigate forward in browser history (like clicking the forward button)
+- snapshot: Get accessibility snapshot of the page with element refs. Returns structured page content with refs (@ref1, @ref2...) that can be used in subsequent click/type actions. This is the RECOMMENDED workflow for AI agents: snapshot → identify element refs → use refs in actions → re-snapshot after changes.
+- wait: Wait for a specified time in milliseconds. Use 'time' parameter. Essential for handling async operations and animations.
+- click: Click on an element (use 'ref' parameter with snapshot refs for reliable element targeting)
+- hover: Hover over an element to trigger hover states, tooltips, or dropdown menus
+- press_key: Press a keyboard key (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown'). Supports key combinations like 'Control+a'.
 - type: Type text into an element
 - fill_form: Fill multiple form fields at once
 - evaluate: Execute JavaScript in browser context
 - screenshot: Take a screenshot of the page
+- save_pdf: Save the current page as a PDF file. Returns the PDF content encoded in base64.
 - console_messages: Get browser console messages (for Next.js, prefer nextjs_index/nextjs_call tools instead)
+- handle_dialog: Handle browser dialogs (alert, confirm, prompt). Use dialogAction='accept' or 'dismiss'. For prompts, use promptText to enter text.
 - close: Close the browser
 - drag: Perform drag and drop
 - upload_file: Upload files
+- new_tab: Open a new browser tab (optionally with a URL)
+- list_tabs: List all open browser tabs with their IDs and URLs
+- switch_tab: Switch to a specific tab by ID (use tabId parameter)
+- close_tab: Close a specific tab by ID (use tabId parameter)
 - list_tools: List all available browser automation tools from the server
 
 Note: The playwright-mcp server will be automatically installed if not present.`,
@@ -119,15 +168,27 @@ type BrowserEvalArgs = {
   action:
     | "start"
     | "navigate"
+    | "go_back"
+    | "go_forward"
+    | "snapshot"
+    | "wait"
     | "click"
+    | "hover"
+    | "press_key"
     | "type"
     | "fill_form"
     | "evaluate"
     | "screenshot"
+    | "save_pdf"
     | "console_messages"
+    | "handle_dialog"
     | "close"
     | "drag"
     | "upload_file"
+    | "new_tab"
+    | "list_tabs"
+    | "switch_tab"
+    | "close_tab"
     | "list_tools"
   browser?: "chrome" | "firefox" | "webkit" | "msedge"
   headless?: boolean | string
@@ -147,6 +208,11 @@ type BrowserEvalArgs = {
   endElement?: string
   endRef?: string
   files?: string[]
+  time?: number
+  tabId?: string
+  key?: string
+  dialogAction?: "accept" | "dismiss"
+  promptText?: string
 }
 
 export async function handler(args: BrowserEvalArgs): Promise<string> {
@@ -211,6 +277,29 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
         toolArgs = { url: args.url }
         break
 
+      case "go_back":
+        toolName = "browser_navigate_back"
+        toolArgs = {}
+        break
+
+      case "go_forward":
+        toolName = "browser_navigate_forward"
+        toolArgs = {}
+        break
+
+      case "snapshot":
+        toolName = "browser_snapshot"
+        toolArgs = {}
+        break
+
+      case "wait":
+        if (!args.time) {
+          throw new Error("time (in milliseconds) is required for wait action")
+        }
+        toolName = "browser_wait_for"
+        toolArgs = { time: args.time }
+        break
+
       case "click":
         toolName = "browser_click"
         toolArgs = {
@@ -220,6 +309,22 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
           button: args.button,
           modifiers: args.modifiers,
         }
+        break
+
+      case "hover":
+        toolName = "browser_hover"
+        toolArgs = {
+          element: args.element,
+          ref: args.ref,
+        }
+        break
+
+      case "press_key":
+        if (!args.key) {
+          throw new Error("key is required for press_key action")
+        }
+        toolName = "browser_press_key"
+        toolArgs = { key: args.key }
         break
 
       case "type":
@@ -259,9 +364,25 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
         toolArgs = { fullPage: args.fullPage }
         break
 
+      case "save_pdf":
+        toolName = "browser_pdf_save"
+        toolArgs = {}
+        break
+
       case "console_messages":
         toolName = "browser_console_messages"
         toolArgs = { errorsOnly: args.errorsOnly }
+        break
+
+      case "handle_dialog":
+        if (!args.dialogAction) {
+          throw new Error("dialogAction ('accept' or 'dismiss') is required for handle_dialog action")
+        }
+        toolName = "browser_handle_dialog"
+        toolArgs = {
+          action: args.dialogAction,
+          promptText: args.promptText,
+        }
         break
 
       case "drag":
@@ -280,6 +401,32 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
       case "upload_file":
         toolName = "browser_file_upload"
         toolArgs = { files: args.files }
+        break
+
+      case "new_tab":
+        toolName = "browser_tab_new"
+        toolArgs = args.url ? { url: args.url } : {}
+        break
+
+      case "list_tabs":
+        toolName = "browser_tab_list"
+        toolArgs = {}
+        break
+
+      case "switch_tab":
+        if (!args.tabId) {
+          throw new Error("tabId is required for switch_tab action")
+        }
+        toolName = "browser_tab_select"
+        toolArgs = { tabId: args.tabId }
+        break
+
+      case "close_tab":
+        if (!args.tabId) {
+          throw new Error("tabId is required for close_tab action")
+        }
+        toolName = "browser_tab_close"
+        toolArgs = { tabId: args.tabId }
         break
 
       default:

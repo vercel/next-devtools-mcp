@@ -23,6 +23,7 @@ export const inputSchema = {
       "evaluate",
       "screenshot",
       "console_messages",
+      "handle_dialog",
       "close",
       "drag",
       "upload_file",
@@ -102,6 +103,16 @@ export const inputSchema = {
     .string()
     .optional()
     .describe("Key to press (e.g., 'Enter', 'Tab', 'Escape', 'ArrowDown', 'Control+a'). For 'press_key' action."),
+
+  dialogAction: z
+    .enum(["accept", "dismiss"])
+    .optional()
+    .describe("Action to take on dialog: 'accept' (OK/Yes) or 'dismiss' (Cancel/No). For 'handle_dialog' action."),
+
+  promptText: z
+    .string()
+    .optional()
+    .describe("Text to enter in a prompt dialog before accepting. For 'handle_dialog' action with prompts."),
 }
 
 export const metadata = {
@@ -138,6 +149,7 @@ Available actions:
 - evaluate: Execute JavaScript in browser context
 - screenshot: Take a screenshot of the page
 - console_messages: Get browser console messages (for Next.js, prefer nextjs_index/nextjs_call tools instead)
+- handle_dialog: Handle browser dialogs (alert, confirm, prompt). Use dialogAction='accept' or 'dismiss'. For prompts, use promptText to enter text.
 - close: Close the browser
 - drag: Perform drag and drop
 - upload_file: Upload files
@@ -166,6 +178,7 @@ type BrowserEvalArgs = {
     | "evaluate"
     | "screenshot"
     | "console_messages"
+    | "handle_dialog"
     | "close"
     | "drag"
     | "upload_file"
@@ -195,6 +208,8 @@ type BrowserEvalArgs = {
   time?: number
   tabId?: string
   key?: string
+  dialogAction?: "accept" | "dismiss"
+  promptText?: string
 }
 
 export async function handler(args: BrowserEvalArgs): Promise<string> {
@@ -349,6 +364,17 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
       case "console_messages":
         toolName = "browser_console_messages"
         toolArgs = { errorsOnly: args.errorsOnly }
+        break
+
+      case "handle_dialog":
+        if (!args.dialogAction) {
+          throw new Error("dialogAction ('accept' or 'dismiss') is required for handle_dialog action")
+        }
+        toolName = "browser_handle_dialog"
+        toolArgs = {
+          action: args.dialogAction,
+          promptText: args.promptText,
+        }
         break
 
       case "drag":

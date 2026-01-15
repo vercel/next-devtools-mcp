@@ -22,6 +22,7 @@ export const inputSchema = {
       "fill_form",
       "evaluate",
       "screenshot",
+      "save_pdf",
       "console_messages",
       "handle_dialog",
       "close",
@@ -148,6 +149,7 @@ Available actions:
 - fill_form: Fill multiple form fields at once
 - evaluate: Execute JavaScript in browser context
 - screenshot: Take a screenshot of the page
+- save_pdf: Save the current page as a PDF file. Returns the PDF content encoded in base64.
 - console_messages: Get browser console messages (for Next.js, prefer nextjs_index/nextjs_call tools instead)
 - handle_dialog: Handle browser dialogs (alert, confirm, prompt). Use dialogAction='accept' or 'dismiss'. For prompts, use promptText to enter text.
 - close: Close the browser
@@ -177,6 +179,7 @@ type BrowserEvalArgs = {
     | "fill_form"
     | "evaluate"
     | "screenshot"
+    | "save_pdf"
     | "console_messages"
     | "handle_dialog"
     | "close"
@@ -359,6 +362,11 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
       case "screenshot":
         toolName = "browser_take_screenshot"
         toolArgs = { fullPage: args.fullPage }
+        break
+
+      case "save_pdf":
+        toolName = "browser_pdf_save"
+        toolArgs = {}
         break
 
       case "console_messages":

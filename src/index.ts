@@ -83,15 +83,6 @@ const resources = [
   nextjsDocsLlmsIndex,
 ]
 
-// Type definitions
-interface JSONSchema {
-  type?: string
-  description?: string
-  properties?: Record<string, JSONSchema>
-  items?: JSONSchema
-  enum?: unknown[]
-}
-
 // Create server
 const server = new Server(
   {
@@ -115,10 +106,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       description: tool.metadata.description,
       inputSchema: {
         type: "object",
-        properties: Object.entries(tool.inputSchema).reduce((acc, [key, zodSchema]) => {
-          acc[key] = zodSchemaToJsonSchema(zodSchema)
-          return acc
-        }, {} as Record<string, JSONSchema>),
+        properties: Object.entries(tool.inputSchema).reduce(
+					(acc: Record<string, Record<string, unknown>>, [key, zodSchema]) => {
+						acc[key] = zodSchemaToJsonSchema(zodSchema);
+						return acc;
+					},
+					{},
+				),
       },
     })),
   }
@@ -232,47 +226,11 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   }
 })
 
-function zodSchemaToJsonSchema(zodSchema: z.ZodTypeAny): JSONSchema {
-  const description = zodSchema._def?.description
-
-  if (zodSchema._def?.typeName === "ZodString") {
-    return { type: "string", description }
-  }
-  if (zodSchema._def?.typeName === "ZodNumber") {
-    return { type: "number", description }
-  }
-  if (zodSchema._def?.typeName === "ZodBoolean") {
-    return { type: "boolean", description }
-  }
-  if (zodSchema._def?.typeName === "ZodArray") {
-    return {
-      type: "array",
-      description,
-      items: zodSchemaToJsonSchema(zodSchema._def.type),
-    }
-  }
-  if (zodSchema._def?.typeName === "ZodObject") {
-    const shape = zodSchema._def.shape()
-    const properties: Record<string, JSONSchema> = {}
-    for (const [key, value] of Object.entries(shape)) {
-      properties[key] = zodSchemaToJsonSchema(value as z.ZodTypeAny)
-    }
-    return { type: "object", description, properties }
-  }
-  if (zodSchema._def?.typeName === "ZodEnum") {
-    return { type: "string", enum: zodSchema._def.values, description }
-  }
-  if (zodSchema._def?.typeName === "ZodOptional") {
-    return zodSchemaToJsonSchema(zodSchema._def.innerType)
-  }
-  if (zodSchema._def?.typeName === "ZodUnion") {
-    const options = zodSchema._def.options
-    if (options.length === 2) {
-      return zodSchemaToJsonSchema(options[0])
-    }
-  }
-
-  return { type: "string", description }
+function zodSchemaToJsonSchema(zodSchema: z.ZodTypeAny): Record<string, unknown> {
+  return z.toJSONSchema(zodSchema, {
+    target: "draft-07",
+    unrepresentable: "any",
+  })
 }
 
 function parseToolArgs(
@@ -289,7 +247,8 @@ function parseToolArgs(
       } else {
         throw new Error(`Invalid argument '${key}': ${parsed.error.message}`)
       }
-    } else if (!zodSchema.isOptional()) {
+    } else if (!zodSchema.safeParse(undefined).success) {
+      // Check if argument is optional by testing if undefined passes validation
       throw new Error(`Missing required argument: ${key}`)
     }
   }

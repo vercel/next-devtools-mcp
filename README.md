@@ -98,15 +98,9 @@ Alternatively, create or edit the configuration file `~/.copilot/mcp-config.json
 ```json
 {
   "mcpServers": {
-    "playwright": {
-      "type": "local",
+    "next-devtools": {
       "command": "npx",
-      "tools": [
-        "*"
-      ],
-      "args": [
-        "@playwright/mcp@latest"
-      ]
+      "args": ["-y", "next-devtools-mcp@latest"]
     }
   }
 }

@@ -24,6 +24,8 @@ npx add-mcp next-devtools-mcp@latest
 Add `-y` to skip the confirmation prompt and install to all detected agents already in use in the project directory. Add `-g` to install globally across all projects.
 
 
+### Manual installation
+
 Add the following config to your MCP client:
 
 ```json

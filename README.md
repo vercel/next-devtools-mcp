@@ -21,7 +21,7 @@ Install the MCP server for all your coding agents:
 npx add-mcp next-devtools-mcp@latest
 ```
 
-Add `-y` to skip the confirmation prompt and install to all detected agents already in use in the project directory.
+Add `-y` to skip the confirmation prompt and install to all detected agents already in use in the project directory. Add `-g` to install globally across all projects.
 
 
 Add the following config to your MCP client:

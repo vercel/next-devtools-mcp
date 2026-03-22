@@ -330,6 +330,11 @@ async function main() {
     process.exit(0)
   }
 
+  // Exit when the client disconnects (transport closes)
+  transport.onclose = () => {
+    shutdown()
+  }
+
   process.on('SIGINT', shutdown)
   process.on('SIGTERM', shutdown)
 }

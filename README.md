@@ -5,6 +5,10 @@
 `next-devtools-mcp` is a Model Context Protocol (MCP) server that provides Next.js development tools and utilities for coding agents like Claude and Cursor.
 
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/vercel-next-devtools-mcp).
+
 ## Getting Started
 
 ### Requirements

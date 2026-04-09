@@ -176,8 +176,18 @@ async function main() {
 
   log('Server started')
 
-  const shutdown = () => {
+  const shutdown = async () => {
     log('Server terminated')
+
+    // Close the MCP server transport before exiting so the host (e.g. Claude
+    // Code) receives a clean EOF on the stdio channel instead of an abrupt
+    // disconnect.  Without this the host reports "MCP server failed" even
+    // though the exit code is 0.
+    try {
+      await server.close()
+    } catch {
+      // Ignore close errors during shutdown
+    }
 
     const aggregationJSON = getSessionAggregationJSON()
 

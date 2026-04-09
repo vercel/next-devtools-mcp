@@ -122,15 +122,16 @@ export async function stopBrowserEvalMCP(): Promise<void> {
 }
 
 /**
- * Cleanup on process exit
+ * Cleanup on process exit.
+ * Signal handling and process.exit() are intentionally left to src/index.ts
+ * so there is a single, ordered shutdown sequence. These listeners only close
+ * the Playwright MCP connection; they do not call process.exit() themselves.
  */
 process.on("SIGINT", async () => {
   await stopBrowserEvalMCP()
-  process.exit(0)
 })
 
 process.on("SIGTERM", async () => {
   await stopBrowserEvalMCP()
-  process.exit(0)
 })
 

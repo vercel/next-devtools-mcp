@@ -48,7 +48,7 @@ export async function ensureBrowserEvalMCP(): Promise<void> {
  * Start playwright-mcp server and connect to it
  */
 export async function startBrowserEvalMCP(options?: {
-  browser?: "chrome" | "firefox" | "webkit" | "msedge"
+  browser?: "chrome" | "chromium" | "firefox" | "webkit" | "msedge"
   headless?: boolean
 }): Promise<MCPConnection> {
   // Ensure playwright-mcp is installed

@@ -25,9 +25,11 @@ export const inputSchema = {
     .describe("The action to perform using browser automation"),
 
   browser: z
-    .enum(["chrome", "firefox", "webkit", "msedge"])
+    .enum(["chrome", "chromium", "firefox", "webkit", "msedge"])
     .optional()
-    .describe("Browser to use (default: chrome). Only used with 'start' action."),
+    .describe(
+      "Browser to use (default: chrome). Use 'chromium' on platforms without a Chrome build (e.g. Linux arm64). Only used with 'start' action."
+    ),
   headless: z
     .union([z.boolean(), z.string().transform((val) => val === "true")])
     .optional()
@@ -129,7 +131,7 @@ type BrowserEvalArgs = {
     | "drag"
     | "upload_file"
     | "list_tools"
-  browser?: "chrome" | "firefox" | "webkit" | "msedge"
+  browser?: "chrome" | "chromium" | "firefox" | "webkit" | "msedge"
   headless?: boolean | string
   url?: string
   element?: string

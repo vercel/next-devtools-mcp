@@ -41,6 +41,9 @@ function forceKillProcessTree(proc: ChildProcess): void {
 const FIXTURE_SOURCE = join(__dirname, "../fixtures/nextjs16-minimal")
 const TEST_PORT = 3456
 const SERVER_STARTUP_TIMEOUT = 180000
+// Teardown kills the dev server and rm -rf's a temp dir containing a full
+// node_modules; on Windows CI this can exceed vitest's default 10s hookTimeout.
+const CLEANUP_TIMEOUT = 60000
 const TEST_TIMEOUT = 240000
 
 describe("nextjs-runtime-discovery", () => {
@@ -194,7 +197,7 @@ describe("nextjs-runtime-discovery", () => {
         console.error("[Test] Failed to clean up temp directory:", error)
       }
     }
-  })
+  }, CLEANUP_TIMEOUT)
 
   it(
     "should discover Next.js server on non-standard port via process discovery",

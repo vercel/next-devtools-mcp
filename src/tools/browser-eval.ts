@@ -36,7 +36,16 @@ export const inputSchema = {
   url: z.string().optional().describe("URL to navigate to (required for 'navigate' action)"),
 
   element: z.string().optional().describe("Element to interact with (CSS selector or text)"),
-  ref: z.string().optional().describe("Reference to element from accessibility snapshot"),
+  ref: z
+    .string()
+    .optional()
+    .describe("Reference to element from accessibility snapshot (alias for 'target')"),
+  target: z
+    .string()
+    .optional()
+    .describe(
+      "Exact target element reference from the page snapshot, or a unique element selector. Preferred over 'ref'."
+    ),
   doubleClick: z
     .union([z.boolean(), z.string().transform((val) => val === "true")])
     .optional()
@@ -52,8 +61,20 @@ export const inputSchema = {
   fields: z
     .array(
       z.object({
-        selector: z.string(),
-        value: z.string(),
+        element: z.string().optional().describe("Human-readable element description"),
+        target: z
+          .string()
+          .optional()
+          .describe(
+            "Exact target element reference from the snapshot, or a unique selector. Preferred over 'selector'."
+          ),
+        selector: z.string().optional().describe("Alias for 'target' (back-compat)"),
+        name: z.string().optional().describe("Human-readable field name"),
+        type: z
+          .enum(["textbox", "checkbox", "radio", "combobox", "slider"])
+          .optional()
+          .describe("Field type (required by Playwright MCP)"),
+        value: z.string().describe("Value to fill into the field"),
       })
     )
     .optional()
@@ -72,9 +93,17 @@ export const inputSchema = {
     .describe("Only return error messages from console"),
 
   startElement: z.string().optional().describe("Starting element for drag operation"),
-  startRef: z.string().optional().describe("Starting element reference"),
+  startRef: z.string().optional().describe("Starting element reference (alias for 'startTarget')"),
+  startTarget: z
+    .string()
+    .optional()
+    .describe("Exact source element reference for drag. Preferred over 'startRef'."),
   endElement: z.string().optional().describe("Ending element for drag operation"),
-  endRef: z.string().optional().describe("Ending element reference"),
+  endRef: z.string().optional().describe("Ending element reference (alias for 'endTarget')"),
+  endTarget: z
+    .string()
+    .optional()
+    .describe("Exact target element reference for drag. Preferred over 'endRef'."),
 
   files: z.array(z.string()).optional().describe("File paths to upload"),
 }
@@ -134,18 +163,28 @@ type BrowserEvalArgs = {
   url?: string
   element?: string
   ref?: string
+  target?: string
   doubleClick?: boolean | string
   button?: "left" | "right" | "middle"
   modifiers?: string[]
   text?: string
-  fields?: Array<{ selector: string; value: string }>
+  fields?: Array<{
+    element?: string
+    target?: string
+    selector?: string
+    name?: string
+    type?: "textbox" | "checkbox" | "radio" | "combobox" | "slider"
+    value: string
+  }>
   script?: string
   fullPage?: boolean | string
   errorsOnly?: boolean | string
   startElement?: string
   startRef?: string
+  startTarget?: string
   endElement?: string
   endRef?: string
+  endTarget?: string
   files?: string[]
 }
 
@@ -215,7 +254,7 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
         toolName = "browser_click"
         toolArgs = {
           element: args.element,
-          ref: args.ref,
+          target: args.target ?? args.ref,
           doubleClick: args.doubleClick,
           button: args.button,
           modifiers: args.modifiers,
@@ -229,7 +268,7 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
         toolName = "browser_type"
         toolArgs = {
           element: args.element,
-          ref: args.ref,
+          target: args.target ?? args.ref,
           text: args.text,
         }
         break
@@ -239,7 +278,15 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
           throw new Error("Fields are required for fill_form action")
         }
         toolName = "browser_fill_form"
-        toolArgs = { fields: args.fields }
+        toolArgs = {
+          fields: args.fields.map((f) => ({
+            element: f.element,
+            target: f.target ?? f.selector,
+            name: f.name,
+            type: f.type,
+            value: f.value,
+          })),
+        }
         break
 
       case "evaluate":
@@ -250,7 +297,7 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
         toolArgs = {
           function: args.script,
           element: args.element,
-          ref: args.ref,
+          target: args.target ?? args.ref,
         }
         break
 
@@ -271,9 +318,9 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
         toolName = "browser_drag"
         toolArgs = {
           startElement: args.startElement,
-          startRef: args.startRef,
+          startTarget: args.startTarget ?? args.startRef,
           endElement: args.endElement,
-          endRef: args.endRef,
+          endTarget: args.endTarget ?? args.endRef,
         }
         break
 

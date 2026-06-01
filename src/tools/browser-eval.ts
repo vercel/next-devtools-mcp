@@ -61,8 +61,20 @@ export const inputSchema = {
   fields: z
     .array(
       z.object({
-        selector: z.string(),
-        value: z.string(),
+        element: z.string().optional().describe("Human-readable element description"),
+        target: z
+          .string()
+          .optional()
+          .describe(
+            "Exact target element reference from the snapshot, or a unique selector. Preferred over 'selector'."
+          ),
+        selector: z.string().optional().describe("Alias for 'target' (back-compat)"),
+        name: z.string().optional().describe("Human-readable field name"),
+        type: z
+          .enum(["textbox", "checkbox", "radio", "combobox", "slider"])
+          .optional()
+          .describe("Field type (required by Playwright MCP)"),
+        value: z.string().describe("Value to fill into the field"),
       })
     )
     .optional()
@@ -156,7 +168,14 @@ type BrowserEvalArgs = {
   button?: "left" | "right" | "middle"
   modifiers?: string[]
   text?: string
-  fields?: Array<{ selector: string; value: string }>
+  fields?: Array<{
+    element?: string
+    target?: string
+    selector?: string
+    name?: string
+    type?: "textbox" | "checkbox" | "radio" | "combobox" | "slider"
+    value: string
+  }>
   script?: string
   fullPage?: boolean | string
   errorsOnly?: boolean | string
@@ -259,7 +278,15 @@ export async function handler(args: BrowserEvalArgs): Promise<string> {
           throw new Error("Fields are required for fill_form action")
         }
         toolName = "browser_fill_form"
-        toolArgs = { fields: args.fields }
+        toolArgs = {
+          fields: args.fields.map((f) => ({
+            element: f.element,
+            target: f.target ?? f.selector,
+            name: f.name,
+            type: f.type,
+            value: f.value,
+          })),
+        }
         break
 
       case "evaluate":

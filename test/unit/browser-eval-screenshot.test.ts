@@ -70,4 +70,42 @@ describe("browser-eval playwright-mcp screenshot tool", () => {
     )
     expect(imageContent).toBeUndefined()
   })
+
+  it("should pass --executable-path flag to playwright-mcp when provided", async () => {
+    const execPath = "/path/to/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+    await startBrowserEvalMCP({ executablePath: execPath })
+
+    expect(connectToMCPServer).toHaveBeenCalledWith(
+      "npx",
+      expect.arrayContaining(["--executable-path", execPath]),
+      expect.any(Object)
+    )
+  })
+
+  it("should not include --executable-path flag when not provided", async () => {
+    await startBrowserEvalMCP()
+
+    const callArgs = vi.mocked(connectToMCPServer).mock.calls[0]
+    const args = callArgs[1] as string[]
+    expect(args).not.toContain("--executable-path")
+  })
+
+  it("should combine executablePath with browser and headless options", async () => {
+    const execPath = "/custom/path/to/browser"
+    await startBrowserEvalMCP({
+      browser: "firefox",
+      headless: true,
+      executablePath: execPath,
+    })
+
+    expect(connectToMCPServer).toHaveBeenCalledWith(
+      "npx",
+      expect.arrayContaining([
+        "--browser", "firefox",
+        "--headless",
+        "--executable-path", execPath,
+      ]),
+      expect.any(Object)
+    )
+  })
 })

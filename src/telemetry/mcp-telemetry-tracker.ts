@@ -1,11 +1,7 @@
 export type McpToolName =
   | "mcp/browser_eval"
-  | "mcp/enable_cache_components"
-  | "mcp/init"
-  | "mcp/nextjs_docs"
   | "mcp/nextjs_index"
   | "mcp/nextjs_call"
-  | "mcp/upgrade_nextjs_16"
 
 export interface McpToolUsage {
   featureName: McpToolName

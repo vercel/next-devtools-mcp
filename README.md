@@ -2,7 +2,10 @@
 
 [![npm next-devtools-mcp package](https://img.shields.io/npm/v/next-devtools-mcp.svg)](https://npmjs.org/package/next-devtools-mcp)
 
-`next-devtools-mcp` is a Model Context Protocol (MCP) server that provides Next.js development tools and utilities for coding agents like Claude and Cursor.
+`next-devtools-mcp` is a Model Context Protocol (MCP) server that connects coding agents like Claude and Cursor to your running Next.js dev server. It discovers running servers and proxies their built-in MCP endpoint (`/_next/mcp`), giving agents live access to runtime errors, routes, and logs — plus Playwright-based browser testing.
+
+> [!NOTE]
+> Documentation and migration guidance no longer ship in this server. Next.js bundles its docs in `node_modules/next/dist/docs/` (surfaced via `AGENTS.md`), and upgrade/Cache Components workflows are now distributed as agent skills. See [Migrating from 0.3.x](#migrating-from-03x).
 
 
 ## Getting Started
@@ -185,25 +188,15 @@ Navigate to `Settings | AI | Manage MCP Servers` and select `+ Add` to register 
 
 ## Quick Start
 
-### For Next.js 16+ Projects (Recommended)
-
-To unlock the full power of runtime diagnostics, start your Next.js dev server:
+Start your Next.js dev server:
 
 ```bash
 npm run dev
 ```
 
-Next.js 16+ has MCP enabled by default at `http://localhost:3000/_next/mcp` (or whichever port your dev server uses). The `next-devtools-mcp` server will automatically discover and connect to it.
+Next.js 16+ has its MCP endpoint enabled by default at `http://localhost:3000/_next/mcp` (or whichever port your dev server uses). `next-devtools-mcp` automatically discovers and connects to it — no configuration needed.
 
-**⚠️ IMPORTANT: Start every Next.js session by calling the `init` tool to set up proper context:**
-
-```
-Use the init tool to set up Next.js DevTools context
-```
-
-This initializes the MCP context and ensures the AI assistant uses official Next.js documentation for all queries.
-
-**After initialization, try these prompts to explore runtime diagnostics:**
+Then ask your coding agent about your running application:
 
 ```
 Next Devtools, what errors are in my Next.js application?
@@ -217,166 +210,11 @@ Next Devtools, show me the structure of my routes
 Next Devtools, what's in the development server logs?
 ```
 
-Your coding agent will use the `nextjs_index` and `nextjs_call` tools to query your running application's actual state.
+Your agent uses the `nextjs_index` and `nextjs_call` tools to query your running application's actual state.
 
-### For All Next.js Projects
-
-You can use the development automation and documentation tools regardless of Next.js version:
-
-```
-Next Devtools, help me upgrade my Next.js app to version 16
-```
-
-```
-Next Devtools, enable Cache Components in my Next.js app
-```
-
-```
-Next Devtools, search Next.js docs for generateMetadata
-```
-
-### 💡 Pro Tip: Auto-Initialize on Every Session
-
-To make your AI assistant **automatically call the `init` tool** at the start of every Next.js session without being asked, add this instruction to your agent's configuration file:
-
-<details>
-<summary>Claude Code / Claude Desktop</summary>
-
-Add to `~/.claude/CLAUDE.md` (global) or `./.claude/CLAUDE.md` (project-specific):
-
-```markdown
-**When starting work on a Next.js project, ALWAYS call the `init` tool from
-next-devtools-mcp FIRST to set up proper context and establish documentation
-requirements. Do this automatically without being asked.**
-```
-
-</details>
-
-<details>
-<summary>Cursor</summary>
-
-Add to `.cursorrules` in your project root or global Cursor settings:
-
-```
-When working with Next.js, always call the init tool from next-devtools-mcp
-at the start of the session to establish proper context and documentation requirements.
-```
-
-</details>
-
-<details>
-<summary>Codex / Other AI Coding Assistants</summary>
-
-Add to your agent's configuration file (e.g., `.codex/instructions.md`, `agent.md`, or similar):
-
-```markdown
-**Next.js Initialization**: When starting work on a Next.js project, automatically
-call the `init` tool from the next-devtools-mcp server FIRST. This establishes
-proper context and ensures all Next.js queries use official documentation.
-```
-
-</details>
-
-**Why this matters:**
-- ✅ Ensures consistent context across all Next.js work
-- ✅ Automatically establishes the documentation-first requirement
-- ✅ No need to manually call init every time
-- ✅ Works across all your Next.js projects
-
-## MCP Resources
-
-The knowledge base resources are automatically available to your coding agent and are split into focused sections for efficient context management. Current resource URIs:
-
-<details>
-<summary>📚 Available Knowledge Base Resources (click to expand)</summary>
-
-- Cache Components (12 sections):
-  - `cache-components://overview`
-  - `cache-components://core-mechanics`
-  - `cache-components://public-caches`
-  - `cache-components://private-caches`
-  - `cache-components://runtime-prefetching`
-  - `cache-components://request-apis`
-  - `cache-components://cache-invalidation`
-  - `cache-components://advanced-patterns`
-  - `cache-components://build-behavior`
-  - `cache-components://error-patterns`
-  - `cache-components://test-patterns`
-  - `cache-components://reference`
-
-- Next.js 16 migration:
-  - `nextjs16://migration/beta-to-stable`
-  - `nextjs16://migration/examples`
-
-- Next.js fundamentals:
-  - `nextjs-fundamentals://use-client`
-
-</details>
-
-Resources are loaded on-demand by your coding agent, providing targeted knowledge without overwhelming the context window.
-
-## MCP Prompts
-
-Pre-configured prompts to help with common Next.js development tasks:
-
-<details>
-<summary>💡 Available Prompts (click to expand)</summary>
-
-- **`upgrade-nextjs-16`** - Guide for upgrading to Next.js 16
-- **`enable-cache-components`** - Migrate and enable Cache Components mode for Next.js 16
-
-</details>
+> **Looking for docs, upgrades, or Cache Components setup?** Those no longer live here — see [Migrating from 0.3.x](#migrating-from-03x).
 
 ## MCP Tools
-
-<details>
-<summary><code>init</code></summary>
-
-Initialize Next.js DevTools MCP context and establish documentation requirements.
-
-**Capabilities:**
-- Sets up proper context for AI assistants working with Next.js
-- Establishes requirement to use `nextjs_docs` for ALL Next.js-related queries
-- Documents all available MCP tools and their use cases
-- Provides best practices for Next.js development with MCP
-- Includes example workflows and quick start checklist
-
-**When to use:**
-- At the beginning of a Next.js development session
-- To understand available tools and establish proper context
-- To ensure documentation-first approach for Next.js development
-
-**Input:**
-- `project_path` (optional) - Path to Next.js project (defaults to current directory)
-
-**Output:**
-- Comprehensive initialization context and guidance for Next.js development with MCP tools
-
-</details>
-
-<details>
-<summary><code>nextjs_docs</code></summary>
-
-Search and retrieve Next.js official documentation and knowledge base.
-
-**Capabilities:**
-- Two-step process: 1) Search for docs by keyword to get paths, 2) Fetch full markdown content by path
-- Uses official Next.js documentation search API
-- Provides access to comprehensive Next.js guides, API references, and best practices
-- Supports filtering by router type (App Router, Pages Router, or both)
-
-**Input:**
-- `action` (required) - Action to perform: `search` to find docs, `get` to fetch full content
-- `query` (optional) - Required for `search`. Keyword search query (e.g., 'metadata', 'generateStaticParams', 'middleware')
-- `path` (optional) - Required for `get`. Doc path from search results (e.g., '/docs/app/api-reference/functions/refresh')
-- `anchor` (optional) - Optional for `get`. Anchor/section from search results (e.g., 'usage')
-- `routerType` (optional) - For `search` only. Filter by: `app`, `pages`, or `all` (default: `all`)
-
-**Output:**
-- Search results with doc titles, paths, content snippets, sections, and anchors
-- Full markdown content for specific documentation pages
-
-</details>
 
 <details>
 <summary><code>browser_eval</code></summary>
@@ -494,65 +332,16 @@ Calls a specific runtime diagnostic tool on a Next.js 16+ dev server's built-in 
 
 </details>
 
-<details>
-<summary><code>upgrade_nextjs_16</code></summary>
+## Migrating from 0.3.x
 
-Guides through upgrading Next.js to version 16 with automated codemod execution.
+Starting in 0.4.0, `next-devtools-mcp` is a thin connector to the Next.js dev server. These were removed:
 
-**Capabilities:**
-- Runs official Next.js codemod automatically (requires clean git state)
-- Handles async API changes (params, searchParams, cookies, headers)
-- Migrates configuration changes
-- Updates image defaults and optimization
-- Fixes parallel routes and dynamic segments
-- Handles deprecated API removals
-- Provides guidance for React 19 compatibility
+- **`nextjs_docs` tool and `nextjs-docs://llms-index` resource** — Next.js bundles its full documentation in `node_modules/next/dist/docs/` (as markdown), surfaced to agents through the project's `AGENTS.md`. Point your agent at those files instead of fetching docs over MCP.
+- **`init` tool** — it existed only to enforce the docs-fetch workflow above, which is no longer needed.
+- **`upgrade_nextjs_16` and `enable_cache_components` tools, and their prompts** — these workflows are moving to distributable agent skills.
+- **All `cache-components://`, `nextjs16://`, and `nextjs-fundamentals://` resources** — superseded by the bundled docs.
 
-**Input:**
-- `project_path` (optional) - Path to Next.js project (defaults to current directory)
-
-**Output:**
-- Structured JSON with step-by-step upgrade guidance
-
-</details>
-
-<details>
-<summary><code>enable_cache_components</code></summary>
-
-Complete Cache Components setup, enablement, and migration for Next.js 16 with automated error detection and fixing. This tool is used for migrating Next.js applications to Cache Components mode.
-
-**Capabilities:**
-- Pre-flight checks (package manager, Next.js version, configuration)
-- Enable Cache Components configuration
-- Start dev server with MCP enabled
-- Automated route verification and error detection
-- Automated error fixing with intelligent boundary setup (Suspense, caching directives, static params)
-- Final verification and build testing
-
-**Input:**
-- `project_path` (optional) - Path to Next.js project (defaults to current directory)
-
-**Output:**
-- Structured JSON with complete setup guidance and phase-by-phase instructions
-
-**Example Usage:**
-
-With Claude Code:
-```
-Next Devtools, help me enable Cache Components in my Next.js 16 app
-```
-
-With other agents or programmatically:
-```json
-{
-  "tool": "enable_cache_components",
-  "args": {
-    "project_path": "/path/to/project"
-  }
-}
-```
-
-</details>
+What remains is server discovery (`nextjs_index`), runtime proxying (`nextjs_call`), and browser automation (`browser_eval`).
 
 ## Privacy & Telemetry
 
@@ -560,7 +349,7 @@ With other agents or programmatically:
 
 `next-devtools-mcp` collects anonymous usage telemetry to help improve the tool. The following data is collected:
 
-- **Tool usage**: Which MCP tools are invoked (e.g., `nextjs_index`, `nextjs_call`, `browser_eval`, `upgrade_nextjs_16`)
+- **Tool usage**: Which MCP tools are invoked (e.g., `nextjs_index`, `nextjs_call`, `browser_eval`)
 - **Error events**: Anonymous error messages when tools fail
 - **Session metadata**: Session ID, timestamps, and basic environment info (OS, Node.js version)
 
@@ -592,11 +381,7 @@ rm -rf ~/.next-devtools-mcp
 
 ### Module Not Found Error
 
-If you encounter an error like:
-
-```
-Error [ERR_MODULE_NOT_FOUND]: Cannot find module '...\next-devtools-mcp\dist\resources\(cache-components)\...'
-```
+If you encounter an `ERR_MODULE_NOT_FOUND` error referencing `next-devtools-mcp/dist`:
 
 **Solution:** Clear your npx cache and restart your MCP client (Cursor, Claude Code, etc.). The server will be freshly installed.
 
@@ -606,10 +391,10 @@ If you see `[error] No server info found`:
 
 **Solutions:**
 1. Make sure your Next.js dev server is running: `npm run dev`
-2. If using Next.js 15 or earlier, use the `upgrade_nextjs_16` tool to upgrade to Next.js 16+
+2. Confirm you are on Next.js 16+ (the `/_next/mcp` endpoint is only available there)
 3. Verify your dev server started successfully without errors
 
-**Note:** The `nextjs_index` and `nextjs_call` tools require Next.js 16+ with a running dev server. Other tools (`nextjs_docs`, `browser_eval`, `upgrade_nextjs_16`, `enable_cache_components`) work without a running server.
+**Note:** The `nextjs_index` and `nextjs_call` tools require Next.js 16+ with a running dev server. `browser_eval` works without one.
 
 ## Local Development
 
@@ -642,7 +427,7 @@ To run the MCP server locally for development:
 
 ## Features
 
-This MCP server provides coding agents with comprehensive Next.js development capabilities through three primary mechanisms:
+This MCP server gives coding agents two capabilities:
 
 ### **1. Runtime Diagnostics & Live State Access** (Next.js 16+)
 Connect directly to your running Next.js dev server's built-in MCP endpoint to query:
@@ -651,22 +436,14 @@ Connect directly to your running Next.js dev server's built-in MCP endpoint to q
 - Development server logs and diagnostics
 - Server Actions and component hierarchies
 
-### **2. Development Automation**
-Tools for common Next.js workflows:
-- **Automated Next.js 16 upgrades** with official codemods
-- **Cache Components migration and setup** with error detection and automated fixes
-- **Browser testing integration** via Playwright for visual verification
-
-### **3. Knowledge Base & Documentation**
-- Curated Next.js 16 knowledge base (12 focused resources on Cache Components, async APIs, etc.)
-- Direct access to official Next.js documentation via search API
-- Pre-configured prompts for upgrade guidance and Cache Components enablement
+### **2. Browser Testing**
+Playwright-based browser automation for visual verification, interaction testing, and capturing client-side errors.
 
 > **Learn more:** See the [Next.js MCP documentation](https://nextjs.org/docs/app/guides/mcp) for details on how MCP servers work with Next.js and coding agents.
 
 ## How It Works
 
-This package provides a **bridge MCP server** that connects your coding agent to Next.js development tools:
+This package is a **thin connector** between your coding agent and your Next.js dev server:
 
 ```
 Coding Agent
@@ -674,17 +451,10 @@ Coding Agent
   next-devtools-mcp (this package)
       ↓
       ├─→ Next.js Dev Server MCP Endpoint (/_next/mcp) ← Runtime diagnostics
-      ├─→ Playwright MCP Server ← Browser automation
-      └─→ Knowledge Base & Tools ← Documentation, upgrades, setup automation
+      └─→ Playwright MCP Server ← Browser automation
 ```
 
-**Key Architecture Points:**
-
-1. **For Next.js 16+ projects**: This server automatically discovers and connects to your running Next.js dev server's built-in MCP endpoint at `http://localhost:PORT/_next/mcp`. This gives coding agents direct access to runtime errors, routes, logs, and application state.
-
-2. **For all Next.js projects**: Provides development automation tools (upgrades, Cache Components setup), documentation access, and browser testing capabilities that work independently of the runtime connection.
-
-3. **Simple workflow**: Call `nextjs_index` to see all servers and available tools, then call `nextjs_call` with the specific port and tool name you want to execute.
+It discovers running Next.js 16+ dev servers and proxies their built-in MCP endpoint at `http://localhost:PORT/_next/mcp`, giving agents direct access to runtime errors, routes, logs, and application state. The workflow: call `nextjs_index` to discover servers and their available tools, then `nextjs_call` with the port and tool name to execute one.
 
 
 ## License

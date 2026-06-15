@@ -5,7 +5,7 @@ describe("Telemetry Events", () => {
   it("should generate event for single tool usage", () => {
     const events = eventMcpToolUsage([
       {
-        featureName: "mcp/init",
+        featureName: "mcp/nextjs_index",
         invocationCount: 1,
       },
     ])
@@ -14,7 +14,7 @@ describe("Telemetry Events", () => {
     expect(events[0]).toEqual({
       eventName: EVENT_MCP_TOOL_USAGE,
       fields: {
-        toolName: "mcp/init",
+        toolName: "mcp/nextjs_index",
         invocationCount: 1,
       },
     })
@@ -23,7 +23,7 @@ describe("Telemetry Events", () => {
   it("should generate events for multiple tool usages", () => {
     const events = eventMcpToolUsage([
       {
-        featureName: "mcp/nextjs_docs",
+        featureName: "mcp/nextjs_call",
         invocationCount: 3,
       },
       {
@@ -36,7 +36,7 @@ describe("Telemetry Events", () => {
     expect(events[0]).toEqual({
       eventName: EVENT_MCP_TOOL_USAGE,
       fields: {
-        toolName: "mcp/nextjs_docs",
+        toolName: "mcp/nextjs_call",
         invocationCount: 3,
       },
     })
@@ -49,18 +49,14 @@ describe("Telemetry Events", () => {
     })
   })
 
-  it("should handle all 7 MCP tool types", () => {
+  it("should handle all MCP tool types", () => {
     const events = eventMcpToolUsage([
       { featureName: "mcp/browser_eval", invocationCount: 1 },
-      { featureName: "mcp/enable_cache_components", invocationCount: 1 },
-      { featureName: "mcp/init", invocationCount: 1 },
-      { featureName: "mcp/nextjs_docs", invocationCount: 1 },
       { featureName: "mcp/nextjs_index", invocationCount: 1 },
       { featureName: "mcp/nextjs_call", invocationCount: 1 },
-      { featureName: "mcp/upgrade_nextjs_16", invocationCount: 1 },
     ])
 
-    expect(events).toHaveLength(7)
+    expect(events).toHaveLength(3)
     expect(events.every((e) => e.eventName === EVENT_MCP_TOOL_USAGE)).toBe(true)
   })
 
@@ -72,7 +68,7 @@ describe("Telemetry Events", () => {
   it("should transform featureName to toolName", () => {
     const events = eventMcpToolUsage([
       {
-        featureName: "mcp/nextjs_docs",
+        featureName: "mcp/nextjs_call",
         invocationCount: 5,
       },
     ])
@@ -80,12 +76,12 @@ describe("Telemetry Events", () => {
     // The event should have 'toolName' in fields, not 'featureName'
     expect(events[0].fields).toHaveProperty("toolName")
     expect(events[0].fields).not.toHaveProperty("featureName")
-    expect(events[0].fields.toolName).toBe("mcp/nextjs_docs")
+    expect(events[0].fields.toolName).toBe("mcp/nextjs_call")
   })
 
   it("should use correct event name constant", () => {
     const events = eventMcpToolUsage([
-      { featureName: "mcp/init", invocationCount: 1 },
+      { featureName: "mcp/nextjs_index", invocationCount: 1 },
     ])
 
     expect(events[0].eventName).toBe("NEXT_MCP_TOOL_USAGE")

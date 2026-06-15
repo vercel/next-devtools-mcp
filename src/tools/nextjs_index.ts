@@ -44,7 +44,7 @@ KEY PRINCIPLE: If the request involves the running Next.js application (whether 
 
 REQUIREMENTS:
 - Next.js 16 or later (MCP support was added in v16)
-- If you're on Next.js 15 or earlier, use the 'upgrade-nextjs-16' MCP prompt to upgrade first
+- If you're on Next.js 15 or earlier, upgrade first by running 'npx @next/codemod@latest upgrade latest'
 
 Next.js 16+ exposes an MCP (Model Context Protocol) endpoint at /_next/mcp automatically when the dev server starts.
 No configuration needed - MCP is enabled by default in Next.js 16 and later.
@@ -61,7 +61,7 @@ After calling this tool, use 'nextjs_call' to execute specific tools.
 2. Call this tool again with the 'port' parameter set to the user-provided port
 
 If the MCP endpoint is not available:
-1. Ensure you're running Next.js 16 or later (use the 'upgrade-nextjs-16' prompt to upgrade)
+1. Ensure you're running Next.js 16 or later (upgrade with 'npx @next/codemod@latest upgrade latest')
 2. Verify the dev server is running (npm run dev)
 3. Check that the dev server started successfully without errors`,
 }
@@ -144,7 +144,7 @@ export async function handler(args: NextjsIndexArgs = {}): Promise<string> {
       return JSON.stringify({
         success: false,
         error: "No running Next.js dev servers with MCP enabled found",
-        hint: "Make sure you're running Next.js 16+ (MCP is enabled by default). Start the dev server with 'npm run dev'. If on Next.js 15 or earlier, upgrade using the 'upgrade-nextjs-16' prompt.",
+        hint: "Make sure you're running Next.js 16+ (MCP is enabled by default). Start the dev server with 'npm run dev'. If on Next.js 15 or earlier, upgrade with 'npx @next/codemod@latest upgrade latest'.",
         ai_instruction:
           "IMPORTANT: Server auto-discovery may not work on all operating systems or network configurations. Please ask the user: 'What port is your Next.js dev server running on?'. Once you have the port number, call this tool again with the 'port' parameter set to the user-provided port.",
         servers: [],

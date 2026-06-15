@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an MCP (Model Context Protocol) server that provides Next.js development tools for AI coding assistants. The server exposes tools, prompts, and resources to help with Next.js upgrades, Cache Components setup, documentation search, browser testing, and runtime diagnostics.
+This is an MCP (Model Context Protocol) server that acts as a thin connector between AI coding assistants and a running Next.js dev server. It discovers running Next.js 16+ dev servers and proxies their built-in MCP endpoint (`/_next/mcp`) for runtime diagnostics, and provides Playwright-based browser automation.
+
+It exposes **tools only** — no prompts or resources. Documentation ships with Next.js itself (`node_modules/next/dist/docs/`), and upgrade/Cache Components workflows are distributed as agent skills, so they are intentionally not part of this server. See the "Migrating from 0.3.x" section of `README.md` for the removal history.
 
 The server is built using the standard `@modelcontextprotocol/sdk` package with TypeScript and ES modules.
 
@@ -32,40 +34,32 @@ pnpm clean
 
 ## Testing
 
-The test suite uses vitest with Claude Agent SDK for E2E testing:
+The test suite uses vitest:
 
 ```bash
-# Run all tests
+# Run unit tests (default; excludes test/e2e/)
 pnpm build && pnpm test
 
-# Note: Tests require ANTHROPIC_API_KEY environment variable
-# Get your key from: https://console.anthropic.com/
+# Run e2e tests (spawns the built server over stdio)
+pnpm build && pnpm test:e2e
 ```
 
-Test files are located in `test/e2e/` and use test fixtures from `test/fixtures/`.
+Unit tests live in `test/unit/`; e2e tests in `test/e2e/` spawn `dist/index.js` and exercise it over the MCP protocol. Fixtures are in `test/fixtures/`.
 
 ## Architecture
 
 ### MCP Server Structure
 
-The main server entry point is `src/index.ts` which uses the standard MCP SDK with stdio transport. The server manually registers:
-- **Tools** (`src/tools/`): Callable functions for automation - each exports `inputSchema`, `metadata`, and `handler`
-- **Prompts** (`src/prompts/`): Pre-configured prompts for common tasks - each exports `inputSchema`, `metadata`, and `handler`
-- **Resources** (`src/resources/`): Knowledge base articles and documentation - each exports `metadata` and `handler`
-
-All tools, prompts, and resources are explicitly imported and registered in `src/index.ts`.
+The main server entry point is `src/index.ts` which uses the standard MCP SDK with stdio transport. The server declares only the `tools` capability and registers tools from `src/tools/`, each exporting `inputSchema`, `metadata`, and `handler`. There are no prompt or resource handlers.
 
 ### Key Components
 
 **MCP Tools** (`src/tools/`):
 - Each tool exports: `inputSchema` (Zod schemas), `metadata` (name, description), `handler` (async function)
 - Tools are manually imported and registered in `src/index.ts`
-- `nextjs_docs`: Search Next.js documentation and knowledge base
-- `browser_eval`: Playwright browser automation (via `playwright-mcp` server)
 - `nextjs_index`: Discover all running Next.js dev servers and list their available MCP tools
 - `nextjs_call`: Execute specific MCP tools on a running Next.js dev server
-- `upgrade_nextjs_16`: Automated Next.js 16 upgrade guidance
-- `enable_cache_components`: Complete Cache Components setup with error detection
+- `browser_eval`: Playwright browser automation (via `playwright-mcp` server)
 
 **MCP Client Library** (`src/_internal/mcp-client.ts`):
 - Connects to external MCP servers via stdio transport
@@ -85,12 +79,6 @@ All tools, prompts, and resources are explicitly imported and registered in `src
 - Telemetry can be disabled via `NEXT_TELEMETRY_DISABLED=1` environment variable
 - Data stored in `~/.next-devtools-mcp/` (telemetry-id, telemetry-salt, mcp.log)
 
-**Resources Architecture**:
-- Knowledge base split into focused sections (12 sections for Cache Components, 2 for Next.js 16, 1 for fundamentals)
-- Each resource exports: `metadata` (uri, name, description, mimeType) and `handler` (function returning content)
-- Resources use URI-based addressing (e.g., `cache-components://overview`)
-- Markdown files in `src/resources/` and `src/prompts/` are copied during build via `scripts/copy-resources.js` (to `dist/resources/` and `dist/resources/prompts/` respectively)
-
 ### TypeScript Configuration
 
 - Target: ES2022, ES modules (NodeNext module resolution)
@@ -101,10 +89,7 @@ All tools, prompts, and resources are explicitly imported and registered in `src
 
 ## Build Process
 
-1. TypeScript compilation: `tsc` compiles all TypeScript files from `src/` to `dist/`
-2. Resource copying: `scripts/copy-resources.js` copies markdown files from `src/resources/` and `src/prompts/` (to `dist/resources/` and `dist/resources/prompts/` respectively)
-
-The `dist/index.js` file is the entry point for the MCP server and includes a shebang for CLI execution.
+`pnpm build` runs `tsc`, compiling all TypeScript files from `src/` to `dist/`. The `dist/index.js` file is the entry point for the MCP server and includes a shebang for CLI execution.
 
 ## MCP Protocol Integration
 
@@ -116,8 +101,6 @@ This server can:
 - Server uses standard MCP SDK `Server` class with `StdioServerTransport`
 - Tools use Zod schemas for input validation, converted to JSON Schema for MCP
 - Tool handlers are called with validated arguments
-- Resources use URI-based addressing (e.g., `cache-components://overview`)
-- Prompts return structured messages with markdown content
 
 ## External MCP Server Dependencies
 
@@ -143,21 +126,7 @@ This server can:
 2. Import and add to the `tools` array in `src/index.ts`
 3. Build and test
 
-**Adding a new MCP resource**:
-1. Create markdown file(s) in `src/resources/`
-2. Create resource handler TypeScript file in `src/resources/` with:
-   - `export const metadata = { uri, name, description, mimeType }`
-   - `export function handler() { return readResourceFile(...) }` - Returns content
-3. Import and add to the `resources` array in `src/index.ts`
-4. The `scripts/copy-resources.js` script automatically copies `.md` files to `dist/resources/`
-
-**Adding a new MCP prompt**:
-1. Create prompt file in `src/prompts/` with:
-   - `export const inputSchema = { ... }` - Optional Zod schemas for parameters
-   - `export const metadata = { name, description, role }`
-   - `export function handler(args) { ... }` - Returns prompt text
-2. Import and add to the `prompts` array in `src/index.ts`
-3. Build and test
+> This server intentionally ships tools only. Do not re-add prompt or resource handlers — documentation lives in Next.js's bundled docs (`node_modules/next/dist/docs/`) and workflows are distributed as agent skills.
 
 **Working with external MCP servers**:
 - Use `src/_internal/mcp-client.ts` for stdio-based communication

@@ -1,6 +1,6 @@
 {
   "name": "next-devtools-mcp",
-  "version": "0.3.10",
+  "version": "0.4.0",
   "type": "module",
   "description": "Next.js development tools MCP server with stdio transport",
   "license": "MIT",
@@ -22,14 +22,12 @@
   "mcpName": "io.github.vercel/next-devtools-mcp",
   "scripts": {
     "dev": "tsc --watch",
-    "copy-resources": "node scripts/copy-resources.js",
-    "build": "tsc && npm run copy-resources",
+    "build": "tsc",
     "prepublishOnly": "pnpm run clean && pnpm run build",
     "clean": "rm -rf dist",
     "start": "node dist/index.js",
     "test": "vitest run --exclude 'test/e2e/**'",
     "test:e2e": "vitest run test/e2e",
-    "eval": "vitest run test/e2e/upgrade.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

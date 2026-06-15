@@ -37,10 +37,10 @@
     "find-process": "2.0.0",
     "pid-port": "2.0.0",
     "undici": "7.16.0",
-    "zod": "3.25.76"
+    "zod": "4.3.6"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.1.15",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.17",
     "@types/node": "^24.7.2",
     "dotenv": "^17.2.3",
     "typescript": "^5.9.2",

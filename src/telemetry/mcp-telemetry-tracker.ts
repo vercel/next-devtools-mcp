@@ -1,5 +1,6 @@
 export type McpToolName =
   | "mcp/browser_eval"
+  | "mcp/nextjs_docs"
   | "mcp/nextjs_index"
   | "mcp/nextjs_call"
 

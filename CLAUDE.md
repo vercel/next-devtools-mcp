@@ -57,6 +57,7 @@ The main server entry point is `src/index.ts` which uses the standard MCP SDK wi
 **MCP Tools** (`src/tools/`):
 - Each tool exports: `inputSchema` (Zod schemas), `metadata` (name, description), `handler` (async function)
 - Tools are manually imported and registered in `src/index.ts`
+- `nextjs_docs`: Version-aware docs gateway — points agents at the bundled docs in `node_modules/next/dist/docs/` (Next.js 16+) or recommends the upgrade codemod. Does NOT fetch docs.
 - `nextjs_index`: Discover all running Next.js dev servers and list their available MCP tools
 - `nextjs_call`: Execute specific MCP tools on a running Next.js dev server
 - `browser_eval`: Playwright browser automation (via `playwright-mcp` server)

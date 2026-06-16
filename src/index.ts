@@ -18,13 +18,15 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 import * as browserEval from "./tools/browser-eval.js"
+import * as nextjsDocs from "./tools/nextjs-docs.js"
 import * as nextjsIndex from "./tools/nextjs_index.js"
 import * as nextjsCall from "./tools/nextjs_call.js"
 
-const tools = [browserEval, nextjsIndex, nextjsCall]
+const tools = [browserEval, nextjsDocs, nextjsIndex, nextjsCall]
 
 const toolNameToTelemetryName: Record<string, McpToolName> = {
   browser_eval: "mcp/browser_eval",
+  nextjs_docs: "mcp/nextjs_docs",
   nextjs_index: "mcp/nextjs_index",
   nextjs_call: "mcp/nextjs_call",
 }

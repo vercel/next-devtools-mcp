@@ -5,7 +5,7 @@
 `next-devtools-mcp` is a Model Context Protocol (MCP) server that connects coding agents like Claude and Cursor to your running Next.js dev server. It discovers running servers and proxies their built-in MCP endpoint (`/_next/mcp`), giving agents live access to runtime errors, routes, and logs — plus Playwright-based browser testing.
 
 > [!NOTE]
-> Documentation and migration guidance no longer ship in this server. Next.js bundles its docs in `node_modules/next/dist/docs/` (surfaced via `AGENTS.md`), and upgrade/Cache Components workflows are now distributed as agent skills. See [Migrating from 0.3.x](#migrating-from-03x).
+> This server no longer bundles documentation or migration prompts. Next.js ships its own docs in `node_modules/next/dist/docs/` (surfaced via `AGENTS.md`); the `nextjs_docs` tool now points agents there instead of fetching. Upgrade/Cache Components workflows are moving to agent skills. See [Migrating from 0.3.x](#migrating-from-03x).
 
 
 ## Getting Started
@@ -217,6 +217,25 @@ Your agent uses the `nextjs_index` and `nextjs_call` tools to query your running
 ## MCP Tools
 
 <details>
+<summary><code>nextjs_docs</code></summary>
+
+Points your agent at the version-accurate Next.js documentation for the current project. **It does not fetch docs** — Next.js 16+ ships its full documentation inside the installed package at `node_modules/next/dist/docs/` (markdown, matching your exact version), and this tool tells the agent where to read it.
+
+**What it does:**
+- Detects the project's installed Next.js version
+- On Next.js 16+: returns the local docs path and how to read/grep it, so the agent uses version-accurate docs instead of training-data guesses
+- On older versions: recommends upgrading with `npx @next/codemod@latest upgrade latest`, which brings the bundled docs and an `AGENTS.md` that points agents to them
+
+**Input:**
+- `topic` (optional) - What you're looking for (e.g. `use cache`, `generateMetadata`); used only to suggest where to look
+- `project_path` (optional) - Path to the project (defaults to current directory)
+
+**Output:**
+- JSON describing where to read the docs, or how to upgrade to get them
+
+</details>
+
+<details>
 <summary><code>browser_eval</code></summary>
 
 Automate and test web applications using Playwright browser automation.
@@ -334,14 +353,17 @@ Calls a specific runtime diagnostic tool on a Next.js 16+ dev server's built-in 
 
 ## Migrating from 0.3.x
 
-Starting in 0.4.0, `next-devtools-mcp` is a thin connector to the Next.js dev server. These were removed:
+Starting in 0.4.0, `next-devtools-mcp` is a thin connector to the Next.js dev server.
 
-- **`nextjs_docs` tool and `nextjs-docs://llms-index` resource** — Next.js bundles its full documentation in `node_modules/next/dist/docs/` (as markdown), surfaced to agents through the project's `AGENTS.md`. Point your agent at those files instead of fetching docs over MCP.
-- **`init` tool** — it existed only to enforce the docs-fetch workflow above, which is no longer needed.
+**Changed:**
+- **`nextjs_docs`** no longer fetches documentation over the network. It is now a gateway that points your agent at the version-accurate docs Next.js bundles at `node_modules/next/dist/docs/` (or recommends upgrading if the project is too old). The `nextjs-docs://llms-index` resource is removed.
+
+**Removed:**
+- **`init` tool** — it existed only to enforce the old docs-fetch workflow, which is no longer needed.
 - **`upgrade_nextjs_16` and `enable_cache_components` tools, and their prompts** — these workflows are moving to distributable agent skills.
 - **All `cache-components://`, `nextjs16://`, and `nextjs-fundamentals://` resources** — superseded by the bundled docs.
 
-What remains is server discovery (`nextjs_index`), runtime proxying (`nextjs_call`), and browser automation (`browser_eval`).
+What remains: the docs gateway (`nextjs_docs`), server discovery (`nextjs_index`), runtime proxying (`nextjs_call`), and browser automation (`browser_eval`).
 
 ## Privacy & Telemetry
 

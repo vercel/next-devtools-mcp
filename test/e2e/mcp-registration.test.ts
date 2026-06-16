@@ -97,10 +97,16 @@ describe("MCP Server Registration", () => {
       const tools = (toolsResponse.result as any).tools
       const toolNames = tools.map((t: any) => t.name).sort()
 
-      // Thin wrapper: server discovery/proxy + browser automation only.
-      // Docs search, prompts, and the upgrade/cache-components knowledge tools
-      // were removed (docs ship in node_modules/next/dist/docs; workflows are skills).
-      expect(toolNames).toEqual(["browser_eval", "nextjs_call", "nextjs_index"])
+      // Thin wrapper: server discovery/proxy, browser automation, and a
+      // version-aware docs gateway. The upgrade/cache-components knowledge tools,
+      // prompts, and resources were removed (workflows are skills); nextjs_docs
+      // no longer fetches — it points at the bundled docs in node_modules.
+      expect(toolNames).toEqual([
+        "browser_eval",
+        "nextjs_call",
+        "nextjs_docs",
+        "nextjs_index",
+      ])
     } finally {
       serverProcess.kill()
     }

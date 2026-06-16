@@ -2,7 +2,7 @@
 
 [![npm next-devtools-mcp package](https://img.shields.io/npm/v/next-devtools-mcp.svg)](https://npmjs.org/package/next-devtools-mcp)
 
-`next-devtools-mcp` is a Model Context Protocol (MCP) server that connects coding agents like Claude and Cursor to your running Next.js dev server. It discovers running servers and proxies their built-in MCP endpoint (`/_next/mcp`), giving agents live access to runtime errors, routes, and logs — plus Playwright-based browser testing.
+`next-devtools-mcp` is a Model Context Protocol (MCP) server that connects coding agents like Claude and Cursor to your running Next.js dev server. It discovers running servers and proxies their built-in MCP endpoint (`/_next/mcp`), giving agents live access to runtime errors, routes, and logs — plus a gateway to [`agent-browser`](https://github.com/vercel-labs/agent-browser) for browser testing.
 
 > [!NOTE]
 > This server no longer bundles documentation or migration prompts. Next.js ships its own docs in `node_modules/next/dist/docs/` (surfaced via `AGENTS.md`); the `nextjs_docs` tool now points agents there instead of fetching. Upgrade/Cache Components workflows are moving to agent skills. See [Migrating from 0.3.x](#migrating-from-03x).
@@ -238,39 +238,17 @@ Points your agent at the version-accurate Next.js documentation for the current 
 <details>
 <summary><code>browser_eval</code></summary>
 
-Automate and test web applications using Playwright browser automation.
+A gateway to [`agent-browser`](https://github.com/vercel-labs/agent-browser), a fast native browser-automation CLI for agents. **It does not drive the browser itself** — it detects whether `agent-browser` is installed and tells the agent how to install it and where to start, so the agent runs the CLI directly (faster and more capable than proxying automation through MCP).
 
-**When to use:**
-- Verifying pages in Next.js projects (especially during upgrades or testing)
-- Testing user interactions and flows
-- Taking screenshots for visual verification
-- Detecting runtime errors, hydration issues, and client-side problems
-- Capturing browser console errors and warnings
-
-**Important:** For Next.js projects, prioritize using the `nextjs_index` and `nextjs_call` tools instead of browser console log forwarding. Only use browser_eval's `console_messages` action as a fallback when these tools are not available.
-
-**Available actions:**
-- `start` - Start browser automation (automatically installs if needed)
-- `navigate` - Navigate to a URL
-- `click` - Click on an element
-- `type` - Type text into an element
-- `fill_form` - Fill multiple form fields at once
-- `evaluate` - Execute JavaScript in browser context
-- `screenshot` - Take a screenshot of the page
-- `console_messages` - Get browser console messages
-- `close` - Close the browser
-- `drag` - Perform drag and drop
-- `upload_file` - Upload files
-- `list_tools` - List all available browser automation tools from the server
+**What it does:**
+- If `agent-browser` is installed: returns the entry point (`agent-browser skills get core --full`) and example commands
+- If not installed: returns the install steps (`npm install -g agent-browser`, then `agent-browser install`)
 
 **Input:**
-- `action` (required) - The action to perform
-- `browser` (optional) - Browser to use: `chrome`, `firefox`, `webkit`, `msedge` (default: `chrome`)
-- `headless` (optional) - Run browser in headless mode (default: `true`)
-- Action-specific parameters (see tool description for details)
+- `task` (optional) - What you want to do in the browser; used only to tailor the guidance
 
 **Output:**
-- JSON with action result, screenshots (base64), console messages, or error information
+- JSON describing how to install or use `agent-browser`
 
 </details>
 
@@ -459,13 +437,13 @@ Connect directly to your running Next.js dev server's built-in MCP endpoint to q
 - Server Actions and component hierarchies
 
 ### **2. Browser Testing**
-Playwright-based browser automation for visual verification, interaction testing, and capturing client-side errors.
+A gateway to the [`agent-browser`](https://github.com/vercel-labs/agent-browser) CLI for visual verification, interaction testing, and capturing client-side errors. The agent runs the CLI directly; `browser_eval` just installs/points to it.
 
 > **Learn more:** See the [Next.js MCP documentation](https://nextjs.org/docs/app/guides/mcp) for details on how MCP servers work with Next.js and coding agents.
 
 ## How It Works
 
-This package is a **thin connector** between your coding agent and your Next.js dev server:
+This package is a **thin connector** between your coding agent and the tooling around your Next.js project:
 
 ```
 Coding Agent
@@ -473,7 +451,7 @@ Coding Agent
   next-devtools-mcp (this package)
       ↓
       ├─→ Next.js Dev Server MCP Endpoint (/_next/mcp) ← Runtime diagnostics
-      └─→ Playwright MCP Server ← Browser automation
+      └─→ agent-browser CLI ← Browser automation (gateway)
 ```
 
 It discovers running Next.js 16+ dev servers and proxies their built-in MCP endpoint at `http://localhost:PORT/_next/mcp`, giving agents direct access to runtime errors, routes, logs, and application state. The workflow: call `nextjs_index` to discover servers and their available tools, then `nextjs_call` with the port and tool name to execute one.

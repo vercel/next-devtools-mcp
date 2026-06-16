@@ -60,14 +60,9 @@ The main server entry point is `src/index.ts` which uses the standard MCP SDK wi
 - `nextjs_docs`: Version-aware docs gateway — points agents at the bundled docs in `node_modules/next/dist/docs/` (Next.js 16+) or recommends the upgrade codemod. Does NOT fetch docs.
 - `nextjs_index`: Discover all running Next.js dev servers and list their available MCP tools
 - `nextjs_call`: Execute specific MCP tools on a running Next.js dev server
-- `browser_eval`: Playwright browser automation (via `playwright-mcp` server)
-
-**MCP Client Library** (`src/_internal/mcp-client.ts`):
-- Connects to external MCP servers via stdio transport
-- Used by `browser_eval` to communicate with `playwright-mcp`
+- `browser_eval`: Gateway to the [`agent-browser`](https://github.com/vercel-labs/agent-browser) CLI — detects whether it's installed and returns install/usage guidance. Does NOT drive the browser itself.
 
 **Runtime Managers** (`src/_internal/`):
-- `browser-eval-manager.ts`: Manages Playwright MCP server lifecycle
 - `nextjs-runtime-manager.ts`: Discovers and connects to Next.js dev servers with MCP enabled
 
 **Telemetry System** (`src/telemetry/`):
@@ -96,20 +91,19 @@ The main server entry point is `src/index.ts` which uses the standard MCP SDK wi
 
 This server can:
 1. Act as a standalone MCP server (stdio transport using `@modelcontextprotocol/sdk`)
-2. Connect to other MCP servers as a client (e.g., playwright-mcp, Next.js runtime MCP)
+2. Connect to a running Next.js dev server's MCP endpoint as a client (`nextjs_index` / `nextjs_call`)
 
 **Key MCP Patterns**:
 - Server uses standard MCP SDK `Server` class with `StdioServerTransport`
 - Tools use Zod schemas for input validation, converted to JSON Schema for MCP
 - Tool handlers are called with validated arguments
 
-## External MCP Server Dependencies
+## External Dependencies
 
-**Playwright MCP** (`browser_eval` tool):
-- Automatically installed globally via npm when needed
-- Package: `@playwright/mcp`
-- Command: `npx @playwright/mcp@latest` (with optional `--browser` and `--headless` flags)
-- Used for browser automation and testing
+**agent-browser CLI** (`browser_eval` tool):
+- The [`agent-browser`](https://github.com/vercel-labs/agent-browser) npm package (native browser-automation CLI)
+- `browser_eval` does not spawn or proxy it; it detects whether it's installed (`command -v agent-browser`) and returns install/usage guidance so the agent runs the CLI directly
+- Install: `npm install -g agent-browser` then `agent-browser install`
 
 **Next.js Runtime MCP** (`nextjs_index` and `nextjs_call` tools):
 - Built into Next.js 16+ (enabled by default)
@@ -129,10 +123,8 @@ This server can:
 
 > This server intentionally ships tools only. Do not re-add prompt or resource handlers — documentation lives in Next.js's bundled docs (`node_modules/next/dist/docs/`) and workflows are distributed as agent skills.
 
-**Working with external MCP servers**:
-- Use `src/_internal/mcp-client.ts` for stdio-based communication
-- Create manager module in `src/_internal/` for lifecycle management
-- Handle server installation, connection, and cleanup
+**Connecting to the Next.js dev server**:
+- `src/_internal/nextjs-runtime-manager.ts` discovers running dev servers and forwards JSON-RPC to their `/_next/mcp` endpoint over HTTP (used by `nextjs_index` / `nextjs_call`)
 
 ## Package Publishing
 

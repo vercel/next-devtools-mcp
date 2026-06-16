@@ -1,353 +1,87 @@
 import { z } from "zod"
-import {
-  startBrowserEvalMCP,
-  stopBrowserEvalMCP,
-  getBrowserEvalConnection,
-} from "../_internal/browser-eval-manager.js"
-import { callServerTool, listServerTools } from "../_internal/mcp-client.js"
+import { execSync } from "child_process"
+
+// agent-browser is a standalone CLI (https://github.com/vercel-labs/agent-browser)
+// that performs fast, native browser automation for agents. Rather than embedding
+// a browser-automation server, browser_eval is a gateway: it detects whether
+// agent-browser is installed and tells the agent how to install and drive it.
+const AGENT_BROWSER_PACKAGE = "agent-browser"
+const INSTALL_COMMAND = "npm install -g agent-browser"
+const SETUP_COMMAND = "agent-browser install"
+const SKILLS_ENTRYPOINT = "agent-browser skills get core --full"
 
 export const inputSchema = {
-  action: z
-    .enum([
-      "start",
-      "navigate",
-      "click",
-      "type",
-      "fill_form",
-      "evaluate",
-      "screenshot",
-      "console_messages",
-      "close",
-      "drag",
-      "upload_file",
-      "list_tools",
-    ])
-    .describe("The action to perform using browser automation"),
-
-  browser: z
-    .enum(["chrome", "chromium", "firefox", "webkit", "msedge"])
-    .optional()
-    .describe(
-      "Browser to use (default: chrome). Use 'chromium' on platforms without a Chrome build (e.g. Linux arm64). Only used with 'start' action."
-    ),
-  headless: z
-    .union([z.boolean(), z.string().transform((val) => val === "true")])
-    .optional()
-    .describe("Run browser in headless mode (default: true). Only used with 'start' action."),
-
-  url: z.string().optional().describe("URL to navigate to (required for 'navigate' action)"),
-
-  element: z.string().optional().describe("Element to interact with (CSS selector or text)"),
-  ref: z
-    .string()
-    .optional()
-    .describe("Reference to element from accessibility snapshot (alias for 'target')"),
-  target: z
+  task: z
     .string()
     .optional()
     .describe(
-      "Exact target element reference from the page snapshot, or a unique element selector. Preferred over 'ref'."
+      "Optional: what you want to do in the browser (e.g. 'open localhost:3000 and check for console errors'). Used only to tailor the guidance."
     ),
-  doubleClick: z
-    .union([z.boolean(), z.string().transform((val) => val === "true")])
-    .optional()
-    .describe("Perform double click instead of single click"),
-  button: z.enum(["left", "right", "middle"]).optional().describe("Mouse button to use"),
-  modifiers: z
-    .array(z.string())
-    .optional()
-    .describe("Keyboard modifiers (e.g., ['Control', 'Shift'])"),
+}
 
-  text: z.string().optional().describe("Text to type into element"),
-
-  fields: z
-    .array(
-      z.object({
-        element: z.string().optional().describe("Human-readable element description"),
-        target: z
-          .string()
-          .optional()
-          .describe(
-            "Exact target element reference from the snapshot, or a unique selector. Preferred over 'selector'."
-          ),
-        selector: z.string().optional().describe("Alias for 'target' (back-compat)"),
-        name: z.string().optional().describe("Human-readable field name"),
-        type: z
-          .enum(["textbox", "checkbox", "radio", "combobox", "slider"])
-          .optional()
-          .describe("Field type (required by Playwright MCP)"),
-        value: z.string().describe("Value to fill into the field"),
-      })
-    )
-    .optional()
-    .describe("Array of fields to fill in a form"),
-
-  script: z.string().optional().describe("JavaScript code to evaluate in browser context"),
-
-  fullPage: z
-    .union([z.boolean(), z.string().transform((val) => val === "true")])
-    .optional()
-    .describe("Take full page screenshot"),
-
-  errorsOnly: z
-    .union([z.boolean(), z.string().transform((val) => val === "true")])
-    .optional()
-    .describe("Only return error messages from console"),
-
-  startElement: z.string().optional().describe("Starting element for drag operation"),
-  startRef: z.string().optional().describe("Starting element reference (alias for 'startTarget')"),
-  startTarget: z
-    .string()
-    .optional()
-    .describe("Exact source element reference for drag. Preferred over 'startRef'."),
-  endElement: z.string().optional().describe("Ending element for drag operation"),
-  endRef: z.string().optional().describe("Ending element reference (alias for 'endTarget')"),
-  endTarget: z
-    .string()
-    .optional()
-    .describe("Exact target element reference for drag. Preferred over 'endRef'."),
-
-  files: z.array(z.string()).optional().describe("File paths to upload"),
+type BrowserEvalArgs = {
+  task?: string
 }
 
 export const metadata = {
   name: "browser_eval",
-  description: `Automate and test web applications using Playwright browser automation.
-This tool connects to playwright-mcp server and provides access to all Playwright capabilities.
+  description: `Set up and use browser automation for this project via the agent-browser CLI.
 
-CRITICAL FOR PAGE VERIFICATION:
-When verifying pages in Next.js projects (especially during upgrades or testing), you MUST use browser automation to load pages
-in a real browser instead of curl or simple HTTP requests. This is because:
-- Browser automation actually renders the page and executes JavaScript (curl only fetches HTML)
-- Detects runtime errors, hydration issues, and client-side problems that curl cannot catch
-- Verifies the full user experience, not just HTTP status codes
-- Captures browser console errors and warnings via console_messages action
+This tool does NOT drive the browser itself. It points you at \`agent-browser\` — a fast, native browser-automation CLI built for agents (https://github.com/vercel-labs/agent-browser) — and tells you how to install it (if needed) and where to start. You then run its commands directly (you have shell access), which is faster and more capable than proxying automation through MCP.
 
-IMPORTANT FOR NEXT.JS PROJECTS:
-If working with a Next.js application, PRIORITIZE using the 'nextjs_index' and 'nextjs_call' tools instead of browser console log forwarding.
-Next.js has built-in MCP integration that provides superior error reporting, build diagnostics, and runtime information
-directly from the Next.js dev server. Only use browser_eval's console_messages action as a fallback when these Next.js tools
-are not available or when you specifically need to test client-side browser behavior that Next.js runtime cannot capture.
-
-Available actions:
-- start: Start browser automation (automatically installs if needed). Verbose logging is always enabled.
-- navigate: Navigate to a URL
-- click: Click on an element
-- type: Type text into an element
-- fill_form: Fill multiple form fields at once
-- evaluate: Execute JavaScript in browser context
-- screenshot: Take a screenshot of the page
-- console_messages: Get browser console messages (for Next.js, prefer nextjs_index/nextjs_call tools instead)
-- close: Close the browser
-- drag: Perform drag and drop
-- upload_file: Upload files
-- list_tools: List all available browser automation tools from the server
-
-Note: The playwright-mcp server will be automatically installed if not present.`,
+Call this when you need to open pages, click, type, screenshot, or capture console errors in a real browser.`,
 }
 
-type BrowserEvalArgs = {
-  action:
-    | "start"
-    | "navigate"
-    | "click"
-    | "type"
-    | "fill_form"
-    | "evaluate"
-    | "screenshot"
-    | "console_messages"
-    | "close"
-    | "drag"
-    | "upload_file"
-    | "list_tools"
-  browser?: "chrome" | "chromium" | "firefox" | "webkit" | "msedge"
-  headless?: boolean | string
-  url?: string
-  element?: string
-  ref?: string
-  target?: string
-  doubleClick?: boolean | string
-  button?: "left" | "right" | "middle"
-  modifiers?: string[]
-  text?: string
-  fields?: Array<{
-    element?: string
-    target?: string
-    selector?: string
-    name?: string
-    type?: "textbox" | "checkbox" | "radio" | "combobox" | "slider"
-    value: string
-  }>
-  script?: string
-  fullPage?: boolean | string
-  errorsOnly?: boolean | string
-  startElement?: string
-  startRef?: string
-  startTarget?: string
-  endElement?: string
-  endRef?: string
-  endTarget?: string
-  files?: string[]
-}
-
-export async function handler(args: BrowserEvalArgs): Promise<string> {
+function detectAgentBrowser(): { installed: boolean; version: string | null } {
   try {
-    if (args.action === "start") {
-      const connection = await startBrowserEvalMCP({
-        browser: args.browser || "chrome",
-        headless: args.headless !== false,
-      })
-      return JSON.stringify({
-        success: true,
-        message: `Browser automation started (${args.browser || "chrome"}, headless: ${
-          args.headless !== false
-        })`,
-        connection: "connected",
-        verbose_logging: "Verbose logging enabled - Browser automation logs will appear in stderr",
-      })
-    }
+    const probe =
+      process.platform === "win32"
+        ? "where agent-browser"
+        : "command -v agent-browser"
+    const resolved = execSync(probe, { stdio: "pipe" }).toString().trim()
+    if (!resolved) return { installed: false, version: null }
+  } catch {
+    return { installed: false, version: null }
+  }
 
-    if (args.action === "list_tools") {
-      const connection = getBrowserEvalConnection()
-      if (!connection) {
-        return JSON.stringify({
-          success: false,
-          error: "Browser automation not started. Use action='start' first.",
-        })
-      }
+  let version: string | null = null
+  try {
+    version = execSync("agent-browser --version", { stdio: "pipe" })
+      .toString()
+      .trim()
+  } catch {
+    // Installed but version probe failed — not important.
+  }
+  return { installed: true, version }
+}
 
-      const tools = await listServerTools(connection)
-      return JSON.stringify({
-        success: true,
-        tools,
-        message: `Found ${tools.length} tools available in playwright-mcp`,
-      })
-    }
+export async function handler({ task }: BrowserEvalArgs): Promise<string> {
+  const { installed, version } = detectAgentBrowser()
 
-    if (args.action === "close") {
-      await stopBrowserEvalMCP()
-      return JSON.stringify({
-        success: true,
-        message: "Browser automation closed",
-      })
-    }
-
-    const connection = getBrowserEvalConnection()
-    if (!connection) {
-      return JSON.stringify({
-        success: false,
-        error: "Browser automation not started. Use action='start' first.",
-      })
-    }
-
-    let toolName: string
-    let toolArgs: Record<string, unknown>
-
-    switch (args.action) {
-      case "navigate":
-        if (!args.url) {
-          throw new Error("URL is required for navigate action")
-        }
-        toolName = "browser_navigate"
-        toolArgs = { url: args.url }
-        break
-
-      case "click":
-        toolName = "browser_click"
-        toolArgs = {
-          element: args.element,
-          target: args.target ?? args.ref,
-          doubleClick: args.doubleClick,
-          button: args.button,
-          modifiers: args.modifiers,
-        }
-        break
-
-      case "type":
-        if (!args.text) {
-          throw new Error("Text is required for type action")
-        }
-        toolName = "browser_type"
-        toolArgs = {
-          element: args.element,
-          target: args.target ?? args.ref,
-          text: args.text,
-        }
-        break
-
-      case "fill_form":
-        if (!args.fields) {
-          throw new Error("Fields are required for fill_form action")
-        }
-        toolName = "browser_fill_form"
-        toolArgs = {
-          fields: args.fields.map((f) => ({
-            element: f.element,
-            target: f.target ?? f.selector,
-            name: f.name,
-            type: f.type,
-            value: f.value,
-          })),
-        }
-        break
-
-      case "evaluate":
-        if (!args.script) {
-          throw new Error("Script is required for evaluate action")
-        }
-        toolName = "browser_evaluate"
-        toolArgs = {
-          function: args.script,
-          element: args.element,
-          target: args.target ?? args.ref,
-        }
-        break
-
-      case "screenshot":
-        toolName = "browser_take_screenshot"
-        toolArgs = { fullPage: args.fullPage }
-        break
-
-      case "console_messages":
-        toolName = "browser_console_messages"
-        toolArgs = { errorsOnly: args.errorsOnly }
-        break
-
-      case "drag":
-        if (!args.startElement || !args.endElement) {
-          throw new Error("startElement and endElement are required for drag action")
-        }
-        toolName = "browser_drag"
-        toolArgs = {
-          startElement: args.startElement,
-          startTarget: args.startTarget ?? args.startRef,
-          endElement: args.endElement,
-          endTarget: args.endTarget ?? args.endRef,
-        }
-        break
-
-      case "upload_file":
-        toolName = "browser_file_upload"
-        toolArgs = { files: args.files }
-        break
-
-      default:
-        throw new Error(`Unknown action: ${args.action}`)
-    }
-
-    const result = await callServerTool(connection, toolName, toolArgs)
-
+  if (installed) {
     return JSON.stringify({
-      success: true,
-      action: args.action,
-      result,
-    })
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    return JSON.stringify({
-      success: false,
-      error: errorMessage,
-      action: args.action,
+      status: "use_agent_browser",
+      tool: AGENT_BROWSER_PACKAGE,
+      version,
+      instructions: [
+        `agent-browser is installed. Drive the browser by running its CLI directly.`,
+        `First, load its usage guide so you use the right commands and selectors: \`${SKILLS_ENTRYPOINT}\``,
+        `Then run commands such as: \`agent-browser open <url>\`, \`agent-browser click <selector>\`, \`agent-browser type <selector> <text>\`, \`agent-browser screenshot\`.`,
+        task
+          ? `For your task ("${task}"), open the page first, then use the commands from the skill guide.`
+          : null,
+      ].filter(Boolean),
     })
   }
+
+  return JSON.stringify({
+    status: "install_required",
+    tool: AGENT_BROWSER_PACKAGE,
+    instructions: [
+      `Install the agent-browser CLI: \`${INSTALL_COMMAND}\``,
+      `Download its managed Chrome (first run only): \`${SETUP_COMMAND}\``,
+      `Then load its usage guide before driving the browser: \`${SKILLS_ENTRYPOINT}\``,
+      `After that, run commands directly, e.g. \`agent-browser open <url>\`.`,
+    ],
+  })
 }

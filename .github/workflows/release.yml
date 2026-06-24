@@ -21,9 +21,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing (OIDC) needs npm >= 11.5.1; the version bundled with
+      # Node does not satisfy this yet.
+      - name: Update npm for trusted publishing
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -31,7 +36,7 @@ jobs:
       - name: Build package
         run: pnpm run build
 
+      # Authenticates via OIDC against the npm trusted publisher configured for
+      # this repo + workflow — no NPM_TOKEN needed. Provenance is automatic.
       - name: Publish to npm
-        run: pnpm publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
+        run: npm publish --access public

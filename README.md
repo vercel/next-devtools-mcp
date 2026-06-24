@@ -2,34 +2,30 @@
 
 [![npm next-devtools-mcp package](https://img.shields.io/npm/v/next-devtools-mcp.svg)](https://npmjs.org/package/next-devtools-mcp)
 
-`next-devtools-mcp` is a Model Context Protocol (MCP) server that connects coding agents like Claude and Cursor to your running Next.js dev server. It discovers running servers and proxies their built-in MCP endpoint (`/_next/mcp`), giving agents live access to runtime errors, routes, and logs — plus a gateway to [`agent-browser`](https://github.com/vercel-labs/agent-browser) for browser testing.
+`next-devtools-mcp` is a Model Context Protocol (MCP) server that connects coding agents like Claude and Cursor to your running Next.js dev server.
+
+It is a **thin connector**. It discovers running Next.js 16+ dev servers and proxies their built-in MCP endpoint (`/_next/mcp`) so agents get live runtime errors, routes, and logs. It also ships two **gateways** that point agents at tools they run directly: version-accurate docs and the [`agent-browser`](https://github.com/vercel-labs/agent-browser) CLI.
 
 > [!NOTE]
-> This server no longer bundles documentation or migration prompts. Next.js ships its own docs in `node_modules/next/dist/docs/` (surfaced via `AGENTS.md`); the `nextjs_docs` tool now points agents there instead of fetching. Upgrade/Cache Components workflows are moving to agent skills. See [Migrating from 0.3.x](#migrating-from-03x).
+> Docs and migration workflows no longer live in this server. Next.js bundles its own docs at `node_modules/next/dist/docs/`, and upgrade / Cache Components workflows are distributed as agent skills. See [Migrating from 0.3.x](#migrating-from-03x).
 
+## Requirements
 
-## Getting Started
-
-### Requirements
-
-- [Node.js](https://nodejs.org/) v20.19 or a newer [latest maintenance LTS](https://github.com/nodejs/Release#release-schedule) version
+- [Node.js](https://nodejs.org/) v20.19 or a newer [LTS](https://github.com/nodejs/Release#release-schedule) version
 - [npm](https://www.npmjs.com/) or [pnpm](https://pnpm.io/)
+- Next.js 16+ with a running dev server (for `nextjs_index` / `nextjs_call`)
 
+## Install
 
-### Install with add-mcp
-
-Install the MCP server for all your coding agents:
+Install for all your coding agents with [`add-mcp`](https://www.npmjs.com/package/add-mcp):
 
 ```bash
 npx add-mcp next-devtools-mcp@latest
 ```
 
-Add `-y` to skip the confirmation prompt and install to all detected agents already in use in the project directory. Add `-g` to install globally across all projects.
+Add `-y` to skip the prompt and install to all detected agents. Add `-g` to install globally across all projects.
 
-
-### Manual installation
-
-Add the following config to your MCP client:
+Or add the config to your MCP client manually:
 
 ```json
 {
@@ -43,56 +39,40 @@ Add the following config to your MCP client:
 ```
 
 > [!NOTE]
-> Using `next-devtools-mcp@latest` ensures that your MCP client will always use the latest version of the Next.js DevTools MCP server.
+> `next-devtools-mcp@latest` keeps your client on the latest version.
 
-### MCP Client Configuration
+### Client-specific setup
 
 <details>
 <summary>Amp</summary>
-
-**Using Amp CLI:**
 
 ```bash
 amp mcp add next-devtools -- npx next-devtools-mcp@latest
 ```
 
-**Or configure manually:**
-
-Follow [Amp's MCP documentation](https://ampcode.com/manual#mcp) and apply the standard configuration shown above.
+Or follow [Amp's MCP docs](https://ampcode.com/manual#mcp) with the config above.
 
 </details>
 
 <details>
 <summary>Claude Code</summary>
 
-Use the Claude Code CLI to add the Next.js DevTools MCP server:
-
 ```bash
 claude mcp add next-devtools npx next-devtools-mcp@latest
 ```
 
-Alternatively, manually configure Claude by editing your MCP settings file and adding the configuration shown above.
+Or edit your MCP settings file with the config above.
 
 </details>
 
 <details>
 <summary>Codex</summary>
 
-**Using Codex CLI:**
-
 ```bash
 codex mcp add next-devtools -- npx next-devtools-mcp@latest
 ```
 
-**Or configure manually:**
-
-Follow the MCP setup guide with the standard configuration format:
-- Command: `npx`
-- Arguments: `-y, next-devtools-mcp@latest`
-
-**Windows 11 Special Configuration:**
-
-Update `.codex/config.toml` with environment variables and increased startup timeout:
+**Windows 11:** add environment variables and a longer startup timeout to `.codex/config.toml`:
 
 ```toml
 env = { SystemRoot="C:\\Windows", PROGRAMFILES="C:\\Program Files" }
@@ -104,45 +84,29 @@ startup_timeout_ms = 20_000
 <details>
 <summary>Cursor</summary>
 
-**Click the button to install:**
-
 [Install in Cursor](https://cursor.com/en/install-mcp?name=next-devtools&config=eyJjb21tYW5kIjoibnB4IC15IG5leHQtZGV2dG9vbHMtbWNwQGxhdGVzdCJ9)
 
-**Or install manually:**
-
-Go to `Cursor Settings` → `MCP` → `New MCP Server`. Use the config provided above.
+Or go to `Cursor Settings` → `MCP` → `New MCP Server` and use the config above.
 
 </details>
 
 <details>
 <summary>Gemini</summary>
 
-**Using Gemini CLI:**
-
-Project-wide installation:
 ```bash
+# Project
 gemini mcp add next-devtools npx next-devtools-mcp@latest
-```
 
-Global installation:
-```bash
+# Global
 gemini mcp add -s user next-devtools npx next-devtools-mcp@latest
 ```
-
-**Or configure manually:**
-
-Follow the MCP setup guide with these parameters:
-- Command: `npx`
-- Arguments: `-y, next-devtools-mcp@latest`
 
 </details>
 
 <details>
 <summary>Google Antigravity</summary>
 
-**Configure in MCP config file:**
-
-Add this to your Antigravity MCP config file: `.gemini/antigravity/mcp_config.json`
+Add to `.gemini/antigravity/mcp_config.json`:
 
 ```json
 {
@@ -155,31 +119,25 @@ Add this to your Antigravity MCP config file: `.gemini/antigravity/mcp_config.js
 }
 ```
 
-See [Antigravity MCP docs](https://antigravity.google/docs/mcp) for more info.
+See the [Antigravity MCP docs](https://antigravity.google/docs/mcp).
 
 </details>
 
 <details>
 <summary>VS Code / Copilot</summary>
 
-**Using VS Code CLI:**
-
 ```bash
 code --add-mcp '{"name":"next-devtools","command":"npx","args":["-y","next-devtools-mcp@latest"]}'
 ```
 
-**Or configure manually:**
-
-Follow the official VS Code MCP server setup guide and add the Next.js DevTools server through VS Code settings.
+Or follow the official VS Code MCP setup guide.
 
 </details>
 
 <details>
 <summary>Warp</summary>
 
-**Using Warp UI:**
-
-Navigate to `Settings | AI | Manage MCP Servers` and select `+ Add` to register a new MCP server with the following configuration:
+`Settings | AI | Manage MCP Servers` → `+ Add`:
 - Name: `next-devtools`
 - Command: `npx`
 - Arguments: `-y, next-devtools-mcp@latest`
@@ -194,184 +152,114 @@ Start your Next.js dev server:
 npm run dev
 ```
 
-Next.js 16+ has its MCP endpoint enabled by default at `http://localhost:3000/_next/mcp` (or whichever port your dev server uses). `next-devtools-mcp` automatically discovers and connects to it — no configuration needed.
+Next.js 16+ enables its MCP endpoint by default at `http://localhost:3000/_next/mcp`. `next-devtools-mcp` discovers and connects to it automatically — no config needed.
 
-Then ask your coding agent about your running application:
+Then ask your agent about the running app:
 
 ```
 Next Devtools, what errors are in my Next.js application?
-```
-
-```
 Next Devtools, show me the structure of my routes
-```
-
-```
 Next Devtools, what's in the development server logs?
 ```
 
-Your agent uses the `nextjs_index` and `nextjs_call` tools to query your running application's actual state.
+The agent calls `nextjs_index` to discover servers, then `nextjs_call` to query their real state.
 
-> **Looking for docs, upgrades, or Cache Components setup?** Those no longer live here — see [Migrating from 0.3.x](#migrating-from-03x).
+## Tools
 
-## MCP Tools
+| Tool           | What it does                                                                              |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| `nextjs_index` | Discover running Next.js dev servers and list each one's runtime MCP tools.                |
+| `nextjs_call`  | Call a runtime tool on a discovered server (errors, routes, logs, Server Actions).        |
+| `nextjs_docs`  | **Gateway.** Point the agent at version-accurate docs in `node_modules/next/dist/docs/`.  |
+| `browser_eval` | **Gateway.** Point the agent at the [`agent-browser`](https://github.com/vercel-labs/agent-browser) CLI for browser automation. |
+
+The gateways do not do the work themselves — they tell the agent where the docs are or how to install/run the CLI, and the agent runs it directly (faster than proxying through MCP).
 
 <details>
-<summary><code>nextjs_docs</code></summary>
+<summary><code>nextjs_index</code> — discover servers</summary>
 
-Points your agent at the version-accurate Next.js documentation for the current project. **It does not fetch docs** — Next.js 16+ ships its full documentation inside the installed package at `node_modules/next/dist/docs/` (markdown, matching your exact version), and this tool tells the agent where to read it.
+Scans common ports for running Next.js 16+ dev servers and lists each server's built-in runtime tools at `/_next/mcp`. No parameters.
 
-**What it does:**
-- Detects the project's installed Next.js version
-- On Next.js 16+: returns the local docs path and how to read/grep it, so the agent uses version-accurate docs instead of training-data guesses
-- On older versions: recommends upgrading with `npx @next/codemod@latest upgrade latest`, which brings the bundled docs and an `AGENTS.md` that points agents to them
+Runtime tools exposed by Next.js (varies by version):
+- `get_errors` — current build, runtime, and type errors
+- `get_logs` — path to the dev log file (browser console + server output)
+- `get_page_metadata` — routes, pages, component metadata
+- `get_project_metadata` — project structure, config, dev server URL
+- `get_server_action_by_id` — resolve a Server Action ID to its source file
 
-**Input:**
-- `topic` (optional) - What you're looking for (e.g. `use cache`, `generateMetadata`); used only to suggest where to look
-- `project_path` (optional) - Path to the project (defaults to current directory)
-
-**Output:**
-- JSON describing where to read the docs, or how to upgrade to get them
+Output: JSON listing discovered servers (port, PID, URL) and their tools.
 
 </details>
 
 <details>
-<summary><code>browser_eval</code></summary>
+<summary><code>nextjs_call</code> — run a runtime tool</summary>
 
-A gateway to [`agent-browser`](https://github.com/vercel-labs/agent-browser), a fast native browser-automation CLI for agents. **It does not drive the browser itself** — it detects whether `agent-browser` is installed and tells the agent how to install it and where to start, so the agent runs the CLI directly (faster and more capable than proxying automation through MCP).
+Calls one runtime tool on a discovered server. Run `nextjs_index` first to find the port and tool name.
 
-**What it does:**
-- If `agent-browser` is installed: returns the entry point (`agent-browser skills get core --full`) and example commands
-- If not installed: returns the install steps (`npm install -g agent-browser`, then `agent-browser install`)
+Input:
+- `port` (required) — dev server port
+- `toolName` (required) — runtime tool to invoke
+- `args` (optional) — arguments object, only if the tool requires them
 
-**Input:**
-- `task` (optional) - What you want to do in the browser; used only to tailor the guidance
-
-**Output:**
-- JSON describing how to install or use `agent-browser`
-
-</details>
-
-<details>
-<summary><code>nextjs_index</code></summary>
-
-Discover all running Next.js dev servers and list their available MCP tools.
-
-**What this tool does:**
-
-Automatically discovers all running Next.js 16+ dev servers on your machine and lists the runtime diagnostic tools available from each server's built-in MCP endpoint at `/_next/mcp`.
-
-**No parameters required** - Just call the tool and it will scan for servers.
-
-**Available Next.js Runtime Tools** (varies by Next.js version):
-- `get_errors` - Get current build, runtime, and type errors
-- `get_logs` - Get path to development log file (browser console + server output)
-- `get_page_metadata` - Query application routes, pages, and component metadata
-- `get_project_metadata` - Get project structure, config, and dev server URL
-- `get_server_action_by_id` - Look up Server Actions by ID to find source files
-
-**Requirements:**
-- Next.js 16+ (MCP enabled by default)
-- Running dev server (`npm run dev`)
-
-**Output:**
-- JSON with list of discovered servers, each containing:
-  - Port, PID, URL
-  - Available tools with descriptions and input schemas
-
-**Example prompts:**
-- "Next Devtools, what servers are running?"
-- "Next Devtools, show me available diagnostic tools"
-
-</details>
-
-<details>
-<summary><code>nextjs_call</code></summary>
-
-Execute a specific MCP tool on a running Next.js dev server.
-
-**What this tool does:**
-
-Calls a specific runtime diagnostic tool on a Next.js 16+ dev server's built-in MCP endpoint at `/_next/mcp`.
-
-**Input Parameters:**
-- `port` (required) - Dev server port (use `nextjs_index` first to discover)
-- `toolName` (required) - Name of the Next.js tool to invoke
-- `args` (optional) - Arguments object for the tool (only if required by that tool)
-
-**Requirements:**
-- Next.js 16+ (MCP enabled by default)
-- Running dev server (`npm run dev`)
-- Use `nextjs_index` first to discover available servers and tools
-
-**Typical workflow:**
-
-```javascript
-// Step 1: Discover servers and tools
-// (call nextjs_index first)
-
-// Step 2: Call a specific tool
-{
-  "port": 3000,
-  "toolName": "get_errors"
-  // args is optional and only needed if the tool requires parameters
-}
+```jsonc
+{ "port": 3000, "toolName": "get_errors" }
 ```
 
-**Output:**
-- JSON with tool execution results
+Output: JSON with the tool's result.
 
-**Example prompts that use this tool:**
-- "Next Devtools, what errors are in my Next.js app?"
-- "Next Devtools, show me my application routes"
-- "Next Devtools, what's in the dev server logs?"
-- "Next Devtools, find the Server Action with ID xyz"
+</details>
+
+<details>
+<summary><code>nextjs_docs</code> — find version-accurate docs</summary>
+
+Does **not** fetch docs. Next.js 16+ ships its full docs (markdown, matching your installed version) at `node_modules/next/dist/docs/`. This tool returns that path and how to read it, so the agent uses version-accurate docs instead of training-data guesses. On older Next.js, it recommends `npx @next/codemod@latest upgrade latest`.
+
+Input: `topic` (optional), `project_path` (optional, defaults to cwd).
+
+</details>
+
+<details>
+<summary><code>browser_eval</code> — set up browser automation</summary>
+
+Does **not** drive the browser. It detects whether [`agent-browser`](https://github.com/vercel-labs/agent-browser) is installed and returns either the entry point (`agent-browser skills get core --full`) or the install steps (`npm install -g agent-browser`, then `agent-browser install`), so the agent runs the CLI directly.
+
+Input: `task` (optional) — used only to tailor the guidance.
 
 </details>
 
 ## Migrating from 0.3.x
 
-Starting in 0.4.0, `next-devtools-mcp` is a thin connector to the Next.js dev server.
+Starting in 0.4.0, `next-devtools-mcp` is a thin connector.
 
 **Changed:**
-- **`nextjs_docs`** no longer fetches documentation over the network. It is now a gateway that points your agent at the version-accurate docs Next.js bundles at `node_modules/next/dist/docs/` (or recommends upgrading if the project is too old). The `nextjs-docs://llms-index` resource is removed.
+- `nextjs_docs` no longer fetches docs over the network. It points the agent at the docs Next.js bundles at `node_modules/next/dist/docs/` (or recommends upgrading). The `nextjs-docs://llms-index` resource is removed.
 
 **Removed:**
-- **`init` tool** — it existed only to enforce the old docs-fetch workflow, which is no longer needed.
-- **`upgrade_nextjs_16` and `enable_cache_components` tools, and their prompts** — these workflows are moving to distributable agent skills.
-- **All `cache-components://`, `nextjs16://`, and `nextjs-fundamentals://` resources** — superseded by the bundled docs.
+- `init` tool — it only enforced the old docs-fetch workflow.
+- `upgrade_nextjs_16` and `enable_cache_components` tools and their prompts — now distributed as agent skills.
+- All `cache-components://`, `nextjs16://`, and `nextjs-fundamentals://` resources — superseded by the bundled docs.
 
-What remains: the docs gateway (`nextjs_docs`), server discovery (`nextjs_index`), runtime proxying (`nextjs_call`), and browser automation (`browser_eval`).
+What remains: `nextjs_index`, `nextjs_call`, `nextjs_docs`, and `browser_eval`.
 
 ## Privacy & Telemetry
 
-### What Data is Collected
+`next-devtools-mcp` collects anonymous usage telemetry to improve the tool:
 
-`next-devtools-mcp` collects anonymous usage telemetry to help improve the tool. The following data is collected:
+- **Tool usage** — which MCP tools are invoked (e.g. `nextjs_index`, `nextjs_call`)
+- **Error events** — anonymous error messages when tools fail
+- **Session metadata** — session ID, timestamps, basic environment (OS, Node.js version)
 
-- **Tool usage**: Which MCP tools are invoked (e.g., `nextjs_index`, `nextjs_call`, `browser_eval`)
-- **Error events**: Anonymous error messages when tools fail
-- **Session metadata**: Session ID, timestamps, and basic environment info (OS, Node.js version)
+**Not collected:** your code, file contents or paths, personal data, credentials, or tool arguments (only tool names).
 
-**What is NOT collected:**
-- Your project code, file contents, or file paths
-- Personal information or identifiable data
-- API keys, credentials, or sensitive configuration
-- Arguments passed to tools (except tool names)
+Local files live under `~/.next-devtools-mcp/` (anonymous `telemetry-id`, `telemetry-salt`, and a debug log `mcp.log`).
 
-Local files are written under `~/.next-devtools-mcp/` (anonymous `telemetry-id`, `telemetry-salt`, and a debug log `mcp.log`). Events are sent to the telemetry endpoint in the background to help us understand usage patterns and improve reliability.
-
-### Opt-Out
-
-To disable telemetry completely, set the environment variable:
+**Opt out** by setting the environment variable (add it to `~/.zshrc` / `~/.bashrc` to persist):
 
 ```bash
 export NEXT_TELEMETRY_DISABLED=1
 ```
 
-Add this to your shell configuration file (e.g., `~/.bashrc`, `~/.zshrc`) to make it permanent.
-
-You can also delete your local telemetry data at any time:
+Delete local telemetry data anytime:
 
 ```bash
 rm -rf ~/.next-devtools-mcp
@@ -379,84 +267,45 @@ rm -rf ~/.next-devtools-mcp
 
 ## Troubleshooting
 
-### Module Not Found Error
+**`ERR_MODULE_NOT_FOUND` referencing `next-devtools-mcp/dist`** — clear your npx cache and restart your MCP client. The server reinstalls fresh.
 
-If you encounter an `ERR_MODULE_NOT_FOUND` error referencing `next-devtools-mcp/dist`:
+**`[error] No server info found`** — `nextjs_index` / `nextjs_call` need a running Next.js 16+ dev server:
+1. Start it: `npm run dev`
+2. Confirm Next.js 16+ (the `/_next/mcp` endpoint only exists there)
+3. Verify it started without errors
 
-**Solution:** Clear your npx cache and restart your MCP client (Cursor, Claude Code, etc.). The server will be freshly installed.
-
-### "No server info found" Error
-
-If you see `[error] No server info found`:
-
-**Solutions:**
-1. Make sure your Next.js dev server is running: `npm run dev`
-2. Confirm you are on Next.js 16+ (the `/_next/mcp` endpoint is only available there)
-3. Verify your dev server started successfully without errors
-
-**Note:** The `nextjs_index` and `nextjs_call` tools require Next.js 16+ with a running dev server. `browser_eval` works without one.
+`browser_eval` and `nextjs_docs` work without a dev server.
 
 ## Local Development
 
-To run the MCP server locally for development:
-
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   pnpm install
-   pnpm build
-   ```
-3. Configure your MCP client to use the local version:
-   ```json
-   {
-     "mcpServers": {
-       "next-devtools": {
-         "command": "node",
-         "args": ["/absolute/path/to/next-devtools-mcp/dist/index.js"]
-       }
-     }
-   }
-   ```
-
-   Note: Replace `/absolute/path/to/next-devtools-mcp` with the actual absolute path to your cloned repository.
-
-   or manually add, e.g. with codex:
-   ```
-   codex mcp add next-devtools-local -- node dist/index.js
-   ```
-
-## Features
-
-This MCP server gives coding agents two capabilities:
-
-### **1. Runtime Diagnostics & Live State Access** (Next.js 16+)
-Connect directly to your running Next.js dev server's built-in MCP endpoint to query:
-- Real-time build and runtime errors
-- Application routes, pages, and component metadata
-- Development server logs and diagnostics
-- Server Actions and component hierarchies
-
-### **2. Browser Testing**
-A gateway to the [`agent-browser`](https://github.com/vercel-labs/agent-browser) CLI for visual verification, interaction testing, and capturing client-side errors. The agent runs the CLI directly; `browser_eval` just installs/points to it.
-
-> **Learn more:** See the [Next.js MCP documentation](https://nextjs.org/docs/app/guides/mcp) for details on how MCP servers work with Next.js and coding agents.
-
-## How It Works
-
-This package is a **thin connector** between your coding agent and the tooling around your Next.js project:
-
-```
-Coding Agent
-      ↓
-  next-devtools-mcp (this package)
-      ↓
-      ├─→ Next.js Dev Server MCP Endpoint (/_next/mcp) ← Runtime diagnostics
-      └─→ agent-browser CLI ← Browser automation (gateway)
+```bash
+git clone https://github.com/vercel/next-devtools-mcp.git
+cd next-devtools-mcp
+pnpm install
+pnpm build
 ```
 
-It discovers running Next.js 16+ dev servers and proxies their built-in MCP endpoint at `http://localhost:PORT/_next/mcp`, giving agents direct access to runtime errors, routes, logs, and application state. The workflow: call `nextjs_index` to discover servers and their available tools, then `nextjs_call` with the port and tool name to execute one.
+Point your MCP client at the local build:
 
+```json
+{
+  "mcpServers": {
+    "next-devtools": {
+      "command": "node",
+      "args": ["/absolute/path/to/next-devtools-mcp/dist/index.js"]
+    }
+  }
+}
+```
+
+Or with Codex:
+
+```bash
+codex mcp add next-devtools-local -- node dist/index.js
+```
+
+See the [Next.js MCP documentation](https://nextjs.org/docs/app/guides/mcp) for how MCP works with Next.js and coding agents.
 
 ## License
 
-MIT License
+MIT

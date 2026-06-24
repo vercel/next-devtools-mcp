@@ -100,8 +100,8 @@ describe("MCP Telemetry Tracking", () => {
         id: 2,
         method: "tools/call",
         params: {
-          name: "nextjs_docs",
-          arguments: { action: "search", query: "cache" },
+          name: "nextjs_index",
+          arguments: {},
         },
       })
 
@@ -110,8 +110,8 @@ describe("MCP Telemetry Tracking", () => {
         id: 3,
         method: "tools/call",
         params: {
-          name: "nextjs_docs",
-          arguments: { action: "search", query: "metadata" },
+          name: "nextjs_index",
+          arguments: {},
         },
       })
 
@@ -157,8 +157,8 @@ describe("MCP Telemetry Tracking", () => {
         id: 2,
         method: "tools/call",
         params: {
-          name: "nextjs_docs",
-          arguments: { action: "search", query: "cache" },
+          name: "nextjs_index",
+          arguments: {},
         },
       })
 
@@ -182,16 +182,16 @@ describe("Telemetry Integration (Unit)", () => {
     const { mcpTelemetryTracker } = await import("../../src/telemetry/mcp-telemetry-tracker.js")
 
     // Simulate tool calls
-    mcpTelemetryTracker.recordToolCall("mcp/nextjs_docs")
-    mcpTelemetryTracker.recordToolCall("mcp/nextjs_docs")
-    mcpTelemetryTracker.recordToolCall("mcp/init")
+    mcpTelemetryTracker.recordToolCall("mcp/nextjs_call")
+    mcpTelemetryTracker.recordToolCall("mcp/nextjs_call")
+    mcpTelemetryTracker.recordToolCall("mcp/nextjs_index")
 
     const usages = getMcpTelemetryUsage()
     expect(usages).toHaveLength(2)
 
     const usageMap = new Map(usages.map((u) => [u.featureName, u.invocationCount]))
-    expect(usageMap.get("mcp/nextjs_docs")).toBe(2)
-    expect(usageMap.get("mcp/init")).toBe(1)
+    expect(usageMap.get("mcp/nextjs_call")).toBe(2)
+    expect(usageMap.get("mcp/nextjs_index")).toBe(1)
   })
 
   it("should generate correct telemetry events", async () => {
@@ -199,23 +199,21 @@ describe("Telemetry Integration (Unit)", () => {
     const { eventMcpToolUsage, EVENT_MCP_TOOL_USAGE } = await import("../../src/telemetry/telemetry-events.js")
 
     // Simulate a realistic session
-    mcpTelemetryTracker.recordToolCall("mcp/init")
-    mcpTelemetryTracker.recordToolCall("mcp/nextjs_docs")
-    mcpTelemetryTracker.recordToolCall("mcp/nextjs_docs")
-    mcpTelemetryTracker.recordToolCall("mcp/browser_eval")
     mcpTelemetryTracker.recordToolCall("mcp/nextjs_index")
+    mcpTelemetryTracker.recordToolCall("mcp/nextjs_call")
+    mcpTelemetryTracker.recordToolCall("mcp/nextjs_call")
+    mcpTelemetryTracker.recordToolCall("mcp/browser_eval")
 
     const usages = getMcpTelemetryUsage()
     const events = eventMcpToolUsage(usages)
 
-    expect(events).toHaveLength(4)
+    expect(events).toHaveLength(3)
     expect(events.every((e) => e.eventName === EVENT_MCP_TOOL_USAGE)).toBe(true)
 
     // Verify event structure
     const toolMap = new Map(events.map((e) => [e.fields.toolName, e.fields.invocationCount]))
-    expect(toolMap.get("mcp/init")).toBe(1)
-    expect(toolMap.get("mcp/nextjs_docs")).toBe(2)
-    expect(toolMap.get("mcp/browser_eval")).toBe(1)
     expect(toolMap.get("mcp/nextjs_index")).toBe(1)
+    expect(toolMap.get("mcp/nextjs_call")).toBe(2)
+    expect(toolMap.get("mcp/browser_eval")).toBe(1)
   })
 })

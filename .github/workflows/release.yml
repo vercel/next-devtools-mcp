@@ -1,16 +1,22 @@
-name: Release to npm
+name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
 
 jobs:
-  publish:
+  release:
+    name: Release
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -22,7 +28,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'pnpm'
+          cache: pnpm
           registry-url: 'https://registry.npmjs.org'
 
       # Trusted publishing (OIDC) needs npm >= 11.5.1; the version bundled with
@@ -33,10 +39,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build package
-        run: pnpm run build
-
-      # Authenticates via OIDC against the npm trusted publisher configured for
-      # this repo + workflow — no NPM_TOKEN needed. Provenance is automatic.
-      - name: Publish to npm
-        run: npm publish --access public
+      # Opens/updates the "Version Packages" PR while changesets accumulate, then
+      # runs `pnpm release` to publish once that PR merges. Publishing authenticates
+      # via OIDC against the npm trusted publisher — no NPM_TOKEN. `commitMode:
+      # github-api` makes the bot's commits and tags signed, satisfying the
+      # require-signed-commits ruleset.
+      - name: Create Release Pull Request or Publish
+        uses: changesets/action@v1
+        with:
+          publish: pnpm release
+          commitMode: github-api
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -28,7 +28,10 @@
     "start": "node dist/index.js",
     "test": "vitest run --exclude 'test/e2e/**'",
     "test:e2e": "vitest run test/e2e",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm run build && changeset publish"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.25.2",
@@ -39,6 +42,8 @@
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.15",
+    "@changesets/changelog-github": "^0.6.0",
+    "@changesets/cli": "^2.31.0",
     "@types/node": "^24.7.2",
     "dotenv": "^17.2.3",
     "typescript": "^5.9.2",

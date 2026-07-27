@@ -1,5 +1,7 @@
 # Next.js DevTools MCP
 
+[![MCP Toplist](https://mcptoplist.com/badge/io.github.vercel%2Fnext-devtools-mcp.svg)](https://mcptoplist.com/server/io.github.vercel%2Fnext-devtools-mcp)
+
 [![npm next-devtools-mcp package](https://img.shields.io/npm/v/next-devtools-mcp.svg)](https://npmjs.org/package/next-devtools-mcp)
 
 `next-devtools-mcp` is a Model Context Protocol (MCP) server that connects coding agents like Claude and Cursor to your running Next.js dev server.

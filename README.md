@@ -212,7 +212,7 @@ Output: JSON with the tool's result.
 <details>
 <summary><code>nextjs_docs</code> — find version-accurate docs</summary>
 
-Does **not** fetch docs. Next.js 16+ ships its full docs (markdown, matching your installed version) at `node_modules/next/dist/docs/`. This tool returns that path and how to read it, so the agent uses version-accurate docs instead of training-data guesses. On older Next.js, it recommends `npx @next/codemod@latest upgrade latest`.
+Does **not** fetch docs. Recent Next.js releases bundle their docs (markdown, matching your installed version) at `node_modules/next/dist/docs/`. This tool checks for those files before returning reading instructions. If an installed release has no bundled docs (including early 16.x releases), it offers https://nextjs.org/docs as a fallback and asks the agent to verify APIs against the installed version. Missing dependencies receive installation guidance instead. On Next.js below 16, it recommends `npx @next/codemod@latest upgrade latest`.
 
 Input: `topic` (optional), `project_path` (optional, defaults to cwd).
 

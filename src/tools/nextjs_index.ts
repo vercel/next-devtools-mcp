@@ -140,22 +140,12 @@ export async function handler(args: NextjsIndexArgs = {}): Promise<string> {
     // Auto-discover all servers
     const servers = await getAllAvailableServers()
 
-    if (servers.length === 0) {
-      return JSON.stringify({
-        success: false,
-        error: "No running Next.js dev servers with MCP enabled found",
-        hint: "Make sure you're running Next.js 16+ (MCP is enabled by default). Start the dev server with 'npm run dev'. If on Next.js 15 or earlier, upgrade with 'npx @next/codemod@latest upgrade latest'.",
-        ai_instruction:
-          "IMPORTANT: Server auto-discovery may not work on all operating systems or network configurations. Please ask the user: 'What port is your Next.js dev server running on?'. Once you have the port number, call this tool again with the 'port' parameter set to the user-provided port.",
-        servers: [],
-      })
-    }
-
     // Get tools for each server
-    const serversWithTools = await Promise.all(
+    const candidatesWithTools = await Promise.all(
       servers.map(async (s) => {
         const protocol = await detectProtocol(s.port)
         const tools = await listNextJsTools(s.port)
+        if (tools.length === 0) return null
         return {
           port: s.port,
           pid: s.pid,
@@ -170,6 +160,19 @@ export async function handler(args: NextjsIndexArgs = {}): Promise<string> {
         }
       })
     )
+
+    const serversWithTools = candidatesWithTools.filter((server) => server !== null)
+
+    if (serversWithTools.length === 0) {
+      return JSON.stringify({
+        success: false,
+        error: "No running Next.js dev servers with MCP enabled found",
+        hint: "Make sure you're running Next.js 16+ (MCP is enabled by default). Start the dev server with 'npm run dev'. If on Next.js 15 or earlier, upgrade with 'npx @next/codemod@latest upgrade latest'.",
+        ai_instruction:
+          "IMPORTANT: Server auto-discovery may not work on all operating systems or network configurations. Please ask the user: 'What port is your Next.js dev server running on?'. Once you have the port number, call this tool again with the 'port' parameter set to the user-provided port.",
+        servers: [],
+      })
+    }
 
     return JSON.stringify({
       success: true,

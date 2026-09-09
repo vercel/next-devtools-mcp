@@ -6,6 +6,7 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js"
 import { z } from "zod"
+import { toolInputSchema } from "./_internal/tool-input-schema.js"
 import { spawn } from "child_process"
 import { fileURLToPath } from "url"
 import { dirname, join } from "path"
@@ -31,15 +32,6 @@ const toolNameToTelemetryName: Record<string, McpToolName> = {
   nextjs_call: "mcp/nextjs_call",
 }
 
-// Type definitions
-interface JSONSchema {
-  type?: string
-  description?: string
-  properties?: Record<string, JSONSchema>
-  items?: JSONSchema
-  enum?: unknown[]
-}
-
 // Create server
 const server = new Server(
   {
@@ -59,13 +51,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: tools.map((tool) => ({
       name: tool.metadata.name,
       description: tool.metadata.description,
-      inputSchema: {
-        type: "object",
-        properties: Object.entries(tool.inputSchema).reduce((acc, [key, zodSchema]) => {
-          acc[key] = zodSchemaToJsonSchema(zodSchema)
-          return acc
-        }, {} as Record<string, JSONSchema>),
-      },
+      inputSchema: toolInputSchema(tool.inputSchema),
     })),
   }
 })
@@ -104,49 +90,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     ],
   }
 })
-
-function zodSchemaToJsonSchema(zodSchema: z.ZodTypeAny): JSONSchema {
-  const description = zodSchema._def?.description
-
-  if (zodSchema._def?.typeName === "ZodString") {
-    return { type: "string", description }
-  }
-  if (zodSchema._def?.typeName === "ZodNumber") {
-    return { type: "number", description }
-  }
-  if (zodSchema._def?.typeName === "ZodBoolean") {
-    return { type: "boolean", description }
-  }
-  if (zodSchema._def?.typeName === "ZodArray") {
-    return {
-      type: "array",
-      description,
-      items: zodSchemaToJsonSchema(zodSchema._def.type),
-    }
-  }
-  if (zodSchema._def?.typeName === "ZodObject") {
-    const shape = zodSchema._def.shape()
-    const properties: Record<string, JSONSchema> = {}
-    for (const [key, value] of Object.entries(shape)) {
-      properties[key] = zodSchemaToJsonSchema(value as z.ZodTypeAny)
-    }
-    return { type: "object", description, properties }
-  }
-  if (zodSchema._def?.typeName === "ZodEnum") {
-    return { type: "string", enum: zodSchema._def.values, description }
-  }
-  if (zodSchema._def?.typeName === "ZodOptional") {
-    return zodSchemaToJsonSchema(zodSchema._def.innerType)
-  }
-  if (zodSchema._def?.typeName === "ZodUnion") {
-    const options = zodSchema._def.options
-    if (options.length === 2) {
-      return zodSchemaToJsonSchema(options[0])
-    }
-  }
-
-  return { type: "string", description }
-}
 
 function parseToolArgs(
   schema: Record<string, z.ZodTypeAny>,

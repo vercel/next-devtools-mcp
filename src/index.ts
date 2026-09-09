@@ -57,7 +57,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   }
 })
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
   const { name, arguments: args } = request.params
 
   const tool = tools.find((t) => t.metadata.name === name)
@@ -81,8 +81,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const parsedArgs = parseToolArgs(tool.inputSchema, args || {})
 
   const result = await (tool.handler as (
-    args: Record<string, unknown>
-  ) => Promise<string | CallToolResult>)(parsedArgs)
+    args: Record<string, unknown>,
+    options: { signal: AbortSignal }
+  ) => Promise<string | CallToolResult>)(parsedArgs, { signal: extra.signal })
 
   if (typeof result !== "string") return result
 

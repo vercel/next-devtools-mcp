@@ -2,6 +2,7 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
+  type CallToolResult,
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js"
@@ -79,7 +80,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   const parsedArgs = parseToolArgs(tool.inputSchema, args || {})
 
-  const result = await (tool.handler as (args: Record<string, unknown>) => Promise<string>)(parsedArgs)
+  const result = await (tool.handler as (
+    args: Record<string, unknown>
+  ) => Promise<string | CallToolResult>)(parsedArgs)
+
+  if (typeof result !== "string") return result
 
   return {
     content: [

@@ -1,4 +1,5 @@
 import { z } from "zod"
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import { callNextJsTool } from "../_internal/nextjs-runtime-manager.js"
 
 export const inputSchema = {
@@ -56,10 +57,17 @@ type NextjsCallArgs = {
   args?: Record<string, unknown>
 }
 
-export async function handler(args: NextjsCallArgs): Promise<string> {
+function toolResult(payload: Record<string, unknown>): CallToolResult {
+  return {
+    ...(payload.success === false ? { isError: true } : {}),
+    content: [{ type: "text", text: JSON.stringify(payload) }],
+  }
+}
+
+export async function handler(args: NextjsCallArgs): Promise<CallToolResult> {
   try {
     if (!args.port) {
-      return JSON.stringify({
+      return toolResult({
         success: false,
         error: "Port is required.",
         hint: "Use 'nextjs_index' first to discover available servers and their ports. If auto-discovery fails, ask the user for the port and call 'nextjs_index' with the 'port' parameter.",
@@ -67,7 +75,7 @@ export async function handler(args: NextjsCallArgs): Promise<string> {
     }
 
     if (!args.toolName) {
-      return JSON.stringify({
+      return toolResult({
         success: false,
         error: "toolName is required.",
         hint: "Use 'nextjs_index' to discover available tool names for your server.",
@@ -79,15 +87,20 @@ export async function handler(args: NextjsCallArgs): Promise<string> {
 
     const result = await callNextJsTool(portNumber, args.toolName, args.args || {})
 
-    return JSON.stringify({
-      success: true,
+    return toolResult({
+      success: !(
+        typeof result === "object" &&
+        result !== null &&
+        "isError" in result &&
+        result.isError === true
+      ),
       port: portNumber,
       toolName: args.toolName,
       result,
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    return JSON.stringify({
+    return toolResult({
       success: false,
       error: errorMessage,
       port: args.port,

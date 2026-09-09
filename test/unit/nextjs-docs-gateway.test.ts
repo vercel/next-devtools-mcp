@@ -51,7 +51,7 @@ describe("nextjs_docs gateway", () => {
     expect(result.nextVersion).toBe("16.3.0")
     expect(result.versionSource).toBe("installed")
     expect(result.docsAvailable).toBe(true)
-    expect(result.docsPath).toBe("node_modules/next/dist/docs/")
+    expect(result.docsPath).toBe(fs.realpathSync(path.join(tmpDir, "node_modules/next/dist/docs")))
   })
 
   it("treats a canary install as modern", async () => {
@@ -100,7 +100,7 @@ describe("nextjs_docs gateway", () => {
     expect(JSON.stringify(result.instructions)).toContain("16.0.7")
   })
 
-  it("includes a grep hint when a topic is provided", async () => {
+  it("includes a search hint when a topic is provided", async () => {
     tmpDir = makeProject({ installed: "16.2.0", withDocs: true })
     const result = JSON.parse(await handler({ project_path: tmpDir, topic: "use cache" }))
     expect(JSON.stringify(result.instructions)).toContain("use cache")
@@ -115,6 +115,45 @@ it("asks for installation only when a modern dependency is not installed", async
     expect(result.status).toBe("install_required")
     expect(result.docsAvailable).toBe(false)
     expect(result.versionSource).toBe("declared")
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+it("resolves installed versions and docs from a hoisted dependency", async () => {
+  const dir = makeProject({ installed: "16.3.0", withDocs: true })
+  const child = path.join(dir, "packages", "web")
+  fs.mkdirSync(child, { recursive: true })
+  fs.writeFileSync(
+    path.join(child, "package.json"),
+    JSON.stringify({ dependencies: { next: "^16.0.0" } })
+  )
+  try {
+    const result = JSON.parse(await handler({ project_path: child, topic: "use cache" }))
+    expect(result.versionSource).toBe("installed")
+    expect(result.nextVersion).toBe("16.3.0")
+    expect(result.docsAvailable).toBe(true)
+    expect(result.docsPath).toBe(fs.realpathSync(path.join(dir, "node_modules/next/dist/docs")))
+    expect(result.instructions[1]).toContain(result.docsPath)
+    expect(result.instructions[2]).toContain(result.docsPath)
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+it("prefers a child-local installation over an ancestor installation", async () => {
+  const dir = makeProject({ installed: "16.3.0", withDocs: true })
+  const child = path.join(dir, "packages", "web")
+  const pkg = path.join(child, "node_modules", "next")
+  fs.mkdirSync(path.join(pkg, "dist", "docs"), { recursive: true })
+  fs.writeFileSync(
+    path.join(pkg, "package.json"),
+    JSON.stringify({ name: "next", version: "16.2.0" })
+  )
+  try {
+    const result = JSON.parse(await handler({ project_path: child }))
+    expect(result.nextVersion).toBe("16.2.0")
+    expect(result.docsPath).toBe(fs.realpathSync(path.join(pkg, "dist", "docs")))
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }

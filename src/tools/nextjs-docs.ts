@@ -1,6 +1,7 @@
 import { z } from "zod"
 import fs from "node:fs"
 import path from "node:path"
+import { createRequire } from "node:module"
 
 // Older 16.x releases do not bundle docs. Check package contents before
 // directing agents to local files; the major version alone is insufficient.
@@ -47,6 +48,24 @@ function parseMajor(versionish: string | null | undefined): number | null {
   return parseInt(match[1], 10)
 }
 
+// Follow the project's module resolution, including hoisted workspace installs.
+function resolveNextPackagePath(projectPath: string): string | null {
+  try {
+    return createRequire(path.resolve(projectPath, "package.json")).resolve("next/package.json")
+  } catch {
+    return null
+  }
+}
+
+function getDocsDirectory(projectPath: string): string {
+  const packagePath = resolveNextPackagePath(projectPath)
+  return path.join(
+    packagePath ? path.dirname(packagePath) : path.resolve(projectPath, "node_modules", "next"),
+    "dist",
+    "docs"
+  )
+}
+
 // Resolve the Next.js version for a project, preferring the actually-installed
 // version (most accurate) over the declared dependency range.
 function resolveNextVersion(projectPath: string): {
@@ -54,13 +73,8 @@ function resolveNextVersion(projectPath: string): {
   source: "installed" | "declared" | null
 } {
   try {
-    const installedPkg = path.join(
-      projectPath,
-      "node_modules",
-      "next",
-      "package.json"
-    )
-    if (fs.existsSync(installedPkg)) {
+    const installedPkg = resolveNextPackagePath(projectPath)
+    if (installedPkg) {
       const { version } = JSON.parse(fs.readFileSync(installedPkg, "utf8"))
       if (typeof version === "string") return { version, source: "installed" }
     }
@@ -94,7 +108,7 @@ export async function handler({ topic, project_path }: NextjsDocsArgs): Promise<
       : /latest|canary|rc|beta/i.test(version ?? "")
 
   if (isModern) {
-    const docsDir = path.join(projectPath, "node_modules", "next", "dist", "docs")
+    const docsDir = getDocsDirectory(projectPath)
     const docsExist = fs.existsSync(docsDir)
     if (!docsExist) {
       const installed = source === "installed"
@@ -119,13 +133,13 @@ export async function handler({ topic, project_path }: NextjsDocsArgs): Promise<
       status: "use_bundled_docs",
       nextVersion: version,
       versionSource: source,
-      docsPath: "node_modules/next/dist/docs/",
+      docsPath: docsDir,
       docsAvailable: docsExist,
       instructions: [
         "Next.js ships its full documentation with the installed package, matching your exact version.",
         `Read the relevant guide directly from \`${docsDir}\` (markdown files mirroring the nextjs.org/docs structure).`,
         topic
-          ? `For "${topic}", search those files, e.g.: grep -ril "${topic.replace(/"/g, "")}" node_modules/next/dist/docs`
+          ? `For "${topic}", search the markdown files under \`${docsDir}\` for that API or topic.`
           : "Browse the directory or grep it for the API/topic you need.",
         "Do not rely on training-data knowledge of Next.js APIs — this version may differ. Prefer the bundled docs.",
       ],

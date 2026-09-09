@@ -214,7 +214,7 @@ Output: JSON with the tool's result.
 
 Does **not** fetch docs. Recent Next.js releases bundle their docs (markdown, matching your installed version) at `node_modules/next/dist/docs/`. This tool checks for those files before returning reading instructions. If an installed release has no bundled docs (including early 16.x releases), it offers https://nextjs.org/docs as a fallback and asks the agent to verify APIs against the installed version. Missing dependencies receive installation guidance instead. On Next.js below 16, it recommends `npx @next/codemod@latest upgrade latest`.
 
-Input: `topic` (optional), `project_path` (optional, defaults to cwd).
+Input: `topic` (optional), `project_path` (optional, defaults to cwd). The tool resolves `next/package.json` from that project, including hoisted workspace dependencies, and returns an absolute `docsPath` for the installed package.
 
 </details>
 

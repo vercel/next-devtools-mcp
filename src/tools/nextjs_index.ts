@@ -4,6 +4,7 @@ import {
   listNextJsTools,
   detectProtocol,
   MCP_HOST,
+  type RuntimeRequestOptions,
 } from "../_internal/nextjs-runtime-manager.js"
 
 export const inputSchema = {
@@ -70,7 +71,7 @@ type NextjsIndexArgs = {
   port?: string | number
 }
 
-async function probeAndListTools(port: number): Promise<{
+async function probeAndListTools(port: number, options: RuntimeRequestOptions): Promise<{
   success: boolean
   server?: {
     port: number
@@ -81,8 +82,8 @@ async function probeAndListTools(port: number): Promise<{
   error?: string
 }> {
   try {
-    const protocol = await detectProtocol(port)
-    const tools = await listNextJsTools(port)
+    const protocol = await detectProtocol(port, options)
+    const tools = await listNextJsTools(port, options)
 
     if (tools.length === 0) {
       return {
@@ -113,12 +114,15 @@ async function probeAndListTools(port: number): Promise<{
   }
 }
 
-export async function handler(args: NextjsIndexArgs = {}): Promise<string> {
+export async function handler(
+  args: NextjsIndexArgs = {},
+  options: RuntimeRequestOptions = {}
+): Promise<string> {
   try {
     // If a specific port is provided, probe it directly
     if (args.port !== undefined) {
       const portNumber = typeof args.port === "string" ? parseInt(args.port, 10) : args.port
-      const result = await probeAndListTools(portNumber)
+      const result = await probeAndListTools(portNumber, options)
 
       if (result.success && result.server) {
         return JSON.stringify({
@@ -138,13 +142,13 @@ export async function handler(args: NextjsIndexArgs = {}): Promise<string> {
     }
 
     // Auto-discover all servers
-    const servers = await getAllAvailableServers()
+    const servers = await getAllAvailableServers(options)
 
     // Get tools for each server
     const candidatesWithTools = await Promise.all(
       servers.map(async (s) => {
-        const protocol = await detectProtocol(s.port)
-        const tools = await listNextJsTools(s.port)
+        const protocol = await detectProtocol(s.port, options)
+        const tools = await listNextJsTools(s.port, options)
         if (tools.length === 0) return null
         return {
           port: s.port,

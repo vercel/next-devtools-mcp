@@ -6,6 +6,18 @@ import { Agent as UndiciAgent } from "undici"
 
 const execAsync = promisify(exec)
 
+export interface RuntimeRequestOptions {
+  signal?: AbortSignal
+  timeoutMs?: number
+}
+
+const REQUEST_TIMEOUT_MS = 60_000
+
+function requestSignal(timeoutMs: number, signal?: AbortSignal): AbortSignal {
+  const deadline = AbortSignal.timeout(timeoutMs)
+  return signal ? AbortSignal.any([signal, deadline]) : deadline
+}
+
 interface NextJsServerInfo {
   port: number
   pid: number
@@ -62,13 +74,13 @@ function getFetchOptions(protocol: "http" | "https") {
 async function probeMCPEndpoint(
   port: number,
   protocol: "http" | "https",
-  timeoutMs: number = 500
-): Promise<Response | null> {
+  timeoutMs: number = 500,
+  signal?: AbortSignal
+): Promise<Pick<Response, "ok" | "status"> | null> {
   try {
     const url = `${protocol}://${MCP_HOST}:${port}/_next/mcp`
     const fetchOptions = getFetchOptions(protocol)
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+    signal?.throwIfAborted()
 
     const response = await fetch(url, {
       ...fetchOptions,
@@ -83,12 +95,15 @@ async function probeMCPEndpoint(
         params: {},
         id: 1,
       }),
-      signal: controller.signal,
+      signal: requestSignal(timeoutMs, signal),
     })
 
-    clearTimeout(timeoutId)
-    return response
+    // Only the status is used by protocol detection. Do not leave a streaming
+    // probe body (and its socket) open after returning.
+    await response.body?.cancel()
+    return { ok: response.ok, status: response.status }
   } catch {
+    signal?.throwIfAborted()
     return null
   }
 }
@@ -98,11 +113,16 @@ async function probeMCPEndpoint(
  * Returns the successful protocol if found, null otherwise
  * Also caches the detected protocol
  */
-async function probePort(port: number, timeoutMs: number = 500): Promise<"http" | "https" | null> {
+async function probePort(
+  port: number,
+  timeoutMs: number = 500,
+  signal?: AbortSignal
+): Promise<"http" | "https" | null> {
+  signal?.throwIfAborted()
   // Check cache first
   if (protocolCache.has(port)) {
     const cachedProtocol = protocolCache.get(port)!
-    const response = await probeMCPEndpoint(port, cachedProtocol, timeoutMs)
+    const response = await probeMCPEndpoint(port, cachedProtocol, timeoutMs, signal)
     if (response?.ok) {
       return cachedProtocol
     }
@@ -112,7 +132,7 @@ async function probePort(port: number, timeoutMs: number = 500): Promise<"http" 
 
   // Try HTTP first (more common for local dev)
   for (const protocol of ["http", "https"] as const) {
-    const response = await probeMCPEndpoint(port, protocol, timeoutMs)
+    const response = await probeMCPEndpoint(port, protocol, timeoutMs, signal)
     if (response && response.status !== 404) {
       protocolCache.set(port, protocol)
       if (response.ok) {
@@ -128,12 +148,16 @@ async function probePort(port: number, timeoutMs: number = 500): Promise<"http" 
  * Detect protocol for a port (for use when making requests)
  * Returns cached protocol or defaults to http
  */
-async function detectProtocol(port: number): Promise<"http" | "https"> {
+async function detectProtocol(
+  port: number,
+  options: RuntimeRequestOptions = {}
+): Promise<"http" | "https"> {
+  options.signal?.throwIfAborted()
   if (protocolCache.has(port)) {
     return protocolCache.get(port)!
   }
 
-  const protocol = await probePort(port)
+  const protocol = await probePort(port, 500, options.signal)
   return protocol ?? "http"
 }
 
@@ -300,9 +324,12 @@ async function findNextJsServers(): Promise<NextJsServerInfo[]> {
 async function makeNextJsMCPRequest(
   port: number,
   method: string,
-  params: Record<string, unknown> = {}
+  params: Record<string, unknown> = {},
+  options: RuntimeRequestOptions = {}
 ): Promise<NextJsMCPResponse> {
-  const protocol = await detectProtocol(port)
+  const signal = requestSignal(options.timeoutMs ?? REQUEST_TIMEOUT_MS, options.signal)
+  signal.throwIfAborted()
+  const protocol = await detectProtocol(port, { signal })
   const url = `${protocol}://${MCP_HOST}:${port}/_next/mcp`
   const fetchOptions = getFetchOptions(protocol)
 
@@ -322,6 +349,7 @@ async function makeNextJsMCPRequest(
         Accept: "application/json, text/event-stream",
       },
       body: JSON.stringify(jsonRpcRequest),
+      signal,
     })
 
     if (!response.ok) {
@@ -372,11 +400,15 @@ async function makeNextJsMCPRequest(
   }
 }
 
-export async function listNextJsTools(port: number): Promise<NextJsMCPTool[]> {
+export async function listNextJsTools(
+  port: number,
+  options: RuntimeRequestOptions = {}
+): Promise<NextJsMCPTool[]> {
   try {
-    const response = await makeNextJsMCPRequest(port, "tools/list", {})
+    const response = await makeNextJsMCPRequest(port, "tools/list", {}, options)
     return response.result?.tools || []
   } catch (error) {
+    options.signal?.throwIfAborted()
     console.error("[Next.js Runtime Manager] Error listing tools:", error)
     return []
   }
@@ -385,13 +417,16 @@ export async function listNextJsTools(port: number): Promise<NextJsMCPTool[]> {
 export async function callNextJsTool(
   port: number,
   toolName: string,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
+  options: RuntimeRequestOptions = {}
 ): Promise<unknown> {
   try {
-    const response = await makeNextJsMCPRequest(port, "tools/call", {
-      name: toolName,
-      arguments: args,
-    })
+    const response = await makeNextJsMCPRequest(
+      port,
+      "tools/call",
+      { name: toolName, arguments: args },
+      options
+    )
 
     return response.result
   } catch (error) {
@@ -410,13 +445,13 @@ const COMMON_PORTS = [3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009
  * Discover Next.js servers by probing common ports
  * This is more reliable than process discovery on some OS
  */
-async function discoverViaPortProbing(): Promise<NextJsServerInfo[]> {
+async function discoverViaPortProbing(options: RuntimeRequestOptions): Promise<NextJsServerInfo[]> {
   const servers: NextJsServerInfo[] = []
 
   // Probe all common ports in parallel for speed
   const results = await Promise.all(
     COMMON_PORTS.map(async (port) => {
-      const protocol = await probePort(port)
+      const protocol = await probePort(port, 500, options.signal)
       if (protocol) {
         return {
           port,
@@ -437,12 +472,15 @@ async function discoverViaPortProbing(): Promise<NextJsServerInfo[]> {
   return servers
 }
 
-export async function getAllAvailableServers(): Promise<NextJsServerInfo[]> {
+export async function getAllAvailableServers(
+  options: RuntimeRequestOptions = {}
+): Promise<NextJsServerInfo[]> {
+  options.signal?.throwIfAborted()
   const seenPorts = new Set<number>()
   const allServers: NextJsServerInfo[] = []
 
   // Step 1: Probe common ports first (most reliable, works on all OS)
-  const portProbedServers = await discoverViaPortProbing()
+  const portProbedServers = await discoverViaPortProbing(options)
   for (const server of portProbedServers) {
     if (!seenPorts.has(server.port)) {
       seenPorts.add(server.port)
@@ -452,6 +490,7 @@ export async function getAllAvailableServers(): Promise<NextJsServerInfo[]> {
 
   // Step 2: Also try process discovery to find servers on non-standard ports
   const processServers = await findNextJsServers()
+  options.signal?.throwIfAborted()
 
   // Filter to servers not already found via port probing
   const newServers = processServers.filter(server => !seenPorts.has(server.port))
@@ -459,7 +498,7 @@ export async function getAllAvailableServers(): Promise<NextJsServerInfo[]> {
   // Verify MCP for process-discovered servers in parallel
   const verifiedServers = await Promise.all(
     newServers.map(async (server) => {
-      const hasMCP = await probePort(server.port, 1000)
+      const hasMCP = await probePort(server.port, 1000, options.signal)
       return hasMCP ? server : null
     })
   )

@@ -205,7 +205,7 @@ Input:
 { "port": 3000, "toolName": "get_errors" }
 ```
 
-Output: JSON with the tool's result.
+Output: JSON with the tool's result. Upstream requests, including response-body reads, have a 60-second deadline. Cancelling an MCP request aborts its upstream network work; discovery also releases response bodies used only to detect the protocol.
 
 </details>
 

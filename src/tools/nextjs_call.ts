@@ -1,6 +1,6 @@
 import { z } from "zod"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
-import { callNextJsTool } from "../_internal/nextjs-runtime-manager.js"
+import { callNextJsTool, type RuntimeRequestOptions } from "../_internal/nextjs-runtime-manager.js"
 
 export const inputSchema = {
   port: z
@@ -64,7 +64,10 @@ function toolResult(payload: Record<string, unknown>): CallToolResult {
   }
 }
 
-export async function handler(args: NextjsCallArgs): Promise<CallToolResult> {
+export async function handler(
+  args: NextjsCallArgs,
+  options: RuntimeRequestOptions = {}
+): Promise<CallToolResult> {
   try {
     if (!args.port) {
       return toolResult({
@@ -85,7 +88,7 @@ export async function handler(args: NextjsCallArgs): Promise<CallToolResult> {
     // Ensure port is a number
     const portNumber = typeof args.port === "string" ? parseInt(args.port, 10) : args.port
 
-    const result = await callNextJsTool(portNumber, args.toolName, args.args || {})
+    const result = await callNextJsTool(portNumber, args.toolName, args.args || {}, options)
 
     return toolResult({
       success: !(

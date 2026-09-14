@@ -25,6 +25,14 @@ type BrowserEvalArgs = {
 
 export const metadata = {
   name: "browser_eval",
+  // Despite the name, this tool only probes for the agent-browser CLI and
+  // returns instructions; it never drives a browser or runs a task itself.
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
   description: `Set up and use browser automation for this project via the agent-browser CLI.
 
 This tool does NOT drive the browser itself. It points you at \`agent-browser\` — a fast, native browser-automation CLI built for agents (https://github.com/vercel-labs/agent-browser) — and tells you how to install it (if needed) and where to start. You then run its commands directly (you have shell access), which is faster and more capable than proxying automation through MCP.

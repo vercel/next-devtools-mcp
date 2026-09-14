@@ -19,6 +19,13 @@ export const inputSchema = {
 
 export const metadata = {
   name: "nextjs_index",
+  // Discovery only: probes local dev servers and lists what they offer.
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
   description: `Discover all running Next.js development servers and list their available MCP tools.
 
 WHEN TO USE THIS TOOL - Use proactively in these scenarios:

@@ -112,6 +112,42 @@ describe("MCP Server Registration", () => {
     }
   }, 10000)
 
+  it("should annotate every tool so clients can tell a read from a proxy call", async () => {
+    const serverProcess = spawn("node", [MCP_SERVER_PATH], {
+      stdio: ["pipe", "pipe", "inherit"],
+    })
+
+    try {
+      await initialize(serverProcess)
+
+      const toolsResponse = await sendMCPRequest(serverProcess, {
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/list",
+      })
+
+      const tools = (toolsResponse.result as any).tools
+      const readOnly = Object.fromEntries(
+        tools.map((t: any) => [t.name, t.annotations?.readOnlyHint])
+      )
+
+      // browser_eval only probes for the agent-browser CLI; nextjs_docs and
+      // nextjs_index only read. nextjs_call proxies an arbitrary dev-server
+      // tool, so it must not claim to be read-only.
+      expect(readOnly).toEqual({
+        browser_eval: true,
+        nextjs_docs: true,
+        nextjs_index: true,
+        nextjs_call: false,
+      })
+      for (const t of tools) {
+        expect(typeof t.annotations.destructiveHint).toBe("boolean")
+      }
+    } finally {
+      serverProcess.kill()
+    }
+  }, 10000)
+
   it("should not advertise any prompts", async () => {
     const serverProcess = spawn("node", [MCP_SERVER_PATH], {
       stdio: ["pipe", "pipe", "inherit"],

@@ -27,6 +27,13 @@ type NextjsDocsArgs = {
 
 export const metadata = {
   name: "nextjs_docs",
+  // Reads the installed Next.js package and its bundled docs; writes nothing.
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
   description: `Find the version-accurate Next.js documentation for THIS project.
 
 This tool does NOT fetch documentation. Recent Next.js releases ship their full docs inside the installed package at \`node_modules/next/dist/docs/\` (markdown), kept in sync with the exact version you have installed. This tool tells you where those docs are and how to read them — so you read the docs that match this project, not a generic or outdated copy.

@@ -53,6 +53,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       name: tool.metadata.name,
       description: tool.metadata.description,
       inputSchema: toolInputSchema(tool.inputSchema),
+      annotations: tool.metadata.annotations,
     })),
   }
 })

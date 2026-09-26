@@ -24,6 +24,13 @@ export const inputSchema = {
 
 export const metadata = {
   name: "nextjs_call",
+  // A proxy: it runs whatever tool the dev server exposes, so it cannot claim
+  // to be read-only or non-destructive. Clients should confirm before calling.
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: false,
+  },
   description: `Call a specific MCP tool on a running Next.js development server.
 
 REQUIREMENTS:

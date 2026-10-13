@@ -1,6 +1,7 @@
 import { z } from "zod"
 import {
   getAllAvailableServers,
+  fetchNextJsTools,
   listNextJsTools,
   detectProtocol,
   MCP_HOST,
@@ -83,7 +84,9 @@ async function probeAndListTools(port: number, options: RuntimeRequestOptions): 
 }> {
   try {
     const protocol = await detectProtocol(port, options)
-    const tools = await listNextJsTools(port, options)
+    // fetchNextJsTools, not listNextJsTools: a request that fails must reach the
+    // catch below with its reason instead of reading as "no tools".
+    const tools = await fetchNextJsTools(port, options)
 
     if (tools.length === 0) {
       return {
@@ -154,7 +157,7 @@ export async function handler(
           port: s.port,
           pid: s.pid,
           command: s.command,
-          url: `${protocol}://localhost:${s.port}`,
+          url: `${protocol}://${MCP_HOST}:${s.port}`,
           toolCount: tools.length,
           tools: tools.map((t) => ({
             name: t.name,

@@ -400,13 +400,24 @@ async function makeNextJsMCPRequest(
   }
 }
 
+/**
+ * Lists the MCP tools of the server on `port`, rejecting with the reason when
+ * the request fails (nothing listening, no /_next/mcp, an MCP error, ...).
+ */
+export async function fetchNextJsTools(
+  port: number,
+  options: RuntimeRequestOptions = {}
+): Promise<NextJsMCPTool[]> {
+  const response = await makeNextJsMCPRequest(port, "tools/list", {}, options)
+  return response.result?.tools || []
+}
+
 export async function listNextJsTools(
   port: number,
   options: RuntimeRequestOptions = {}
 ): Promise<NextJsMCPTool[]> {
   try {
-    const response = await makeNextJsMCPRequest(port, "tools/list", {}, options)
-    return response.result?.tools || []
+    return await fetchNextJsTools(port, options)
   } catch (error) {
     options.signal?.throwIfAborted()
     console.error("[Next.js Runtime Manager] Error listing tools:", error)

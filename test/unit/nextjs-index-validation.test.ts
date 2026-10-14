@@ -1,15 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { handler } from "../../src/tools/nextjs_index.js"
 import {
+  fetchNextJsTools,
   getAllAvailableServers,
   listNextJsTools,
 } from "../../src/_internal/nextjs-runtime-manager.js"
 
 vi.mock("../../src/_internal/nextjs-runtime-manager.js", () => ({
   getAllAvailableServers: vi.fn(),
+  fetchNextJsTools: vi.fn(),
   listNextJsTools: vi.fn(),
   detectProtocol: vi.fn().mockResolvedValue("http"),
-  MCP_HOST: "localhost",
+  MCP_HOST: "127.0.0.1",
 }))
 
 describe("nextjs_index candidate validation", () => {
@@ -40,7 +42,17 @@ describe("nextjs_index candidate validation", () => {
   })
 
   it("still rejects an invalid explicit port candidate", async () => {
-    vi.mocked(listNextJsTools).mockResolvedValue([])
+    vi.mocked(fetchNextJsTools).mockResolvedValue([])
     expect(JSON.parse(await handler({ port: 3000 })).success).toBe(false)
+  })
+
+  it("reports discovered servers on NEXT_DEVTOOLS_HOST, like an explicit port", async () => {
+    vi.mocked(getAllAvailableServers).mockResolvedValue([candidates[1]])
+    vi.mocked(listNextJsTools).mockResolvedValue(tools)
+    vi.mocked(fetchNextJsTools).mockResolvedValue(tools)
+    const discovered = JSON.parse(await handler())
+    const explicit = JSON.parse(await handler({ port: 3001 }))
+    expect(discovered.servers[0].url).toBe("http://127.0.0.1:3001")
+    expect(discovered.servers[0].url).toBe(explicit.servers[0].url)
   })
 })

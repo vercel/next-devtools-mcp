@@ -3,6 +3,7 @@ import { spawn } from "child_process"
 import { join, dirname } from "path"
 import { fileURLToPath } from "url"
 import { execSync } from "child_process"
+import { createServer } from "node:http"
 
 // E2E tests need longer timeouts
 vi.setConfig({ testTimeout: 600000, hookTimeout: 60000 })
@@ -184,29 +185,55 @@ describe("MCP Server Registration", () => {
     }
   }, 10000)
 
-  it("should treat null for an optional argument as omitted", async () => {
+  it("should treat null for nextjs_call args as omitted", async () => {
+    // Fake /_next/mcp endpoint on loopback; NEXT_DEVTOOLS_HOST points the server at it (src/_internal/nextjs-runtime-manager.ts:51).
+    const received: unknown[] = []
+    const fake = createServer(async (req, res) => {
+      let body = ""
+      for await (const chunk of req) body += chunk
+      const request = JSON.parse(body)
+      if (request.method === "tools/call") received.push(request.params.arguments)
+      res.writeHead(200, { "Content-Type": "text/event-stream" })
+      res.end(
+        `data: ${JSON.stringify({ jsonrpc: "2.0", id: request.id, result: { content: [{ type: "text", text: "fixture" }] } })}\n\n`
+      )
+    })
+    await new Promise<void>((resolve) => fake.listen(0, "127.0.0.1", resolve))
+    const port = (fake.address() as { port: number }).port
+
     const serverProcess = spawn("node", [MCP_SERVER_PATH], {
       stdio: ["pipe", "pipe", "inherit"],
+      env: { ...process.env, NEXT_DEVTOOLS_HOST: "127.0.0.1", NEXT_TELEMETRY_DISABLED: "1" },
     })
 
     try {
       await initialize(serverProcess)
 
-      // Some MCP clients send null for optional arguments they leave unset.
-      const toolResponse = await sendMCPRequest(serverProcess, {
-        jsonrpc: "2.0",
-        id: 2,
-        method: "tools/call",
-        params: {
-          name: "nextjs_index",
-          arguments: { port: null },
-        },
-      })
+      // #161: null for an optional argument is treated as omitted (https://github.com/vercel/next-devtools-mcp/issues/161).
+      const callWith = (id: number, extra: Record<string, unknown>) =>
+        sendMCPRequest(serverProcess, {
+          jsonrpc: "2.0",
+          id,
+          method: "tools/call",
+          params: {
+            name: "nextjs_call",
+            arguments: { port, toolName: "get_errors", ...extra },
+          },
+        })
 
-      expect(toolResponse.error).toBeUndefined()
-      expect(toolResponse.result).toBeDefined()
+      const withNull = await callWith(2, { args: null })
+      const omitted = await callWith(3, {})
+
+      for (const response of [withNull, omitted]) {
+        expect(response.error).toBeUndefined()
+        const payload = JSON.parse((response.result as any).content[0].text)
+        expect(payload.success).toBe(true)
+        expect(payload.result.content[0].text).toBe("fixture")
+      }
+      expect(received).toEqual([{}, {}])
     } finally {
       serverProcess.kill()
+      fake.close()
     }
   }, 10000)
 })

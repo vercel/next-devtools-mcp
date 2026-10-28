@@ -18,7 +18,7 @@ export const inputSchema = {
     .record(z.string(), z.unknown())
     .nullish()
     .describe(
-      "Arguments object to pass to the Next.js MCP tool. MUST be an object (e.g., {param: 'value'}), NOT a string. Only provide this parameter if the tool requires arguments - omit it entirely for tools that take no arguments. Use 'nextjs_index' to see the inputSchema for each tool."
+      "Arguments object to pass to the Next.js MCP tool. MUST be an object (e.g., {param: 'value'}), NOT a string. Only provide this parameter if the tool requires arguments - omit it entirely for tools that take no arguments; null is treated the same as omitting it. Use 'nextjs_index' to see the inputSchema for each tool."
     ),
 }
 
@@ -35,7 +35,7 @@ Use 'nextjs_index' first to discover available servers, tools, and their input s
 If 'nextjs_index' auto-discovery fails, ask the user for the port and call 'nextjs_index' again with the 'port' parameter.
 
 IMPORTANT: When calling tools:
-- The 'args' parameter MUST be an object (e.g., {key: "value"}), NOT a string
+- The 'args' parameter MUST be an object (e.g., {key: "value"}), NOT a string; null is treated the same as omitting it
 - If a tool doesn't require arguments, OMIT the 'args' parameter entirely - do NOT pass {} or "{}"
 - Check the tool's inputSchema from 'nextjs_index' to see what arguments are required
 

@@ -43,4 +43,13 @@ describe("nextjs_index candidate validation", () => {
     vi.mocked(listNextJsTools).mockResolvedValue([])
     expect(JSON.parse(await handler({ port: 3000 })).success).toBe(false)
   })
+
+  it("treats a null port as omitted and runs auto-discovery", async () => {
+    vi.mocked(getAllAvailableServers).mockResolvedValue(candidates)
+    vi.mocked(listNextJsTools).mockResolvedValue([])
+    const omitted = JSON.parse(await handler())
+    const nulled = JSON.parse(await handler({ port: null }))
+    expect(getAllAvailableServers).toHaveBeenCalledTimes(2)
+    expect(nulled).toEqual(omitted)
+  })
 })

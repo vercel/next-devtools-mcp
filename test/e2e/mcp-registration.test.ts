@@ -183,4 +183,30 @@ describe("MCP Server Registration", () => {
       serverProcess.kill()
     }
   }, 10000)
+
+  it("should treat null for an optional argument as omitted", async () => {
+    const serverProcess = spawn("node", [MCP_SERVER_PATH], {
+      stdio: ["pipe", "pipe", "inherit"],
+    })
+
+    try {
+      await initialize(serverProcess)
+
+      // Some MCP clients send null for optional arguments they leave unset.
+      const toolResponse = await sendMCPRequest(serverProcess, {
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: {
+          name: "nextjs_index",
+          arguments: { port: null },
+        },
+      })
+
+      expect(toolResponse.error).toBeUndefined()
+      expect(toolResponse.result).toBeDefined()
+    } finally {
+      serverProcess.kill()
+    }
+  }, 10000)
 })

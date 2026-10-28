@@ -16,7 +16,7 @@ export const inputSchema = {
 
   args: z
     .record(z.string(), z.unknown())
-    .optional()
+    .nullish()
     .describe(
       "Arguments object to pass to the Next.js MCP tool. MUST be an object (e.g., {param: 'value'}), NOT a string. Only provide this parameter if the tool requires arguments - omit it entirely for tools that take no arguments. Use 'nextjs_index' to see the inputSchema for each tool."
     ),
@@ -54,7 +54,7 @@ Example usage:
 type NextjsCallArgs = {
   port: string | number
   toolName: string
-  args?: Record<string, unknown>
+  args?: Record<string, unknown> | null
 }
 
 function toolResult(payload: Record<string, unknown>): CallToolResult {

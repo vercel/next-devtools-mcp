@@ -11,7 +11,7 @@ export const inputSchema = {
   port: z
     .union([z.string(), z.number()])
     .transform((val) => (typeof val === "string" ? parseInt(val, 10) : val))
-    .optional()
+    .nullish()
     .describe(
       "Optional port number to probe directly. Use this when auto-discovery fails - ask the user which port their Next.js dev server is running on."
     ),
@@ -68,7 +68,7 @@ If the MCP endpoint is not available:
 }
 
 type NextjsIndexArgs = {
-  port?: string | number
+  port?: string | number | null
 }
 
 async function probeAndListTools(port: number, options: RuntimeRequestOptions): Promise<{
@@ -120,7 +120,7 @@ export async function handler(
 ): Promise<string> {
   try {
     // If a specific port is provided, probe it directly
-    if (args.port !== undefined) {
+    if (args.port != null) {
       const portNumber = typeof args.port === "string" ? parseInt(args.port, 10) : args.port
       const result = await probeAndListTools(portNumber, options)
 

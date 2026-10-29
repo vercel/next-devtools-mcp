@@ -13,6 +13,7 @@ describe("advertised tool input schemas", () => {
     { port: 3000, toolName: "get_errors" },
     { port: "3000", toolName: "get_server_action_by_id", args: { actionId: "test" } },
     { port: 3000, toolName: "example", args: { nested: { value: [null, true, 1] } } },
+    { port: 3000, toolName: "get_errors", args: null },
   ])("accepts the same valid arguments as the tool: %j", (args) => {
     expect(validate(args).valid).toBe(true)
     expect(z.object(call).safeParse(args).success).toBe(true)
@@ -36,5 +37,6 @@ describe("advertised tool input schemas", () => {
     expect(validateIndex({}).valid).toBe(true)
     expect(validateIndex({ port: 3000 }).valid).toBe(true)
     expect(validateIndex({ port: "3000" }).valid).toBe(true)
+    expect(validateIndex({ port: null }).valid).toBe(true)
   })
 })

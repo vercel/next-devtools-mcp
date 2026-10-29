@@ -243,7 +243,8 @@ describe("MCP Server Registration", () => {
       }
       expect(received).toEqual([{}, {}])
     } finally {
-      serverProcess.kill()
+      // SIGKILL skips the SIGTERM handler, which spawns a detached flusher that could recreate the home (src/index.ts:141-155).
+      serverProcess.kill("SIGKILL")
       await exited
       fake.close()
       rmSync(home, { recursive: true, force: true })

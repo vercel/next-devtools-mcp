@@ -13,7 +13,7 @@ export const inputSchema = {
     .transform((val) => (typeof val === "string" ? parseInt(val, 10) : val))
     .nullish()
     .describe(
-      "Optional port number to probe directly. Use this when auto-discovery fails - ask the user which port their Next.js dev server is running on."
+      "Optional port number to probe directly; null is treated as omitted. Use this when auto-discovery fails - ask the user which port their Next.js dev server is running on."
     ),
 }
 

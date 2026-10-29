@@ -199,7 +199,7 @@ Calls one runtime tool on a discovered server. Run `nextjs_index` first to find 
 Input:
 - `port` (required) — dev server port
 - `toolName` (required) — runtime tool to invoke
-- `args` (optional) — arguments object, only if the tool requires them
+- `args` (optional) — arguments object, only if the tool requires them; `null` is treated as omitted
 
 ```jsonc
 { "port": 3000, "toolName": "get_errors" }

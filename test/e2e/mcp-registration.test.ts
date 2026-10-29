@@ -4,6 +4,8 @@ import { join, dirname } from "path"
 import { fileURLToPath } from "url"
 import { execSync } from "child_process"
 import { createServer } from "node:http"
+import { mkdtempSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
 
 // E2E tests need longer timeouts
 vi.setConfig({ testTimeout: 600000, hookTimeout: 60000 })
@@ -201,10 +203,19 @@ describe("MCP Server Registration", () => {
     await new Promise<void>((resolve) => fake.listen(0, "127.0.0.1", resolve))
     const port = (fake.address() as { port: number }).port
 
+    // Isolated home: the server writes its mcp.log under the home directory via homedir() (src/telemetry/telemetry-dir.ts:9).
+    const home = mkdtempSync(join(tmpdir(), "next-devtools-mcp-home-"))
     const serverProcess = spawn("node", [MCP_SERVER_PATH], {
       stdio: ["pipe", "pipe", "inherit"],
-      env: { ...process.env, NEXT_DEVTOOLS_HOST: "127.0.0.1", NEXT_TELEMETRY_DISABLED: "1" },
+      env: {
+        ...process.env,
+        HOME: home,
+        USERPROFILE: home,
+        NEXT_DEVTOOLS_HOST: "127.0.0.1",
+        NEXT_TELEMETRY_DISABLED: "1",
+      },
     })
+    const exited = new Promise<void>((resolve) => serverProcess.once("exit", () => resolve()))
 
     try {
       await initialize(serverProcess)
@@ -233,7 +244,9 @@ describe("MCP Server Registration", () => {
       expect(received).toEqual([{}, {}])
     } finally {
       serverProcess.kill()
+      await exited
       fake.close()
+      rmSync(home, { recursive: true, force: true })
     }
   }, 10000)
 })

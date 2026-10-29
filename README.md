@@ -178,7 +178,14 @@ The gateways do not do the work themselves — they tell the agent where the doc
 <details>
 <summary><code>nextjs_index</code> — discover servers</summary>
 
-Scans common ports for running Next.js 16+ dev servers and lists each server's built-in runtime tools at `/_next/mcp`. No parameters.
+Scans common ports for running Next.js 16+ dev servers and lists each server's built-in runtime tools at `/_next/mcp`.
+
+Input:
+- `port` (optional) — probe this port directly instead of auto-discovering. `null` is treated as omitted and triggers auto-discovery, the same as leaving it out.
+
+```jsonc
+{ "port": 3000 }
+```
 
 Runtime tools exposed by Next.js (varies by version):
 - `get_errors` — current build, runtime, and type errors

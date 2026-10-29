@@ -243,7 +243,7 @@ describe("MCP Server Registration", () => {
       }
       expect(received).toEqual([{}, {}])
     } finally {
-      // SIGKILL skips the SIGTERM handler, which spawns a detached flusher that could recreate the home (src/index.ts:141-155).
+      // SIGKILL cannot be caught, so it skips the SIGTERM handler (https://man7.org/linux/man-pages/man7/signal.7.html). That handler spawns a detached flusher that could recreate the home (src/index.ts:141-155).
       serverProcess.kill("SIGKILL")
       await exited
       fake.close()

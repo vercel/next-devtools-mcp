@@ -276,6 +276,22 @@ rm -rf ~/.next-devtools-mcp
 
 `browser_eval` and `nextjs_docs` work without a dev server.
 
+**No server found with `next dev --experimental-https`** — `next-devtools-mcp` verifies TLS certificates. mkcert installs its CA in the OS trust store, which Node.js doesn't read, and Next.js passes the CA only to its own server process. Point `NODE_EXTRA_CA_CERTS` at that CA in the MCP server's `env`, then restart your MCP client:
+
+```json
+{
+  "mcpServers": {
+    "next-devtools": {
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"],
+      "env": { "NODE_EXTRA_CA_CERTS": "/absolute/path/to/rootCA.pem" }
+    }
+  }
+}
+```
+
+Use the full path to `rootCA.pem` in the folder `next dev` prints on first run (`CA Root certificate created in ...`); on Windows, write it with `/` or `\\`. With your own certificate or a custom HTTPS server, use the CA that signed it. As a last resort, `"NODE_TLS_REJECT_UNAUTHORIZED": "0"` skips certificate verification for every HTTPS request the MCP server makes.
+
 ## Local Development
 
 ```bash

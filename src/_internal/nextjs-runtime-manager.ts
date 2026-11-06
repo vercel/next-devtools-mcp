@@ -52,8 +52,8 @@ const MCP_HOST = process.env.NEXT_DEVTOOLS_HOST ?? "localhost"
 
 /**
  * Get fetch options for HTTPS requests
- * Automatically allows insecure TLS for HTTPS (self-signed certificates)
- * Can be disabled via NODE_TLS_REJECT_UNAUTHORIZED=0
+ * TLS certificates are verified by default. Certificate verification is
+ * skipped only when NODE_TLS_REJECT_UNAUTHORIZED=0
  */
 function getFetchOptions(protocol: "http" | "https") {
   const allowInsecure =
